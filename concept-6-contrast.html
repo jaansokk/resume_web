@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaan Sokk — Concept 6: Contrast</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --bg-alt: #0A0A0A;
+            --bg-card: #111111;
+            --text: #FFFFFF;
+            --text-mid: #B0B0B0;
+            --text-dim: #666666;
+            --accent: #FFCC00;
+            --border: #222222;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* HOME */
+        .page {
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .photo-bg {
+            position: fixed;
+            inset: 0;
+            background: url('20221211-SBW_0367.jpg') center center;
+            background-size: cover;
+        }
+
+        .photo-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(0,0,0,0.6) 0%,
+                rgba(0,0,0,0.85) 50%,
+                rgba(0,0,0,0.95) 100%
+            );
+        }
+
+        .noise {
+            position: fixed;
+            inset: 0;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 500;
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        .nav-bar.solid {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            cursor: pointer;
+        }
+
+        .brand span {
+            color: var(--accent);
+        }
+
+        .nav-items {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav-item {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-mid);
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .main {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: end;
+        }
+
+        .left-col {
+            padding: 0 2.5rem 4rem;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 0.5rem 0;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 2rem;
+        }
+
+        .main-title {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+        }
+
+        .main-title .dim {
+            color: var(--text-mid);
+        }
+
+        .main-sub {
+            font-size: 1.0625rem;
+            font-weight: 400;
+            color: var(--text-mid);
+            line-height: 1.7;
+            max-width: 480px;
+        }
+
+        .right-col {
+            padding: 0 2.5rem 4rem;
+        }
+
+        .chat-card {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+        }
+
+        .chat-head {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-head-left {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.6; }
+        }
+
+        .chat-head-text {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+        }
+
+        .chat-msgs {
+            padding: 1.25rem;
+            max-height: 280px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .chat-msgs.on {
+            display: block;
+        }
+
+        .m {
+            margin-bottom: 1rem;
+            animation: rise 0.3s ease;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .m.user {
+            text-align: right;
+        }
+
+        .m .b {
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            font-size: 0.9375rem;
+            max-width: 90%;
+        }
+
+        .m.user .b {
+            background: var(--accent);
+            color: var(--bg);
+            font-weight: 500;
+        }
+
+        .m.ai .b {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+
+        .em-row {
+            margin-top: 0.75rem;
+            display: flex;
+            gap: 0;
+        }
+
+        .em-row input {
+            flex: 1;
+            padding: 0.625rem 0.875rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-right: none;
+            font-family: inherit;
+            font-size: 0.8125rem;
+            color: var(--text);
+            outline: none;
+        }
+
+        .em-row input:focus {
+            border-color: var(--accent);
+        }
+
+        .em-row button {
+            padding: 0.625rem 1rem;
+            background: var(--accent);
+            border: none;
+            font-family: inherit;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--bg);
+            cursor: pointer;
+        }
+
+        .chat-foot {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0;
+        }
+
+        .chat-in {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-right: none;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            color: var(--text);
+            outline: none;
+        }
+
+        .chat-in::placeholder {
+            color: var(--text-dim);
+        }
+
+        .chat-in:focus {
+            border-color: var(--text-dim);
+        }
+
+        .chat-send {
+            padding: 0.875rem 2rem;
+            background: var(--accent);
+            border: none;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--bg);
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .chat-send:hover {
+            filter: brightness(0.9);
+        }
+
+        /* TIMELINE VIEW */
+        .timeline-view {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: var(--bg);
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+            padding-top: 5rem;
+        }
+
+        .timeline-view.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .timeline-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 2.5rem 8rem;
+        }
+
+        .timeline-intro {
+            margin-bottom: 4rem;
+        }
+
+        .timeline-intro h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-intro p {
+            font-size: 1.0625rem;
+            color: var(--text-mid);
+            max-width: 600px;
+        }
+
+        /* Timeline line */
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline-year {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-year::before {
+            content: '';
+            position: absolute;
+            left: -3rem;
+            top: 0.5rem;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            transform: translateX(-4px);
+        }
+
+        .year-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .exp-card {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .exp-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: transparent;
+            transition: background 0.25s;
+        }
+
+        .exp-card:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .exp-card:hover::before {
+            background: var(--accent);
+        }
+
+        .exp-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.25rem;
+        }
+
+        .exp-card h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        .exp-card .duration {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        .exp-card .role {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 0.625rem;
+        }
+
+        .exp-card .summary {
+            font-size: 0.875rem;
+            color: var(--text-mid);
+            line-height: 1.6;
+        }
+
+        .exp-card .arrow {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            opacity: 0;
+            transition: all 0.25s;
+        }
+
+        .exp-card:hover .arrow {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        /* SINGLE EXPERIENCE VIEW */
+        .single-exp-view {
+            position: fixed;
+            inset: 0;
+            z-index: 110;
+            background: var(--bg);
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+            padding-top: 5rem;
+        }
+
+        .single-exp-view.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-mid);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 2rem;
+        }
+
+        .back-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .single-exp-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 2.5rem 8rem;
+        }
+
+        .single-exp-meta {
+            margin-bottom: 2rem;
+        }
+
+        .single-exp-meta .company {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+
+        .single-exp-meta h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        .single-exp-meta .period {
+            font-size: 1rem;
+            color: var(--text-dim);
+        }
+
+        .single-exp-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .single-exp-section h2 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-mid);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .single-exp-section p {
+            font-size: 1.0625rem;
+            color: var(--text-mid);
+            line-height: 1.8;
+        }
+
+        .single-exp-section ul {
+            list-style: none;
+        }
+
+        .single-exp-section li {
+            font-size: 1rem;
+            color: var(--text-mid);
+            line-height: 1.7;
+            padding-left: 1.5rem;
+            position: relative;
+            margin-bottom: 0.75rem;
+        }
+
+        .single-exp-section li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.65rem;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+        }
+
+        .tags-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 0.375rem 0.875rem;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dim);
+        }
+
+        /* FLOATING CHAT */
+        .floating-chat {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 600;
+            width: 380px;
+            max-height: 500px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+
+        .floating-chat.visible {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        .floating-chat-head {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .floating-chat-head-left {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .floating-chat-toggle {
+            width: 28px;
+            height: 28px;
+            background: transparent;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .floating-chat-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .floating-chat-msgs {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            min-height: 200px;
+            max-height: 300px;
+        }
+
+        .floating-chat-foot {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0;
+        }
+
+        .floating-chat.minimized {
+            max-height: auto;
+        }
+
+        .floating-chat.minimized .floating-chat-msgs,
+        .floating-chat.minimized .floating-chat-foot {
+            display: none;
+        }
+
+        /* Floating chat trigger button */
+        .chat-trigger {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 590;
+            width: 56px;
+            height: 56px;
+            background: var(--accent);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(255,204,0,0.3);
+        }
+
+        .chat-trigger:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-trigger.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        .chat-trigger svg {
+            width: 24px;
+            height: 24px;
+            color: var(--bg);
+        }
+
+        @media (max-width: 1024px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+            
+            .left-col {
+                padding-bottom: 2rem;
+            }
+            
+            .main-title {
+                font-size: 2.75rem;
+            }
+
+            .timeline-content {
+                padding: 2rem 1.5rem 8rem;
+            }
+
+            .timeline {
+                padding-left: 2rem;
+            }
+
+            .timeline-year::before {
+                left: -2rem;
+            }
+
+            .single-exp-content {
+                padding: 2rem 1.5rem 8rem;
+            }
+
+            .floating-chat {
+                width: calc(100vw - 3rem);
+                right: 1.5rem;
+                left: 1.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-bar {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-items {
+                display: none;
+            }
+
+            .main-title {
+                font-size: 2.25rem;
+            }
+
+            .left-col, .right-col {
+                padding: 0 1.5rem 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PERSISTENT NAV BAR -->
+    <nav class="nav-bar" id="navBar">
+        <div class="brand" onclick="goHome()">Jaan<span>.</span>Sokk</div>
+        <div class="nav-items">
+            <a class="nav-item" onclick="showTimeline()">Experience</a>
+            <a class="nav-item">Contact</a>
+        </div>
+    </nav>
+
+    <!-- HOME PAGE -->
+    <div class="page" id="homePage">
+        <div class="photo-bg"></div>
+        <div class="photo-overlay"></div>
+        <div class="noise"></div>
+
+        <div class="main">
+            <div class="left-col">
+                <div class="eyebrow">Product Owner · Technical Lead</div>
+                <h1 class="main-title">
+                    15 years of<br>
+                    <span class="dim">building &</span><br>
+                    shipping.
+                </h1>
+                <p class="main-sub">
+                    Blockchain, fintech, mobility data. Certified ScrumMaster. 
+                    DeFi enthusiast. Looking for my next challenge.
+                </p>
+            </div>
+
+            <div class="right-col">
+                <div class="chat-card">
+                    <div class="chat-head">
+                        <div class="chat-head-left">
+                            <span class="pulse-dot"></span>
+                            <span class="chat-head-text">Ask me anything</span>
+                        </div>
+                    </div>
+                    <div class="chat-msgs" id="msgs"></div>
+                    <div class="chat-foot">
+                        <input type="text" class="chat-in" id="inp" placeholder="Tell me about your opportunity...">
+                        <button class="chat-send" onclick="sendHome()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TIMELINE VIEW -->
+    <div class="timeline-view" id="timelineView">
+        <div class="timeline-content">
+            <div class="timeline-intro">
+                <h1>My Experience</h1>
+                <p>15 years across product ownership, technical leadership, and engineering management. Click on any role to learn more.</p>
+            </div>
+
+            <div class="timeline">
+                <!-- 2025 -->
+                <div class="timeline-year">
+                    <div class="year-label">2025 — Present</div>
+                    <div class="exp-card" onclick="showExp('positium')">
+                        <div class="exp-card-top">
+                            <h3>Positium</h3>
+                            <span class="duration">2025 — Now</span>
+                        </div>
+                        <div class="role">Technical Project Lead</div>
+                        <div class="summary">Leading Estonian Mobility Modelling — a 2-year nationwide prototype. Engineering management across projects in Saudi Arabia, India, Mongolia.</div>
+                        <div class="arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2024-2025 -->
+                <div class="timeline-year">
+                    <div class="year-label">2024 — 2025</div>
+                    <div class="exp-card" onclick="showExp('guardtime-po')">
+                        <div class="exp-card-top">
+                            <h3>Guardtime</h3>
+                            <span class="duration">2024 — 2025</span>
+                        </div>
+                        <div class="role">Product Owner</div>
+                        <div class="summary">Digital Green Energy Certification for Adani — blockchain-based, privacy-preserving certificates. UAE Stablecoin platform + zkSync bridge.</div>
+                        <div class="arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2019-2024 -->
+                <div class="timeline-year">
+                    <div class="year-label">2019 — 2024</div>
+                    <div class="exp-card" onclick="showExp('guardtime-pm')">
+                        <div class="exp-card-top">
+                            <h3>Guardtime</h3>
+                            <span class="duration">2019 — 2024</span>
+                        </div>
+                        <div class="role">Technical Project Manager / ScrumMaster</div>
+                        <div class="summary">NEOM Construction Asset Management — team of 11, 1600 monthly users, 114 sites. EU Digital Covid Certificate implementation.</div>
+                        <div class="arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2017-2019 -->
+                <div class="timeline-year">
+                    <div class="year-label">2017 — 2019</div>
+                    <div class="exp-card" onclick="showExp('4finance')">
+                        <div class="exp-card-top">
+                            <h3>4Finance Group</h3>
+                            <span class="duration">2017 — 2019</span>
+                        </div>
+                        <div class="role">Product Manager — Risk & Customer Journey</div>
+                        <div class="summary">friia.se loan product launch. Event-driven architecture. GDPR compliance. Scaled agile across 3 teams.</div>
+                        <div class="arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2012-2017 -->
+                <div class="timeline-year">
+                    <div class="year-label">2012 — 2017</div>
+                    <div class="exp-card" onclick="showExp('playtech')">
+                        <div class="exp-card-top">
+                            <h3>Playtech</h3>
+                            <span class="duration">2012 — 2017</span>
+                        </div>
+                        <div class="role">Team Lead — Casino Branding</div>
+                        <div class="summary">Team of 7. Led Agile transformation → 30% lead time reduction. Feature rollout for 100+ brands (Bet365, Betfair).</div>
+                        <div class="arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SINGLE EXPERIENCE VIEW -->
+    <div class="single-exp-view" id="singleExpView">
+        <div class="single-exp-content" id="singleExpContent">
+            <!-- Content dynamically injected -->
+        </div>
+    </div>
+
+    <!-- FLOATING CHAT TRIGGER (hidden on home, visible on timeline/single) -->
+    <button class="chat-trigger hidden" id="chatTrigger" onclick="openFloatingChat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </button>
+
+    <!-- FLOATING CHAT -->
+    <div class="floating-chat" id="floatingChat">
+        <div class="floating-chat-head">
+            <div class="floating-chat-head-left">
+                <span class="pulse-dot"></span>
+                <span class="chat-head-text">Ask me anything</span>
+            </div>
+            <button class="floating-chat-toggle" onclick="closeFloatingChat()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="floating-chat-msgs" id="floatingMsgs"></div>
+        <div class="floating-chat-foot">
+            <input type="text" class="chat-in" id="floatingInp" placeholder="Ask about this role...">
+            <button class="chat-send" onclick="sendFloating()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Experience data
+        const experiences = {
+            'positium': {
+                company: 'Positium',
+                role: 'Technical Project Lead',
+                period: '2025 — Present',
+                description: 'Leading the Estonian Mobility Modelling initiative — a 2-year nationwide prototype that transforms mobile network data into actionable mobility insights for urban planning and policy decisions.',
+                highlights: [
+                    'Engineering management across international projects in Saudi Arabia, India, and Mongolia',
+                    'Org design using unFIX patterns for cross-functional team flexibility',
+                    'Pipeline development for big data analytics (Python, PySpark)',
+                    'Stakeholder coordination across government and private sector partners'
+                ],
+                tags: ['Data Analytics', 'Python', 'Org Design', 'Big Data', 'Mobility']
+            },
+            'guardtime-po': {
+                company: 'Guardtime',
+                role: 'Product Owner',
+                period: '2024 — 2025',
+                description: 'Led product strategy for enterprise blockchain solutions, focusing on green energy certification and digital payments infrastructure.',
+                highlights: [
+                    'Digital Green Energy Certification for Adani — blockchain-based, privacy-preserving renewable energy certificates',
+                    'UAE Stablecoin platform with zkSync bridge for enterprise cross-border payments',
+                    'Product discovery and roadmap ownership for Web3 enterprise products',
+                    'Coordination between engineering, business development, and external partners'
+                ],
+                tags: ['Blockchain', 'Web3', 'Product Strategy', 'DeFi', 'Enterprise']
+            },
+            'guardtime-pm': {
+                company: 'Guardtime',
+                role: 'Technical Project Manager / ScrumMaster',
+                period: '2019 — 2024',
+                description: 'Managed complex technical projects at scale, from construction asset management in Saudi Arabia to pandemic response infrastructure across the EU.',
+                highlights: [
+                    'NEOM Construction Asset Management: Team of 11, 1600 monthly active users, 114 construction sites',
+                    'EU Digital Covid Certificate: Implementation for vaccination verification across member states',
+                    'Certified ScrumMaster with hands-on Agile coaching',
+                    'KSI blockchain integration for tamper-proof audit trails'
+                ],
+                tags: ['Mobile', 'KSI Blockchain', 'Agile', 'ScrumMaster', 'Enterprise']
+            },
+            '4finance': {
+                company: '4Finance Group',
+                role: 'Product Manager — Risk & Customer Journey',
+                period: '2017 — 2019',
+                description: 'Owned product development for risk assessment and customer journey optimization in consumer lending, launching products across European markets.',
+                highlights: [
+                    'friia.se loan product launch — end-to-end product ownership from concept to market',
+                    'Event-driven architecture implementation for real-time risk decisioning',
+                    'GDPR compliance project across multiple data systems',
+                    'Scaled agile practices across 3 cross-functional teams'
+                ],
+                tags: ['Fintech', 'Risk', 'Agile Coach', 'GDPR', 'Consumer Lending']
+            },
+            'playtech': {
+                company: 'Playtech',
+                role: 'Team Lead — Casino Branding',
+                period: '2012 — 2017',
+                description: 'Led a front-end development team delivering branding and customization solutions for the world\'s largest gaming operators.',
+                highlights: [
+                    'Team of 7 developers delivering branded casino experiences',
+                    'Led Agile transformation → 30% reduction in lead time',
+                    'Feature rollout for 100+ brands including Bet365, Betfair, and major European operators',
+                    'Technical mentorship and hiring for growing team'
+                ],
+                tags: ['Gaming', 'Team Lead', 'Scrum', 'Front-end', 'B2B']
+            }
+        };
+
+        let msgCount = 0;
+        let currentView = 'home';
+        let currentExp = null;
+
+        // DOM refs
+        const homePage = document.getElementById('homePage');
+        const timelineView = document.getElementById('timelineView');
+        const singleExpView = document.getElementById('singleExpView');
+        const singleExpContent = document.getElementById('singleExpContent');
+        const chatTrigger = document.getElementById('chatTrigger');
+        const floatingChat = document.getElementById('floatingChat');
+        const floatingMsgs = document.getElementById('floatingMsgs');
+        const floatingInp = document.getElementById('floatingInp');
+        const navBar = document.getElementById('navBar');
+        const msgs = document.getElementById('msgs');
+        const inp = document.getElementById('inp');
+
+        // Event listeners
+        inp.addEventListener('keypress', e => { if (e.key === 'Enter') sendHome(); });
+        floatingInp.addEventListener('keypress', e => { if (e.key === 'Enter') sendFloating(); });
+
+        // Update nav bar and chat trigger based on view
+        function updateView() {
+            if (currentView === 'home') {
+                navBar.classList.remove('solid');
+                chatTrigger.classList.add('hidden');
+                floatingChat.classList.remove('visible');
+            } else {
+                navBar.classList.add('solid');
+                // Show trigger only if floating chat is not open
+                if (!floatingChat.classList.contains('visible')) {
+                    chatTrigger.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Navigation functions
+        function goHome() {
+            timelineView.classList.remove('active');
+            singleExpView.classList.remove('active');
+            currentView = 'home';
+            currentExp = null;
+            updateView();
+        }
+
+        function showTimeline() {
+            timelineView.classList.add('active');
+            singleExpView.classList.remove('active');
+            currentView = 'timeline';
+            updateView();
+        }
+
+        function showExp(expId) {
+            const exp = experiences[expId];
+            if (!exp) return;
+
+            currentExp = expId;
+            
+            singleExpContent.innerHTML = `
+                <button class="back-btn" onclick="backToTimeline()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Back to Timeline
+                </button>
+
+                <div class="single-exp-meta">
+                    <div class="company">${exp.company}</div>
+                    <h1>${exp.role}</h1>
+                    <div class="period">${exp.period}</div>
+                </div>
+
+                <div class="single-exp-section">
+                    <h2>Overview</h2>
+                    <p>${exp.description}</p>
+                </div>
+
+                <div class="single-exp-section">
+                    <h2>Key Highlights</h2>
+                    <ul>
+                        ${exp.highlights.map(h => `<li>${h}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="single-exp-section">
+                    <h2>Skills & Technologies</h2>
+                    <div class="tags-row">
+                        ${exp.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            singleExpView.classList.add('active');
+            singleExpView.scrollTop = 0;
+            currentView = 'single';
+            updateView();
+        }
+
+        function backToTimeline() {
+            singleExpView.classList.remove('active');
+            currentView = 'timeline';
+            currentExp = null;
+            updateView();
+        }
+
+        // Floating chat functions
+        function openFloatingChat() {
+            floatingChat.classList.add('visible');
+            chatTrigger.classList.add('hidden');
+            floatingInp.focus();
+        }
+
+        function closeFloatingChat() {
+            floatingChat.classList.remove('visible');
+            chatTrigger.classList.remove('hidden');
+        }
+
+        // Message functions
+        function addMsg(text, type, container, email = false) {
+            const d = document.createElement('div');
+            d.className = `m ${type}`;
+            let h = `<div class="b">${text}</div>`;
+            if (email) {
+                h += `<div class="em-row"><input type="email" placeholder="your@email.com"><button onclick="submitEmail()">Submit</button></div>`;
+            }
+            d.innerHTML = h;
+            container.appendChild(d);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendHome() {
+            const t = inp.value.trim();
+            if (!t) return;
+            msgs.classList.add('on');
+            addMsg(t, 'user', msgs);
+            inp.value = '';
+            msgCount++;
+
+            setTimeout(() => {
+                const opp = /pm|product|manager|owner|lead|hire|job|team|opportunity|position|role/i.test(t);
+                if (msgCount === 1) {
+                    if (opp) {
+                        addMsg("That sounds promising. I've led product and engineering at Guardtime, 4Finance, and Playtech. Check out my experience timeline.", 'ai', msgs);
+                        setTimeout(() => showTimeline(), 800);
+                    } else {
+                        addMsg("Great to connect. I'm a Product Owner & Technical Lead — 15 years across blockchain, fintech, and mobility data. What would you like to know?", 'ai', msgs);
+                    }
+                }
+            }, 400);
+        }
+
+        function sendFloating() {
+            const t = floatingInp.value.trim();
+            if (!t) return;
+            addMsg(t, 'user', floatingMsgs);
+            floatingInp.value = '';
+            msgCount++;
+
+            setTimeout(() => {
+                if (currentExp) {
+                    const exp = experiences[currentExp];
+                    addMsg(`Happy to discuss my work at ${exp.company}. What specifically would you like to know about this role?`, 'ai', floatingMsgs);
+                } else if (msgCount <= 3) {
+                    addMsg("Would you like details on any specific role? I can share more about NEOM, the energy certification work, or fintech experience.", 'ai', floatingMsgs);
+                } else {
+                    addMsg("This could be a great fit. Could I get your email so Jaan can follow up?", 'ai', floatingMsgs, true);
+                }
+            }, 400);
+        }
+
+        function submitEmail() {
+            addMsg("Perfect. Jaan will reach out soon.", 'ai', floatingMsgs);
+        }
+    </script>
+</body>
+</html>

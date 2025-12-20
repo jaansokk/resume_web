@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaan Sokk — Concept 1: Editorial Minimal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cream: #F7F5F0;
+            --bg-warm: #EDE9E0;
+            --text-primary: #1A1A1A;
+            --text-secondary: #5A5A5A;
+            --accent: #C4704B;
+            --accent-hover: #A85A38;
+            --border: #D4D0C8;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-cream);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ===== FIRST SCREEN ===== */
+        .screen-home {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .screen-home.split-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .photo-section {
+            position: relative;
+            background: url('20221211-SBW_0367.jpg') center center;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        .photo-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to right,
+                rgba(0,0,0,0.1) 0%,
+                rgba(0,0,0,0.3) 100%
+            );
+        }
+
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            background: var(--bg-cream);
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 2rem;
+            left: 4rem;
+            font-family: 'Fraunces', serif;
+            font-size: 1.25rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            color: var(--text-primary);
+        }
+
+        .browse-link {
+            position: absolute;
+            top: 2rem;
+            right: 4rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding-bottom: 2px;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .browse-link:hover {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .intro-content {
+            max-width: 480px;
+        }
+
+        .intro-content h1 {
+            font-family: 'Fraunces', serif;
+            font-size: 2.75rem;
+            font-weight: 300;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .intro-content h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .intro-content p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            line-height: 1.7;
+        }
+
+        .chat-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            padding: 1.5rem;
+            min-height: 60px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .chat-messages.active {
+            display: block;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-message.user {
+            text-align: right;
+        }
+
+        .chat-message.user .message-bubble {
+            background: var(--accent);
+            color: var(--white);
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            border-radius: 12px 12px 4px 12px;
+            max-width: 80%;
+        }
+
+        .chat-message.ai .message-bubble {
+            background: var(--bg-warm);
+            color: var(--text-primary);
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            border-radius: 12px 12px 12px 4px;
+            max-width: 80%;
+        }
+
+        .email-prompt {
+            margin-top: 0.75rem;
+        }
+
+        .email-prompt input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            margin-right: 0.5rem;
+            width: 200px;
+        }
+
+        .email-prompt button {
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .email-prompt button:hover {
+            background: var(--accent-hover);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            border: none;
+            font-family: inherit;
+            font-size: 1rem;
+            background: transparent;
+            outline: none;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .chat-submit {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chat-submit:hover {
+            background: var(--bg-warm);
+        }
+
+        /* ===== SPLIT VIEW (Experience Panel) ===== */
+        .experience-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100vh;
+            background: var(--bg-cream);
+            transform: translateX(-100%);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .experience-panel.active {
+            transform: translateX(0);
+        }
+
+        .experience-panel.active ~ .screen-home .photo-section {
+            display: none;
+        }
+
+        .experience-content {
+            padding: 4rem;
+        }
+
+        .experience-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .experience-header h2 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+        }
+
+        .close-panel {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-panel:hover {
+            background: var(--bg-warm);
+            border-color: var(--text-secondary);
+        }
+
+        .experience-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--accent);
+            color: var(--white);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-radius: 100px;
+            margin-bottom: 1rem;
+        }
+
+        .experience-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .experience-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .experience-card h3 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.25rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+        }
+
+        .experience-card .role {
+            color: var(--accent);
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .experience-card p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.6;
+        }
+
+        .experience-card .tags {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .experience-card .tag {
+            padding: 0.25rem 0.625rem;
+            background: var(--bg-warm);
+            font-size: 0.75rem;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .screen-home {
+                grid-template-columns: 1fr;
+            }
+            
+            .photo-section {
+                min-height: 40vh;
+            }
+
+            .content-section {
+                padding: 2rem;
+            }
+
+            .logo, .browse-link {
+                position: static;
+                margin-bottom: 1rem;
+            }
+
+            .experience-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Experience Panel (slides in from left) -->
+    <div class="experience-panel" id="experiencePanel">
+        <div class="experience-content">
+            <div class="experience-header">
+                <h2>Related Experience</h2>
+                <button class="close-panel" onclick="toggleExperience(false)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <span class="experience-tag">Product Design</span>
+
+            <div class="experience-card">
+                <h3>Stripe</h3>
+                <div class="role">Product Designer · 2021–Present</div>
+                <p>Led design for merchant onboarding flows, reducing drop-off by 23%. Collaborated with engineering on component library scaling.</p>
+                <div class="tags">
+                    <span class="tag">Design Systems</span>
+                    <span class="tag">User Research</span>
+                    <span class="tag">Figma</span>
+                </div>
+            </div>
+
+            <div class="experience-card">
+                <h3>Square</h3>
+                <div class="role">Senior Designer · 2018–2021</div>
+                <p>Designed the seller dashboard redesign reaching 2M+ merchants. Established mobile-first design patterns.</p>
+                <div class="tags">
+                    <span class="tag">Mobile Design</span>
+                    <span class="tag">Dashboard UX</span>
+                    <span class="tag">Prototyping</span>
+                </div>
+            </div>
+
+            <span class="experience-tag" style="margin-top: 2rem;">Photography & Video</span>
+
+            <div class="experience-card">
+                <h3>SokkPhoto</h3>
+                <div class="role">Founder & Photographer</div>
+                <p>Portrait and event photography with clients including tech startups, musicians, and private events. Currently building sokkphoto.com/joon.</p>
+                <div class="tags">
+                    <span class="tag">Portrait</span>
+                    <span class="tag">Events</span>
+                    <span class="tag">Post-Production</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Home Screen -->
+    <div class="screen-home" id="screenHome">
+        <div class="photo-section">
+            <div class="photo-overlay"></div>
+        </div>
+
+        <div class="content-section">
+            <div class="logo">Jaan Sokk</div>
+            <a class="browse-link" onclick="toggleExperience(true)">Browse my work →</a>
+
+            <div class="intro-content">
+                <h1>Designer, photographer, <em>maker.</em></h1>
+                <p>I craft digital products and capture moments. What brings you here today?</p>
+
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-input-wrapper">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Tell me what you have in mind...">
+                        <button class="chat-submit" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let messageCount = 0;
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const experiencePanel = document.getElementById('experiencePanel');
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Show messages area
+            chatMessages.classList.add('active');
+
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+            messageCount++;
+
+            // Simulate AI response
+            setTimeout(() => {
+                if (messageCount === 1) {
+                    // First response - classify and respond
+                    const isOpportunity = message.toLowerCase().includes('job') || 
+                                         message.toLowerCase().includes('hire') || 
+                                         message.toLowerCase().includes('work') ||
+                                         message.toLowerCase().includes('project');
+                    
+                    if (isOpportunity) {
+                        addMessage("That sounds exciting! I've worked on similar projects at Stripe and Square. Let me show you some relevant experience.", 'ai');
+                        setTimeout(() => toggleExperience(true), 800);
+                    } else {
+                        addMessage("Great to hear from you! I'd love to chat. Feel free to ask me anything about my work in design, photography, or web development.", 'ai');
+                    }
+                } else if (messageCount === 2) {
+                    addMessage("Would you like to see more examples of my past experience that relate to this?", 'ai');
+                } else if (messageCount === 3) {
+                    addMessage("I'm glad you're interested! Can I get your email? I'll make sure the real Jaan knows about this conversation 😊", 'ai', true);
+                } else {
+                    addMessage("Thanks for your message! Jaan will be in touch soon.", 'ai');
+                }
+            }, 600);
+        }
+
+        function addMessage(text, type, showEmail = false) {
+            const div = document.createElement('div');
+            div.className = `chat-message ${type}`;
+            
+            let html = `<div class="message-bubble">${text}</div>`;
+            
+            if (showEmail) {
+                html += `
+                    <div class="email-prompt">
+                        <input type="email" placeholder="your@email.com">
+                        <button onclick="submitEmail()">Submit</button>
+                    </div>
+                `;
+            }
+            
+            div.innerHTML = html;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function submitEmail() {
+            addMessage("Perfect, I've noted that down. Talk soon!", 'ai');
+        }
+
+        function toggleExperience(show) {
+            experiencePanel.classList.toggle('active', show);
+            document.getElementById('screenHome').classList.toggle('split-view', show);
+        }
+    </script>
+</body>
+</html>
+

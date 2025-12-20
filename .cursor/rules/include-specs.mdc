@@ -1,0 +1,12 @@
+---
+description: Always include the specs folder for context in every chat
+globs:
+  - specs/**/*.md
+  - specs/**/*.mdx
+  - specs/**/*.txt
+  - specs/**/*.json
+  - specs/*.md
+alwaysApply: true
+---
+
+Specs are the source of truth for scope and acceptance criteria.
