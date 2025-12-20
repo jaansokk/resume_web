@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
+import { findRelevantExperiences } from '../utils/keywordMatching';
 
 export default function ChatCard() {
   const [messages, setMessages] = useState<Array<{ text: string; type: 'user' | 'ai'; showEmailInput?: boolean }>>([]);
@@ -15,18 +16,26 @@ export default function ChatCard() {
     setMessageCount(prev => prev + 1);
     const currentCount = messageCount + 1;
 
+    // Check if keywords are detected that would trigger split view
+    const relevantExperiences = findRelevantExperiences(text);
+    const hasKeywords = relevantExperiences.length > 0;
+    
+    // Also check for opportunity keywords
+    const isOpportunity = /pm|product|manager|owner|lead|hire|job|team|opportunity|position|role/i.test(text);
+
     setTimeout(() => {
-      const isOpportunity = /pm|product|manager|owner|lead|hire|job|team|opportunity|position|role/i.test(text);
-      
       if (currentCount === 1) {
-        if (isOpportunity) {
+        if (isOpportunity || hasKeywords) {
           setMessages(prev => [...prev, {
-            text: "That sounds promising. I've led product and engineering at Guardtime, 4Finance, and Playtech. Check out my experience timeline.",
+            text: "That sounds promising. I've led product and engineering at Guardtime, 4Finance, and Playtech. Here are some relevant experiences.",
             type: 'ai'
           }]);
-          setTimeout(() => {
-            window.location.href = `/chat?message=${encodeURIComponent(text)}`;
-          }, 800);
+          // Navigate to split view when keywords are detected
+          if (hasKeywords || isOpportunity) {
+            setTimeout(() => {
+              window.location.href = `/chat?message=${encodeURIComponent(text)}`;
+            }, 800);
+          }
         } else {
           setMessages(prev => [...prev, {
             text: "Great to connect. I'm a Product Owner & Technical Lead — 15 years across blockchain, fintech, and mobility data. What would you like to know?",
@@ -34,6 +43,13 @@ export default function ChatCard() {
           }]);
         }
       } else if (currentCount === 2 || currentCount === 3) {
+        // Check for keywords in subsequent messages too
+        const newRelevantExperiences = findRelevantExperiences(text);
+        if (newRelevantExperiences.length > 0) {
+          setTimeout(() => {
+            window.location.href = `/chat?message=${encodeURIComponent(text)}`;
+          }, 800);
+        }
         setMessages(prev => [...prev, {
           text: "Do you want to see more examples of my past experience that would relate to this?",
           type: 'ai'

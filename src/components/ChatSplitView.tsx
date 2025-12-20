@@ -73,7 +73,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[600px]">
       {/* Left: Related Experience */}
-      <div className="bg-bg-alt border border-border p-6">
+      <div className="bg-bg-alt p-6">
         <h2 className="text-xs font-bold uppercase tracking-wider text-text-mid mb-4 pb-3 border-b border-border">
           Related Experience
         </h2>
