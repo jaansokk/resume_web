@@ -10,8 +10,9 @@ const initialMessage = searchParams.get('message') || '';
 <Layout title="Chat — Jaan Sokk">
   <NavBar />
   
-  <div class="min-h-screen bg-bg pt-20">
-    <div class="max-w-[1400px] mx-auto px-10 py-8 pb-32">
+  <!-- Main container: full viewport height, nav is ~80px (py-5 + content) -->
+  <div class="h-screen bg-bg pt-20 overflow-hidden">
+    <div class="h-full max-w-[1400px] mx-auto px-10 py-8">
       <ChatSplitView client:load initialMessage={initialMessage} />
     </div>
   </div>
