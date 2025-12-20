@@ -5,6 +5,7 @@ Assign one label:
 - **New opportunity**: hiring, PM/PO role, contract work, project request, “can you help”, “we need”, “looking for”
 - **General talk**: browsing, curiosity, small talk, unrelated questions
 
+Implementation note (prototype): keyword regex is OK; later upgrade to a small router model.
 
 ### Chat stages (suggested)
 1. **Turn 1**
@@ -22,9 +23,9 @@ Assign one label:
    - Show email input + submit CTA (mocked)
 
 ### Safety/UX notes
+- Avoid sounding like a real human assistant scheduling without consent; be explicit it’s a website assistant.
 - Keep responses short, scannable, and PM-oriented.
 - Provide “Browse experience” escape hatch from chat at all times.
-
 
 ### Experience relevance mapping (prototype)
 Map keywords → left panel sections:

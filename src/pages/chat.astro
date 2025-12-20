@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/NavBar.astro';
+import ChatSplitView from '../components/ChatSplitView';
+
+const searchParams = Astro.url.searchParams;
+const initialMessage = searchParams.get('message') || '';
+---
+
+<Layout title="Chat — Jaan Sokk">
+  <NavBar />
+  
+  <div class="min-h-screen bg-bg pt-20">
+    <div class="max-w-[1400px] mx-auto px-10 py-8">
+      <ChatSplitView client:load initialMessage={initialMessage} />
+    </div>
+  </div>
+</Layout>
+

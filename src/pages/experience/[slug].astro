@@ -1,0 +1,121 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/NavBar.astro';
+import { getCollection } from 'astro:content';
+import { Content } from 'astro:content';
+
+export async function getStaticPaths() {
+  const experiences = await getCollection('experience');
+  return experiences.map((exp) => {
+    // Remove .md extension if present
+    const slug = exp.id.replace(/\.md$/, '');
+    return {
+      params: { slug },
+      props: { experience: exp },
+    };
+  });
+}
+
+interface Props {
+  experience: Content<'experience'>;
+}
+
+const { experience } = Astro.props;
+const { Content: ExperienceContent } = await experience.render();
+---
+
+<Layout title={`${experience.data.role} at ${experience.data.company} — Jaan Sokk`}>
+  <NavBar />
+  
+  <div class="min-h-screen bg-bg pt-20">
+    <div class="max-w-[800px] mx-auto px-10 py-8 pb-32">
+      <a
+        href="/experience"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border font-sans text-xs font-semibold uppercase tracking-wider text-text-mid cursor-pointer transition-all hover:border-accent hover:text-accent mb-8"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Timeline
+      </a>
+
+      <div class="mb-8">
+        <div class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-accent mb-3">
+          {experience.data.company}
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tight mb-2">
+          {experience.data.role}
+        </h1>
+        <div class="text-base text-text-dim">
+          {experience.data.period}
+        </div>
+      </div>
+
+      <div class="space-y-10">
+        <ExperienceContent />
+      </div>
+
+      <div class="mt-10">
+        <h2 class="text-xs font-bold uppercase tracking-[0.15em] text-text-mid mb-4 pb-3 border-b border-border">
+          Skills & Technologies
+        </h2>
+        <div class="flex gap-2 flex-wrap">
+          {experience.data.tags.map((tag) => (
+            <span key={tag} class="px-3.5 py-1.5 bg-bg-alt border border-border text-[0.6875rem] font-semibold uppercase tracking-wide text-text-dim">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  :global(.single-exp-section) {
+    margin-bottom: 2.5rem;
+  }
+
+  :global(.single-exp-section h2) {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-mid);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  :global(.single-exp-section p) {
+    font-size: 1.0625rem;
+    color: var(--text-mid);
+    line-height: 1.8;
+  }
+
+  :global(.single-exp-section ul) {
+    list-style: none;
+    padding: 0;
+  }
+
+  :global(.single-exp-section li) {
+    font-size: 1rem;
+    color: var(--text-mid);
+    line-height: 1.7;
+    padding-left: 1.5rem;
+    position: relative;
+    margin-bottom: 0.75rem;
+  }
+
+  :global(.single-exp-section li::before) {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.65rem;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+  }
+</style>
+
