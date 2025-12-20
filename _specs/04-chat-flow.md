@@ -12,20 +12,19 @@ Assign one label:
 
 
 ### Chat stages (suggested)
-1. **Turn 1**
+1. **Classification**
    - Classify prompt
    - If **New opportunity** or **keywords detected**:
      - Confirm interest, ask 1 clarifying question (role/company/problem)
      - **Automatically expand to split view** and show most relevant experience
    - If **General talk**:
      - Invite browsing or ask what they want to explore
-2. **Turn 2–3**
+2. **Examples of experience**
    - Ask: "Do you want to see some more examples of my past experience that would relate to this?"
    - **If keywords detected in subsequent messages**: Expand to split view
-3. **Turn 3–4**
+3. **Ask for a LinkedIn link or email**
    - Ask for email:
-     - "Can I get your email? I'll be sure to let the real Jaan know about this — so we can continue the conversation."
-   - Show email input + submit CTA (mocked)
+     - "Can I get your LinkedIn profile? I'll be sure to let the real Jaan know about this — so we can continue the conversation."
 
 ### Split View Trigger
 - **Automatic expansion**: Split view appears when relevant keywords are detected in any message

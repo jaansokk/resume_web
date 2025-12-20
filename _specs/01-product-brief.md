@@ -20,9 +20,4 @@ Build a **resume website with chat capability** for **PM/PO applications**:
   - Left: “Related experience” (auto-filtered)
   - Right: ongoing chat
 
-### Non-goals (for now)
-- Real AI backend integration (mocked logic is fine)
-- Full CMS/admin (content is static)
-- Pixel-perfect visual polish (prototype-level)
-
 

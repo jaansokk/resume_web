@@ -17,11 +17,7 @@
 
 ### Content blocks (recommended)
 - **Hero positioning (PM/PO)**
-  - One-liner options (pick one later):
-    - “Product Owner / Product Manager with 15 years leading teams and shipping complex products.”
-    - “PM/PO blending product thinking + technical delivery across fintech, blockchain, and data.”
-  - Supporting line:
-    - “Tell me what you’re hiring for — I’ll show the most relevant experience.”
+  - One-liner + supporting line
 - **Experience highlights (left panel)**
   - Positium — Technical Project Lead (2025–…)
   - Guardtime — Product Owner (2024–2025)
