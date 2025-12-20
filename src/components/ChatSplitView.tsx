@@ -126,9 +126,9 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full min-h-0">
       {/* Left: Related Experience - scrollable */}
-      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col h-full min-h-0 overflow-hidden">
         <div className="flex items-center gap-6 mb-6 flex-shrink-0">
           <h2 className="text-xs font-bold uppercase tracking-wider text-text-mid whitespace-nowrap">
             Related Experience
@@ -152,7 +152,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
           )}
         </div>
         
-        <div className="flex-1 overflow-y-auto pb-8">
+        <div className="flex-1 min-h-0 overflow-y-auto pb-8">
           {relatedExperiences.length > 0 ? (
             <div>
               {relatedExperiences[activeTab] && (
@@ -190,7 +190,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
       </div>
 
       {/* Right: Chat - fills remaining height */}
-      <div className="h-full flex flex-col bg-bg-alt border border-border">
+      <div className="h-full min-h-0 flex flex-col bg-bg-alt border border-border">
         <div className="px-5 py-4 border-b border-border flex justify-between items-center flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 bg-accent animate-pulse"></span>
@@ -200,7 +200,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
           </div>
         </div>
         
-        <div className="flex-1 px-5 py-5 overflow-y-auto">
+        <div className="flex-1 min-h-0 px-5 py-5 overflow-y-auto">
           {messages.length === 0 && (
             <p className="text-text-mid text-sm">Start a conversation...</p>
           )}
