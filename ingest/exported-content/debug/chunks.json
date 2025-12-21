@@ -1,0 +1,202 @@
+[
+  {
+    "type": "experience",
+    "slug": "4finance",
+    "chunkId": 0,
+    "title": "Product Manager — Risk & Customer Journey",
+    "tags": [
+      "Fintech",
+      "Risk",
+      "Agile Coach",
+      "GDPR",
+      "Consumer Lending"
+    ],
+    "company": "4Finance Group",
+    "role": "Product Manager — Risk & Customer Journey",
+    "section": "",
+    "text": "Owned product development for risk assessment and customer journey optimization in consumer lending, launching products across European markets.",
+    "updatedAt": "2025-12-21T11:10:04.674Z",
+    "sourceHash": "1405a61e5ae1e6b43c6549936a89acdc10e8b81ed3646c0d1e44d1297930c6ef",
+    "textHash": "40b3fbedff8d9940fc51bf0a2b3eb9a0bc2cd2aaeea40dee317c6303a219d03e"
+  },
+  {
+    "type": "experience",
+    "slug": "4finance",
+    "chunkId": 1,
+    "title": "Product Manager — Risk & Customer Journey",
+    "tags": [
+      "Fintech",
+      "Risk",
+      "Agile Coach",
+      "GDPR",
+      "Consumer Lending"
+    ],
+    "company": "4Finance Group",
+    "role": "Product Manager — Risk & Customer Journey",
+    "section": "Key Highlights",
+    "text": "- friia.se loan product launch — end-to-end product ownership from concept to market\n- Event-driven architecture implementation for real-time risk decisioning\n- GDPR compliance project across multiple data systems\n- Scaled agile practices across 3 cross-functional teams",
+    "updatedAt": "2025-12-21T11:10:04.674Z",
+    "sourceHash": "1405a61e5ae1e6b43c6549936a89acdc10e8b81ed3646c0d1e44d1297930c6ef",
+    "textHash": "90961069c4ae8bfef7a6129fcd937447e62d90e4d4741a852486345681bb8e7b"
+  },
+  {
+    "type": "experience",
+    "slug": "guardtime-pm",
+    "chunkId": 0,
+    "title": "Technical Project Manager / ScrumMaster",
+    "tags": [
+      "Mobile",
+      "KSI Blockchain",
+      "Agile",
+      "ScrumMaster",
+      "Enterprise"
+    ],
+    "company": "Guardtime",
+    "role": "Technical Project Manager / ScrumMaster",
+    "section": "",
+    "text": "Managed complex technical projects at scale, from construction asset management in Saudi Arabia to pandemic response infrastructure across the EU.",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "c375bbc99444a7e48c7073d5de9074fa401168925a0e85ee82fc17c9bc228222",
+    "textHash": "75c4aedcb6df64791b9af81da58e05873993a445e85e0e048c83621890633a8f"
+  },
+  {
+    "type": "experience",
+    "slug": "guardtime-pm",
+    "chunkId": 1,
+    "title": "Technical Project Manager / ScrumMaster",
+    "tags": [
+      "Mobile",
+      "KSI Blockchain",
+      "Agile",
+      "ScrumMaster",
+      "Enterprise"
+    ],
+    "company": "Guardtime",
+    "role": "Technical Project Manager / ScrumMaster",
+    "section": "Key Highlights",
+    "text": "- NEOM Construction Asset Management: Team of 11, 1600 monthly active users, 114 construction sites\n- EU Digital Covid Certificate: Implementation for vaccination verification across member states\n- Certified ScrumMaster with hands-on Agile coaching\n- KSI blockchain integration for tamper-proof audit trails",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "c375bbc99444a7e48c7073d5de9074fa401168925a0e85ee82fc17c9bc228222",
+    "textHash": "83ac2dfd321d2a90fb7579b5fcbbfad52ce47b8502ed7e9c2864e1b7c9c6bdc6"
+  },
+  {
+    "type": "experience",
+    "slug": "guardtime-po",
+    "chunkId": 0,
+    "title": "Product Owner",
+    "tags": [
+      "Blockchain",
+      "Web3",
+      "Product Strategy",
+      "DeFi",
+      "Enterprise"
+    ],
+    "company": "Guardtime",
+    "role": "Product Owner",
+    "section": "",
+    "text": "Led product strategy for enterprise blockchain solutions, focusing on green energy certification and digital payments infrastructure.",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "2b9c5d483b4768322e891451f4984b86b5c1ca97c7a494fc014f14a278fd1ac4",
+    "textHash": "11fdfd8da9f7e73e1297d5c4699fa605ba2d08106969c5893e3889e6e7e13023"
+  },
+  {
+    "type": "experience",
+    "slug": "guardtime-po",
+    "chunkId": 1,
+    "title": "Product Owner",
+    "tags": [
+      "Blockchain",
+      "Web3",
+      "Product Strategy",
+      "DeFi",
+      "Enterprise"
+    ],
+    "company": "Guardtime",
+    "role": "Product Owner",
+    "section": "Key Highlights",
+    "text": "- Digital Green Energy Certification for Adani — blockchain-based, privacy-preserving renewable energy certificates\n- UAE Stablecoin platform with zkSync bridge for enterprise cross-border payments\n- Product discovery and roadmap ownership for Web3 enterprise products\n- Coordination between engineering, business development, and external partners",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "2b9c5d483b4768322e891451f4984b86b5c1ca97c7a494fc014f14a278fd1ac4",
+    "textHash": "41649dd30505a3a2a187430446d192d2960112202e9ff1dff36925d18ea481e3"
+  },
+  {
+    "type": "experience",
+    "slug": "playtech",
+    "chunkId": 0,
+    "title": "Team Lead — Casino Branding",
+    "tags": [
+      "Gaming",
+      "Team Lead",
+      "Scrum",
+      "Front-end",
+      "B2B"
+    ],
+    "company": "Playtech",
+    "role": "Team Lead — Casino Branding",
+    "section": "",
+    "text": "Led a front-end development team delivering branding and customization solutions for the world's largest gaming operators.",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "dc06b52ce6f45be84aaf8b472bb6073f7b3809dc076b0662301b83a269a8dd17",
+    "textHash": "d0b42f5b6428f47e970a0e7e6d5e13c4d419b7df19a7759ff49adaa1dbd1cc0a"
+  },
+  {
+    "type": "experience",
+    "slug": "playtech",
+    "chunkId": 1,
+    "title": "Team Lead — Casino Branding",
+    "tags": [
+      "Gaming",
+      "Team Lead",
+      "Scrum",
+      "Front-end",
+      "B2B"
+    ],
+    "company": "Playtech",
+    "role": "Team Lead — Casino Branding",
+    "section": "Key Highlights",
+    "text": "- Team of 7 developers delivering branded casino experiences\n- Led Agile transformation → 30% reduction in lead time\n- Feature rollout for 100+ brands including Bet365, Betfair, and major European operators\n- Technical mentorship and hiring for growing team",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "dc06b52ce6f45be84aaf8b472bb6073f7b3809dc076b0662301b83a269a8dd17",
+    "textHash": "10e99d1b641843ba4b5eb108a1df74374985ec53f22398e248d88e2d45cb1cf6"
+  },
+  {
+    "type": "experience",
+    "slug": "positium",
+    "chunkId": 0,
+    "title": "Technical Project Lead",
+    "tags": [
+      "Data Analytics",
+      "Python",
+      "Org Design",
+      "Big Data",
+      "Mobility"
+    ],
+    "company": "Positium",
+    "role": "Technical Project Lead",
+    "section": "",
+    "text": "Leading the Estonian Mobility Modelling initiative — a 2-year nationwide prototype that transforms mobile network data into actionable mobility insights for urban planning and policy decisions.",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "a54b1c4039ac99873b2b25156dd33ac231ee539282a934f75f3ffc8e6e5cf85f",
+    "textHash": "f904f9154022ed356985698e1bf317ed5c135b88320e8ea7f04c314ea756c19d"
+  },
+  {
+    "type": "experience",
+    "slug": "positium",
+    "chunkId": 1,
+    "title": "Technical Project Lead",
+    "tags": [
+      "Data Analytics",
+      "Python",
+      "Org Design",
+      "Big Data",
+      "Mobility"
+    ],
+    "company": "Positium",
+    "role": "Technical Project Lead",
+    "section": "Key Highlights",
+    "text": "- Engineering management across international projects in Saudi Arabia, India, and Mongolia\n- Org design using unFIX patterns for cross-functional team flexibility\n- Pipeline development for big data analytics (Python, PySpark)\n- Stakeholder coordination across government and private sector partners",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "sourceHash": "a54b1c4039ac99873b2b25156dd33ac231ee539282a934f75f3ffc8e6e5cf85f",
+    "textHash": "39579ed203ca39f9706c0128078fb8d12c5527c0f164feb471ffcc00dec882ad"
+  }
+]

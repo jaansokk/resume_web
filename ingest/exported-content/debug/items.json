@@ -1,0 +1,154 @@
+[
+  {
+    "type": "experience",
+    "uiVisible": true,
+    "slug": "4finance",
+    "title": "Product Manager — Risk & Customer Journey",
+    "tags": [
+      "Fintech",
+      "Risk",
+      "Agile Coach",
+      "GDPR",
+      "Consumer Lending"
+    ],
+    "summary": "Owned product development for risk assessment and customer journey optimization in consumer lending, launching products across European markets.",
+    "sourcePath": "ui/src/content/experience/4finance.md",
+    "sourceHash": "1405a61e5ae1e6b43c6549936a89acdc10e8b81ed3646c0d1e44d1297930c6ef",
+    "updatedAt": "2025-12-21T11:10:04.674Z",
+    "keywords": [
+      "fintech",
+      "lending",
+      "risk",
+      "payments",
+      "fraud",
+      "enterprise",
+      "gov",
+      "compliance",
+      "gdpr",
+      "agile"
+    ],
+    "company": "4Finance Group",
+    "role": "Product Manager — Risk & Customer Journey",
+    "period": "2017 — 2019"
+  },
+  {
+    "type": "experience",
+    "uiVisible": true,
+    "slug": "guardtime-pm",
+    "title": "Technical Project Manager / ScrumMaster",
+    "tags": [
+      "Mobile",
+      "KSI Blockchain",
+      "Agile",
+      "ScrumMaster",
+      "Enterprise"
+    ],
+    "summary": "Managed complex technical projects at scale, from construction asset management in Saudi Arabia to pandemic response infrastructure across the EU.",
+    "sourcePath": "ui/src/content/experience/guardtime-pm.md",
+    "sourceHash": "c375bbc99444a7e48c7073d5de9074fa401168925a0e85ee82fc17c9bc228222",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "keywords": [
+      "enterprise",
+      "gov",
+      "compliance",
+      "gdpr",
+      "agile",
+      "scrum",
+      "transformation",
+      "coaching",
+      "mobile",
+      "blockchain"
+    ],
+    "company": "Guardtime",
+    "role": "Technical Project Manager / ScrumMaster",
+    "period": "2019 — 2024"
+  },
+  {
+    "type": "experience",
+    "uiVisible": true,
+    "slug": "guardtime-po",
+    "title": "Product Owner",
+    "tags": [
+      "Blockchain",
+      "Web3",
+      "Product Strategy",
+      "DeFi",
+      "Enterprise"
+    ],
+    "summary": "Led product strategy for enterprise blockchain solutions, focusing on green energy certification and digital payments infrastructure.",
+    "sourcePath": "ui/src/content/experience/guardtime-po.md",
+    "sourceHash": "2b9c5d483b4768322e891451f4984b86b5c1ca97c7a494fc014f14a278fd1ac4",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "keywords": [
+      "blockchain",
+      "web3",
+      "crypto",
+      "defi",
+      "token",
+      "stablecoin",
+      "product",
+      "enterprise"
+    ],
+    "company": "Guardtime",
+    "role": "Product Owner",
+    "period": "2024 — 2025"
+  },
+  {
+    "type": "experience",
+    "uiVisible": true,
+    "slug": "playtech",
+    "title": "Team Lead — Casino Branding",
+    "tags": [
+      "Gaming",
+      "Team Lead",
+      "Scrum",
+      "Front-end",
+      "B2B"
+    ],
+    "summary": "Led a front-end development team delivering branding and customization solutions for the world's largest gaming operators.",
+    "sourcePath": "ui/src/content/experience/playtech.md",
+    "sourceHash": "dc06b52ce6f45be84aaf8b472bb6073f7b3809dc076b0662301b83a269a8dd17",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "keywords": [
+      "agile",
+      "scrum",
+      "transformation",
+      "coaching",
+      "team lead",
+      "front-end"
+    ],
+    "company": "Playtech",
+    "role": "Team Lead — Casino Branding",
+    "period": "2012 — 2017"
+  },
+  {
+    "type": "experience",
+    "uiVisible": true,
+    "slug": "positium",
+    "title": "Technical Project Lead",
+    "tags": [
+      "Data Analytics",
+      "Python",
+      "Org Design",
+      "Big Data",
+      "Mobility"
+    ],
+    "summary": "Leading the Estonian Mobility Modelling initiative — a 2-year nationwide prototype that transforms mobile network data into actionable mobility insights for urban planning and policy decisions.",
+    "sourcePath": "ui/src/content/experience/positium.md",
+    "sourceHash": "a54b1c4039ac99873b2b25156dd33ac231ee539282a934f75f3ffc8e6e5cf85f",
+    "updatedAt": "2025-12-21T11:10:04.678Z",
+    "keywords": [
+      "data",
+      "modelling",
+      "mobility",
+      "analytics",
+      "python",
+      "pyspark",
+      "big data",
+      "engineering management"
+    ],
+    "company": "Positium",
+    "role": "Technical Project Lead",
+    "period": "2025 — Present"
+  }
+]

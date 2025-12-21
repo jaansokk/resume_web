@@ -1,0 +1,13 @@
+{
+  "name": "resume-web-root",
+  "private": true,
+  "packageManager": "pnpm@9.15.2",
+  "scripts": {
+    "ingest:verify": "pnpm -C ingest run verify",
+    "ingest:export": "pnpm -C ingest run export",
+    "ingest:vectors": "pnpm -C ingest run vectors",
+    "ingest:all": "pnpm -C ingest run all"
+  }
+}
+
+

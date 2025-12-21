@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2025-12-21T11:03:12.930Z",
+  "items": [
+    {
+      "type": "experience",
+      "slug": "4finance",
+      "title": "Product Manager — Risk & Customer Journey",
+      "tags": [
+        "Fintech",
+        "Risk",
+        "Agile Coach",
+        "GDPR",
+        "Consumer Lending"
+      ],
+      "summary": "Owned product development for risk assessment and customer journey optimization in consumer lending, launching products across European markets.",
+      "company": "4Finance Group",
+      "role": "Product Manager — Risk & Customer Journey",
+      "period": "2017 — 2019"
+    },
+    {
+      "type": "experience",
+      "slug": "guardtime-pm",
+      "title": "Technical Project Manager / ScrumMaster",
+      "tags": [
+        "Mobile",
+        "KSI Blockchain",
+        "Agile",
+        "ScrumMaster",
+        "Enterprise"
+      ],
+      "summary": "Managed complex technical projects at scale, from construction asset management in Saudi Arabia to pandemic response infrastructure across the EU.",
+      "company": "Guardtime",
+      "role": "Technical Project Manager / ScrumMaster",
+      "period": "2019 — 2024"
+    },
+    {
+      "type": "experience",
+      "slug": "guardtime-po",
+      "title": "Product Owner",
+      "tags": [
+        "Blockchain",
+        "Web3",
+        "Product Strategy",
+        "DeFi",
+        "Enterprise"
+      ],
+      "summary": "Led product strategy for enterprise blockchain solutions, focusing on green energy certification and digital payments infrastructure.",
+      "company": "Guardtime",
+      "role": "Product Owner",
+      "period": "2024 — 2025"
+    },
+    {
+      "type": "experience",
+      "slug": "playtech",
+      "title": "Team Lead — Casino Branding",
+      "tags": [
+        "Gaming",
+        "Team Lead",
+        "Scrum",
+        "Front-end",
+        "B2B"
+      ],
+      "summary": "Led a front-end development team delivering branding and customization solutions for the world's largest gaming operators.",
+      "company": "Playtech",
+      "role": "Team Lead — Casino Branding",
+      "period": "2012 — 2017"
+    },
+    {
+      "type": "experience",
+      "slug": "positium",
+      "title": "Technical Project Lead",
+      "tags": [
+        "Data Analytics",
+        "Python",
+        "Org Design",
+        "Big Data",
+        "Mobility"
+      ],
+      "summary": "Leading the Estonian Mobility Modelling initiative — a 2-year nationwide prototype that transforms mobile network data into actionable mobility insights for urban planning and policy decisions.",
+      "company": "Positium",
+      "role": "Technical Project Lead",
+      "period": "2025 — Present"
+    }
+  ]
+}
