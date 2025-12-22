@@ -5,17 +5,14 @@ import { parseFrontmatter } from "./lib/frontmatter.mjs";
 import { sha256Hex } from "./lib/hash.mjs";
 import { chunkMarkdownBody } from "./lib/chunking.mjs";
 import { embedTexts, makeChunkCacheKey } from "./lib/openai-embeddings.mjs";
-import { buildBulkNdjsonIndex, bulkUpsert } from "./lib/opensearch-bulk.mjs";
+import { buildBulkNdjsonIndex, bulkUpsert, countDocs } from "./lib/opensearch-bulk.mjs";
+import { loadEnv } from "./lib/load-env.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 
 const DEFAULT_ENDPOINT = "https://09eid9cakc659fdreqsj.eu-central-1.aoss.amazonaws.com";
-const endpoint = process.env.AOSS_ENDPOINT || DEFAULT_ENDPOINT;
-
-const ITEMS_INDEX = process.env.AOSS_ITEMS_INDEX || "content_items_v1";
-const CHUNKS_INDEX = process.env.AOSS_CHUNKS_INDEX || "content_chunks_v1";
 
 const UI_CONTENT_ROOT = path.join(repoRoot, "ui", "src", "content");
 const CACHE_FILE = path.join(repoRoot, "ingest", "exported-content", "embeddings-cache.json");
@@ -29,6 +26,10 @@ function getArgValue(name) {
   const idx = process.argv.indexOf(name);
   if (idx === -1) return undefined;
   return process.argv[idx + 1];
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 function assert(condition, message) {
@@ -144,11 +145,32 @@ async function loadMarkdownItems({ type, dir }) {
 }
 
 async function main() {
+  // Load `.env` and let it override any existing values (to avoid "stale exported env vars").
+  await loadEnv({ repoRoot, override: true });
+
   const dryRun = getArgFlag("--dry-run");
   const noIndex = getArgFlag("--no-index");
   const limit = Number(getArgValue("--limit") || "0") || undefined;
 
-  const model = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+  // Backward-compatible env names:
+  const endpoint =
+    process.env.AOSS_ENDPOINT ||
+    process.env.OPENSEARCH_ENDPOINT ||
+    process.env.OS_ENDPOINT ||
+    DEFAULT_ENDPOINT;
+  const ITEMS_INDEX =
+    process.env.AOSS_ITEMS_INDEX ||
+    process.env.OS_INDEX_ITEMS ||
+    "content_items_v1";
+  const CHUNKS_INDEX =
+    process.env.AOSS_CHUNKS_INDEX ||
+    process.env.OS_INDEX_CHUNKS ||
+    "content_chunks_v1";
+
+  const model =
+    process.env.OPENAI_EMBEDDING_MODEL ||
+    process.env.OPENAI_EMBED_MODEL ||
+    "text-embedding-3-small";
   const dimensions = process.env.OPENAI_EMBEDDING_DIM ? Number(process.env.OPENAI_EMBEDDING_DIM) : undefined;
 
   console.log(`AOSS endpoint: ${endpoint}`);
@@ -274,15 +296,40 @@ async function main() {
   const bulkBlocks = [];
 
   for (const doc of itemDocs) {
-    bulkBlocks.push(buildBulkNdjsonIndex({ index: ITEMS_INDEX, id: doc.slug, doc }));
+    // NOTE (OpenSearch Serverless): Bulk API does NOT support custom document IDs (_id).
+    // Store the slug in the document and let AOSS generate the document ID.
+    bulkBlocks.push(buildBulkNdjsonIndex({ index: ITEMS_INDEX, id: undefined, doc }));
   }
   for (const doc of chunkDocs) {
-    assert(Array.isArray(doc.embedding), `Missing embedding for ${doc.slug}::${doc.chunkId}`);
-    bulkBlocks.push(buildBulkNdjsonIndex({ index: CHUNKS_INDEX, id: `${doc.slug}::${doc.chunkId}`, doc }));
+    assert(Array.isArray(doc.embedding), `Missing embedding for ${doc.slug}__${doc.chunkId}`);
+    // NOTE (OpenSearch Serverless): Bulk API does NOT support custom document IDs (_id).
+    // We include slug+chunkId as fields for deterministic lookup if needed.
+    bulkBlocks.push(buildBulkNdjsonIndex({ index: CHUNKS_INDEX, id: undefined, doc }));
   }
 
   console.log(`Indexing to AOSS: operations=${bulkBlocks.length}`);
-  await bulkUpsert({ endpoint, ndjson: bulkBlocks });
+  await bulkUpsert({
+    endpoint,
+    ndjson: bulkBlocks,
+    refresh: process.env.AOSS_REFRESH || process.env.OS_REFRESH // optional; avoid refresh=true
+  });
+
+  // Serverless is eventually consistent; counts may lag briefly. Retry a few times.
+  let itemsCount;
+  let chunksCount;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      itemsCount = await countDocs({ endpoint, index: ITEMS_INDEX });
+      chunksCount = await countDocs({ endpoint, index: CHUNKS_INDEX });
+      break;
+    } catch (e) {
+      if (attempt === 5) throw e;
+      await sleep(500 * attempt);
+    }
+  }
+  if (itemsCount && chunksCount) {
+    console.log(`AOSS counts: ${ITEMS_INDEX}=${itemsCount.count} ${CHUNKS_INDEX}=${chunksCount.count}`);
+  }
   console.log("Done.");
 }
 

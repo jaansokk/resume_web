@@ -12,7 +12,7 @@ function requireEnv(name) {
 
 export async function embedTexts({
   texts,
-  model = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small",
+  model = process.env.OPENAI_EMBEDDING_MODEL || process.env.OPENAI_EMBED_MODEL || "text-embedding-3-small",
   apiKey = process.env.OPENAI_API_KEY,
   dimensions
 }) {

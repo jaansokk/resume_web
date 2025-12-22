@@ -1,22 +1,23 @@
 import { signSigV4 } from "./lib/sigv4.mjs";
+import { loadEnv } from "./lib/load-env.mjs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DEFAULT_ENDPOINT = "https://09eid9cakc659fdreqsj.eu-central-1.aoss.amazonaws.com";
-const endpoint = process.env.AOSS_ENDPOINT || DEFAULT_ENDPOINT;
-const region = process.env.AWS_REGION || "eu-central-1";
-const service = process.env.AOSS_SERVICE || "aoss";
+const regionDefault = "eu-central-1";
 
 function requireEnv(name) {
   const v = process.env[name];
   if (!v) {
     throw new Error(
       `Missing ${name}. Run via aws-vault so credentials are exported, e.g.\n` +
-        `  aws-vault exec resume-web-ingest -- pnpm ingest:verify\n`
+        `  aws-vault exec resume-web-ingest -- npm run ingest:verify\n`
     );
   }
   return v;
 }
 
-async function signedFetch(url, { method = "GET", headers = {}, body = "" } = {}) {
+async function signedFetch(url, { method = "GET", headers = {}, body = "", region, service } = {}) {
   const accessKeyId = requireEnv("AWS_ACCESS_KEY_ID");
   const secretAccessKey = requireEnv("AWS_SECRET_ACCESS_KEY");
   const sessionToken = process.env.AWS_SESSION_TOKEN;
@@ -43,6 +44,21 @@ async function signedFetch(url, { method = "GET", headers = {}, body = "" } = {}
 }
 
 async function main() {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const repoRoot = path.resolve(__dirname, "..", "..");
+  // Load `.env` and let it override any existing values (to avoid "stale exported env vars").
+  await loadEnv({ repoRoot, override: true });
+
+  // Backward-compatible env names:
+  const endpoint =
+    process.env.AOSS_ENDPOINT ||
+    process.env.OPENSEARCH_ENDPOINT ||
+    process.env.OS_ENDPOINT ||
+    DEFAULT_ENDPOINT;
+  const region = process.env.AWS_REGION || regionDefault;
+  const service = process.env.AOSS_SERVICE || "aoss";
+
   console.log(`AOSS endpoint: ${endpoint}`);
   console.log(`Region: ${region}  Service: ${service}`);
 
@@ -50,7 +66,7 @@ async function main() {
   const rootUrl = new URL(endpoint);
   rootUrl.pathname = "/";
 
-  const { res: rootRes, text: rootText } = await signedFetch(rootUrl.toString());
+  const { res: rootRes, text: rootText } = await signedFetch(rootUrl.toString(), { region, service });
   console.log(`GET / -> ${rootRes.status} ${rootRes.statusText}`);
   console.log(rootText.slice(0, 500));
 
@@ -60,7 +76,7 @@ async function main() {
   catUrl.searchParams.set("format", "json");
 
   try {
-    const { res: catRes, text: catText } = await signedFetch(catUrl.toString());
+    const { res: catRes, text: catText } = await signedFetch(catUrl.toString(), { region, service });
     console.log(`\nGET /_cat/indices?format=json -> ${catRes.status} ${catRes.statusText}`);
     console.log(catText.slice(0, 800));
   } catch (e) {

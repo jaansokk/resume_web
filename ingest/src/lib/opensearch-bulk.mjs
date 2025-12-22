@@ -5,7 +5,7 @@ function requireEnv(name) {
   if (!v) {
     throw new Error(
       `Missing ${name}. Run via aws-vault so credentials are exported, e.g.\n` +
-        `  aws-vault exec resume-web-ingest -- pnpm ingest:verify\n`
+        `  aws-vault exec resume-web-ingest -- npm run ingest:verify\n`
     );
   }
   return v;
@@ -59,13 +59,15 @@ export async function aossFetch({
 }
 
 export function buildBulkNdjsonIndex({ index, id, doc }) {
-  return `{"index":{"_index":"${index}","_id":"${id}"}}\n${JSON.stringify(doc)}\n`;
+  const meta = id ? `{"index":{"_index":"${index}","_id":"${id}"}}` : `{"index":{"_index":"${index}"}}`;
+  return `${meta}\n${JSON.stringify(doc)}\n`;
 }
 
 export async function bulkUpsert({
   endpoint,
   ndjson,
-  maxBytes = 5 * 1024 * 1024
+  maxBytes = 5 * 1024 * 1024,
+  refresh
 }) {
   // Split into chunks by bytes to stay under request limits.
   const parts = [];
@@ -81,11 +83,16 @@ export async function bulkUpsert({
 
   for (let i = 0; i < parts.length; i++) {
     const body = parts[i];
+    // OpenSearch Serverless does not support refresh=true on bulk requests.
+    // If you want refresh behavior, pass refresh="wait_for" (if supported) or rely on eventual consistency.
+    const refreshPolicy =
+      refresh === "true" ? undefined : refresh; // normalize accidental "true"
+    const query = refreshPolicy ? { refresh: refreshPolicy } : undefined;
     const { res, text } = await aossFetch({
       endpoint,
       method: "POST",
       path: "/_bulk",
-      query: { refresh: "true" },
+      query,
       body,
       headers: { "content-type": "application/x-ndjson" }
     });
@@ -101,10 +108,29 @@ export async function bulkUpsert({
       throw new Error(`AOSS bulk returned non-JSON (${res.status}): ${text.slice(0, 1200)}`);
     }
     if (json.errors) {
-      const firstErr = (json.items || []).find((it) => it.index && it.index.error)?.index?.error;
-      throw new Error(`AOSS bulk had item errors. First error: ${JSON.stringify(firstErr).slice(0, 1200)}`);
+      const firstItem = (json.items || []).find((it) => it.index && it.index.error)?.index;
+      const err = firstItem?.error;
+      const ctx = firstItem
+        ? {
+            index: firstItem._index,
+            id: firstItem._id,
+            status: firstItem.status,
+            error: err
+          }
+        : { error: "Unknown bulk item error format" };
+      throw new Error(`AOSS bulk had item errors. First failing item: ${JSON.stringify(ctx).slice(0, 1600)}`);
     }
   }
+}
+
+export async function countDocs({ endpoint, index }) {
+  const { res, text } = await aossFetch({
+    endpoint,
+    method: "GET",
+    path: `/${index}/_count`
+  });
+  if (!res.ok) throw new Error(`AOSS count failed (${res.status}): ${text.slice(0, 800)}`);
+  return JSON.parse(text);
 }
 
 
