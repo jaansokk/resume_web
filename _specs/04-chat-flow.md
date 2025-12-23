@@ -23,7 +23,7 @@ Assign one label:
    - Ask: "Do you want to see some more examples of my past experience that would relate to this?"
    - **If keywords detected in subsequent messages**: Expand to split view
 3. **Ask for a LinkedIn link or email**
-   - Ask for email:
+   - Ask:
      - "Can I get your LinkedIn profile? I'll be sure to let the real Jaan know about this — so we can continue the conversation."
 
 ### Split View Trigger
@@ -34,15 +34,5 @@ Assign one label:
 ### Safety/UX notes
 - Keep responses short, scannable, and PM-oriented.
 - Provide “Browse experience” escape hatch from chat at all times.
-
-
-### Experience relevance mapping (prototype)
-Map keywords → left panel sections:
-- **blockchain / web3 / crypto / defi / token / stablecoin** → Guardtime PO pilots
-- **fintech / lending / risk / payments / fraud** → 4Finance PM + Guardtime stablecoin
-- **enterprise / gov / compliance / GDPR** → 4Finance GDPR + EU DCC + NEOM
-- **data / modelling / mobility / analytics** → Positium mobility modelling
-- **agile / scrum / transformation / coaching** → Playtech + Guardtime TPM/SM
-- **design / web / photography / video** → freelance / portfolio section
 
 

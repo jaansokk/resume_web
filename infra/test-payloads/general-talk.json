@@ -1,0 +1,17 @@
+{
+  "conversationId": "test-general-talk",
+  "client": {
+    "origin": "https://example.com",
+    "page": {
+      "path": "/",
+      "activeSlug": null
+    }
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "Tell me about yourself"
+    }
+  ]
+}
+

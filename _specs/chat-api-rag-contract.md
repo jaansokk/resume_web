@@ -1,5 +1,4 @@
 
-
 ## Goal
 Define the MVP `/chat` API contract and RAG flow for a Lambda backend, with client-managed conversation state.
 
@@ -10,6 +9,8 @@ Key requirements:
 - Include `background` content for LLM context, but never present it as a UI artifact.
 - Response is structured JSON so UI is stable.
 
+This spec adds an explicit, end-to-end API flow description (who calls what, in what order, what the inputs/outputs are). :contentReference[oaicite:0]{index=0}
+
 ---
 
 ## Endpoints (MVP)
@@ -18,6 +19,7 @@ Key requirements:
 Generates next assistant message + UI directives.
 
 Request (suggested):
+```json
 {
   "conversationId": "uuid-v4",
   "client": {
@@ -30,12 +32,14 @@ Request (suggested):
     { "role": "assistant", "text": "..." }
   ]
 }
+```
 
 Rules:
 - UI should send only the last ~8–20 messages (bounded).
 - Optionally include a rolling summary later (not required in MVP).
+- Response (suggested):
 
-Response (suggested):
+```json
 {
   "assistant": { "text": "..." },
 
@@ -57,86 +61,117 @@ Response (suggested):
     "askForEmail": false
   }
 }
+```
 
 UI behavior:
-- Use `related[].slug` to drive the left panel (cards/tabs).
-- Never display background as cards/tabs; ignore `type="background"` for any UI artifact selection.
-- `citations` are optional for debugging; if shown, UI should hide background citations by default.
+- Use related[].slug to drive the left panel (cards/tabs).
+- Never display background as cards/tabs; ignore type="background" for any UI artifact selection.
+- Citations are optional for debugging; if shown, UI should hide background citations by default.
 - If slugs are invalid, backend must drop them and return fallback slugs.
 
-### POST /lead (optional, later)
-Stores email/LinkedIn lead in DynamoDB (out of MVP scope unless desired).
+
+
+## Explicit end-to-end flow (who calls what)
+
+### Actors
+- **UI (browser on VPS-hosted site)**: holds chat memory (last N messages) and calls `/chat`.
+- **API Gateway**: HTTPS entry point for the Lambda.
+- **Lambda (`/chat`)**: orchestrator; validates input/output, calls OpenAI + OpenSearch, enforces rules (e.g., background not surfaced as UI items).
+- **OpenAI Embeddings**: turns retrieval text into a vector.
+- **OpenSearch Serverless**: vector store over `content_chunks_v1`, returns top chunk hits.
+- **OpenAI Chat Model**: generates structured JSON output (classification/tone/assistant text/related slugs).
+
+### Preconditions (outside the request)
+- Ingestion has created and populated:
+  - `content_items_v1` (metadata: experience/project/background)
+  - `content_chunks_v1` (chunk embeddings: experience/project/background)
+- Background items exist only for LLM context and are either:
+  - flagged `uiVisible=false` in metadata, and/or
+  - excluded from any UI-facing export (e.g., `content-index.json`)
+
+### Sequence (single user message)
+1) **UI → Lambda**: `POST /chat`
+   - UI includes `messages[]` (last N turns) so Lambda has conversational context.
+   - UI includes `client.page` so the model can optionally tailor responses (“I’m on your Guardtime page…”).
+
+2) **Lambda → OpenAI Chat (Router)** 
+   - Purpose: make the experience feel LLM-driven:
+     - classification (`new_opportunity` vs `general_talk`)
+     - tone/style direction
+     - retrieval query rewrite for OpenSearch(“what should we search for?”)
+     - stage flags (`offerMoreExamples`, `askForEmail`)
+   - Output: strict JSON, e.g.:
+     - `classification`, `tone`, `retrievalQuery`, `suggestedRelatedSlugs`, `next{...}`
+   - Validation: `suggestedRelatedSlugs` must be experience/project only (never background).
+
+3) **Lambda → OpenAI Embeddings**: compute retrieval vector
+   - Input text is either:
+     - router `retrievalQuery`, or
+     - last user message (fallback)
+   - Output: `queryEmbedding: number[]` with length `EMBEDDING_DIM`
+
+4) **Lambda → OpenSearch Serverless**: vector search in `content_chunks_v1`
+   - Lambda sends a kNN query using the embedding vector.
+   - For MVP, retrieve a larger candidate pool (e.g., `k=30..50`) for better post-processing.
+
+5) **Lambda post-processes retrieval results**
+   - Split hits by `type`:
+     - **experience/project**: primary evidence for examples and factual claims
+     - **background**: secondary context (principles/books/preferences)
+   - Enforce caps:
+     - `maxBackgroundChunks = 2`
+     - `maxMainChunks = 10` (experience/project)
+   - Compute candidate related slugs **only from experience/project hits**:
+     - group hits by `slug`
+     - rank by score aggregation or hit count
+     - take top 3–6 slugs
+   - Never compute UI-related slugs from background hits.
+
+6) **Lambda → OpenAI Chat (Answer)**: generate grounded assistant response
+   - Inputs:
+     - recent messages (from UI)
+     - router output (classification/tone/flags) if router used
+     - selected retrieved chunks (type, slug, chunkId, section, text)
+   - Instructions:
+     - use retrieved text as source of truth for experience/project claims
+     - background may influence tone/preferences but should not invent facts
+     - if insufficient info, ask 1 clarifying question
+     - return strict JSON: `assistant.text`, `classification`, `tone`, `related[]`, `citations[]`, `next{...}`
+
+7) **Lambda validates and sanitizes response JSON**
+   - Validate JSON schema (zod).
+   - Validate `related[].slug`:
+     - exists in `content_items_v1` (or other canonical source)
+     - is NOT background
+   - If invalid/empty:
+     - fallback to top slugs from step 5 (experience/project only)
+
+8) **Lambda → UI**: return final JSON
+   - UI appends `assistant.text` to chat
+   - UI updates left panel using `related[]`
+   - UI may store/display citations (optional; hide background by default)
 
 ---
 
-## RAG pipeline inside Lambda (MVP)
+## RAG pipeline summary (MVP)
 
-### Step 1) Router LLM call (structured JSON)
-Purpose:
-- Make the interaction feel LLM-driven: classification + tone + what to do next.
-
-Inputs:
-- recent messages
-- a small system style prompt (“PM/PO tone, concise, confident”)
-
-Outputs (JSON):
-- classification
-- tone/style hints
-- retrievalQuery (string)
-- suggestedRelatedSlugs (0–6)  // ONLY experience/project slugs
-- flags: offerMoreExamples / askForEmail
-
-Validation rules:
-- If router suggests slugs that don’t exist or include background slugs, drop them.
-
----
+### Step 1) Router LLM call (structured JSON) — optional but recommended
+- Output: classification, tone, retrievalQuery, next-step flags, optional suggested related slugs.
+- Validation: never allow background slugs in related.
 
 ### Step 2) Retrieval (vector search)
-Goal:
-- Retrieve grounded content chunks for answer generation.
-- Include `background` chunks for personalization/context, but cap them.
-
-MVP retrieval strategy (recommended):
-- Run ONE vector search with a larger K (e.g., 30–50) across `content_chunks_v1`.
-- In application code:
-  - Keep up to `maxBackgroundChunks = 2`
-  - Keep up to `maxExperienceProjectChunks = 10`
-  - Prefer experience/project chunks when building the final context window.
-
-Alternative retrieval strategy (upgrade path):
-- Run two searches:
-  1) background-only: filter `type="background"` with k=6
-  2) main: filter `type in ("experience","project")` with k=20
-- Merge and cap background chunks.
-
-Aggregation:
-- Aggregate experience/project hits by slug to compute candidate slugs.
-- NEVER compute related slugs from background hits.
-
----
+- Embed retrieval text (OpenAI embeddings).
+- kNN search OpenSearch content_chunks_v1.
+- Cap background chunks; prioritize experience/project chunks.
 
 ### Step 3) Answer LLM call (grounded generation)
-Inputs:
-- recent conversation
-- router output (classification + tone)
-- retrieved chunks (include: type, slug, section, chunkId, text)
-Instructions:
-- Use retrieved text as the source of truth for factual claims about experience/projects.
-- Background can shape tone and personal preferences, but should not introduce unverifiable claims.
-- If missing info, ask 1 clarifying question.
-- Return JSON with:
-  - `assistant.text`
-  - `related[]` (experience/projects only)
-  - `citations[]` (may include background for internal traceability)
-  - `next{...}`
-
----
+- Provide retrieved chunks as context.
+- Return strict JSON response for UI.
 
 ### Step 4) Validate + return
-- Validate JSON schema (zod).
-- Validate `related[].slug` exist and are NOT background.
-- If invalid/empty:
-  - fallback to top slugs from retrieval aggregation (experience/project only).
+- zod validation
+- slug validation
+- fallback behavior
 
 ---
 

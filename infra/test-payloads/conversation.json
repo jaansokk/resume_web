@@ -1,0 +1,25 @@
+{
+  "conversationId": "test-conversation",
+  "client": {
+    "origin": "https://example.com",
+    "page": {
+      "path": "/experience/guardtime",
+      "activeSlug": "guardtime-po"
+    }
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "What's your experience with product management?"
+    },
+    {
+      "role": "assistant",
+      "text": "I have extensive experience in product management, particularly in B2B SaaS and data products."
+    },
+    {
+      "role": "user",
+      "text": "Can you tell me more about your work at Guardtime?"
+    }
+  ]
+}
+

@@ -24,23 +24,12 @@
   - Around the **2nd–3rd assistant response**:
     - Ask: “Do you want to see more examples of my past experience that would relate to this?”
   - Then:
-    - Ask: “Can I get your email? … so we can continue the conversation.”
-    - Include an email input (mocked submit is fine)
+    - Ask: “Can I get your LinkedIn profile? … so we can continue the conversation.”
 
 - **Style**
   - **Dark UI** (light text on dark)
   - **Sans fonts**
   - **Prefer no rounded corners on buttons** (square/straight edges)
 
-
-### Nice-to-haves (next)
-- “Browse mode” page that works without chat
-- More precise experience filtering (keywords → categories)
-- Keyboard UX (Enter to send; focus management on open split)
-- Basic accessibility improvements (contrast, focus rings, reduced motion)
-
-### Out of scope for now
-- Authentication, analytics, persistence, real email sending
-- Real LLM integration (later can be OpenAI/Claude/etc.)
 
 

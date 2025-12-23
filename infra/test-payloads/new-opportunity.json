@@ -1,0 +1,17 @@
+{
+  "conversationId": "test-new-opportunity",
+  "client": {
+    "origin": "https://example.com",
+    "page": {
+      "path": "/experience",
+      "activeSlug": null
+    }
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "We're looking for a product manager with experience in B2B SaaS and data products. Do you have relevant experience?"
+    }
+  ]
+}
+

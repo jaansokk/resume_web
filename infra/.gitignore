@@ -1,0 +1,20 @@
+# Build artifacts
+build/
+*.zip
+
+# Temporary files
+*.tmp
+*.log
+
+# AWS CLI output
+*.json.bak
+
+# Python cache (if any scripts use Python)
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
