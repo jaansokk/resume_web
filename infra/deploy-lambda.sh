@@ -85,6 +85,7 @@ cd "$ORIGINAL_DIR"
 # Create zip (exclude unnecessary files)
 echo "Creating zip package..."
 rm -f "$ZIP_FILE"
+cd "$BUILD_DIR/lambda-package"
 zip -r "$ZIP_FILE" . \
     -x "*.git*" \
     -x "*.pyc" \
@@ -97,6 +98,7 @@ zip -r "$ZIP_FILE" . \
     -x "*.dist-info/*" \
     -x "*.egg-info/*" \
     > /dev/null
+cd "$ORIGINAL_DIR"
 
 ZIP_SIZE=$(du -h "$ZIP_FILE" | cut -f1)
 echo -e "${GREEN}✓ Package created: $ZIP_FILE ($ZIP_SIZE)${NC}"
