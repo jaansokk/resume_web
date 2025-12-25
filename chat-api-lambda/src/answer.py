@@ -140,12 +140,13 @@ class AnswerGenerator:
         tone = router_output.get("tone", "neutral")
         next_flags = router_output.get("next", {})
         
-        tone_guidance = {
+        tone_guidance_map = {
             "warm": "Be friendly, personable, and approachable. Use a conversational, warm tone.",
             "direct": "Be concise, professional, and to the point. Avoid unnecessary pleasantries.",
             "neutral": "Be professional and balanced. Use a neutral, informative tone.",
             "enthusiastic": "Be energetic and positive. Show genuine interest and excitement."
-        }.get(tone, tone_guidance["neutral"])
+        }
+        tone_guidance = tone_guidance_map.get(tone, tone_guidance_map["neutral"])
         
         classification_guidance = {
             "new_opportunity": """This appears to be a new opportunity (hiring, project, contract). 

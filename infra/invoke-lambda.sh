@@ -207,7 +207,7 @@ RESPONSE=$(cat "$TEMP_RESPONSE")
 rm -f "$TEMP_PAYLOAD" "$TEMP_RESPONSE"
 
 # Check for function error
-if echo "$RESPONSE" | python3 -c "import sys, json; d=json.load(sys.stdin); sys.exit(1 if d.get('errorMessage') or d.get('errorType') else 0)" 2>/dev/null; then
+if echo "$RESPONSE" | python3 -c "import sys, json; d=json.load(sys.stdin); sys.exit(0 if (d.get('errorMessage') or d.get('errorType')) else 1)" 2>/dev/null; then
     echo -e "${RED}✗ Function error occurred${NC}"
     echo ""
     echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"

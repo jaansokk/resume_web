@@ -56,19 +56,38 @@ class OpenSearchClient:
         
         raise ValueError("No AWS credentials found")
     
-    def _sign_request(self, method: str, path: str, body: str = "", headers: Optional[Dict[str, str]] = None) -> Dict[str, str]:
-        """Sign request with SigV4."""
+    def _sign_request(
+        self,
+        method: str,
+        path: str,
+        body: str = "",
+        headers: Optional[Dict[str, str]] = None
+    ) -> Dict[str, str]:
+        """
+        Sign request with SigV4.
+
+        OpenSearch Serverless expects `x-amz-content-sha256` to be present for signed requests.
+        """
         url = f"{self.endpoint}{path}"
+        body_bytes = body.encode("utf-8") if body else b""
+        payload_hash = hashlib.sha256(body_bytes).hexdigest()
+
+        base_headers = dict(headers or {})
+        # Ensure consistent headers for signing + request execution
+        if body:
+            base_headers.setdefault("content-type", "application/json")
+        base_headers["x-amz-content-sha256"] = payload_hash
+
         request = AWSRequest(
             method=method,
             url=url,
-            data=body.encode("utf-8") if body else None,
-            headers=headers or {}
+            data=body_bytes if body else None,
+            headers=base_headers
         )
-        
+
         credentials = self._get_credentials()
         SigV4Auth(credentials, self.service, self.region).add_auth(request)
-        
+
         return dict(request.headers)
     
     def _request(self, method: str, path: str, body: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
