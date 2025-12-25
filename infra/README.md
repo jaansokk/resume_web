@@ -10,7 +10,14 @@ Scripts for deploying and testing the chat-api Lambda function using AWS CLI.
    aws configure
    ```
 
-2. **Required environment variables** (set before running scripts):
+2. **Docker installed** (required for building Lambda dependencies)
+   ```bash
+   docker --version
+   ```
+   
+   The deployment script uses Docker to build Python dependencies for Lambda's Amazon Linux environment. This ensures packages with C extensions (like `pydantic_core`) are compiled for the correct platform.
+
+3. **Required environment variables** (set before running scripts):
    ```bash
    export OPENAI_API_KEY="your-openai-key"
    export OPENSEARCH_ENDPOINT="https://your-opensearch-endpoint.aoss.amazonaws.com"
@@ -42,13 +49,14 @@ export LAMBDA_TIMEOUT=120
 ```
 
 **What it does:**
+- Uses Docker to build Lambda-compatible dependencies (Python packages compiled for Amazon Linux x86_64)
 - Creates deployment package (zip file) in `build/` directory
 - Creates IAM role if needed
 - Creates/updates Lambda function
 - Sets environment variables
 - Configures timeout and memory
 
-**Note:** Build artifacts are created in `infra/build/` directory and are ignored by git (see `.gitignore`).
+**Note:** Build artifacts are created in `infra/build/` directory and are ignored by git (see `.gitignore`). The script uses the official AWS Lambda Python Docker image to ensure all dependencies (especially those with C extensions) are compiled for the correct platform.
 
 **Configuration options:**
 - `LAMBDA_NAME` - Function name (default: `chat-api`)

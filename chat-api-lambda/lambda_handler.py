@@ -1,6 +1,7 @@
 """
 Lambda handler for /chat endpoint.
 Implements RAG flow per chat-api-rag-contract.md spec.
+Version: 1.0.1
 """
 import json
 import os
@@ -75,8 +76,14 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "body": ""
             }
         
-        # Parse request
-        body = json.loads(event.get("body", "{}"))
+        # Parse request - handle both API Gateway and direct invocation
+        if "body" in event:
+            # API Gateway format: payload is in event.body as JSON string
+            body = json.loads(event["body"]) if isinstance(event["body"], str) else event["body"]
+        else:
+            # Direct invocation: event is the payload itself
+            body = event
+        
         conversation_id = body.get("conversationId", "unknown")
         origin = body.get("client", {}).get("origin") or event.get("headers", {}).get("origin")
         
@@ -149,7 +156,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     except Exception as e:
         # Internal error
-        print(f"Error in lambda_handler: {str(e)}", exc_info=True)
+        import traceback
+        print(f"Error in lambda_handler: {str(e)}")
+        print(traceback.format_exc())
         return {
             "statusCode": 500,
             "headers": cors_headers(),

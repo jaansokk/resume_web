@@ -42,8 +42,8 @@ class OpenSearchClient:
         
         if access_key and secret_key:
             return Credentials(
-                access_key_id=access_key,
-                secret_access_key=secret_key,
+                access_key=access_key,
+                secret_key=secret_key,
                 token=session_token
             )
         

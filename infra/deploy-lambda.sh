@@ -10,6 +10,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Load .env file if it exists (from infra directory)
+SCRIPT_DIR_TEMP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR_TEMP/.env" ]; then
+    echo -e "${GREEN}Loading environment variables from .env${NC}"
+    set -a  # automatically export all variables
+    source "$SCRIPT_DIR_TEMP/.env"
+    set +a
+fi
+
 # Configuration (override with environment variables or command line args)
 LAMBDA_NAME="${LAMBDA_NAME:-chat-api}"
 LAMBDA_ROLE_NAME="${LAMBDA_ROLE_NAME:-chat-api-lambda-role}"
@@ -70,17 +79,40 @@ rm -f "$BUILD_DIR/lambda-package"/*.zip 2>/dev/null || true
 
 # Install dependencies into build directory
 PACKAGE_DIR="$BUILD_DIR/lambda-package"
-cd "$PACKAGE_DIR"
 echo "Installing Python dependencies to: $PACKAGE_DIR"
-# Use absolute path to ensure pip installs only in build directory, not source
-# --no-cache-dir prevents pip from creating cache files elsewhere
-pip install -r "$PACKAGE_DIR/requirements.txt" -t "$PACKAGE_DIR" --quiet --disable-pip-version-check --no-cache-dir
+
+# Check if Docker is available for proper Lambda-compatible builds
+if command -v docker &> /dev/null; then
+    echo "Using Docker to build Lambda-compatible dependencies..."
+    # Use AWS Lambda Python base image to install dependencies
+    # This ensures C extensions are compiled for the correct platform (Amazon Linux 2)
+    # Force x86_64 platform to match Lambda's default architecture
+    docker run --rm \
+        --platform linux/amd64 \
+        --entrypoint "" \
+        -v "$PACKAGE_DIR":/var/task \
+        public.ecr.aws/lambda/python:3.12 \
+        pip install -r /var/task/requirements.txt -t /var/task --quiet --no-cache-dir
+else
+    echo -e "${YELLOW}Warning: Docker not found. Installing with local pip (may not work if packages have C extensions)${NC}"
+    echo "For production deployments, install Docker to ensure Lambda compatibility."
+    cd "$PACKAGE_DIR"
+    # Fallback to local pip with platform-specific wheels
+    pip install -r "$PACKAGE_DIR/requirements.txt" -t "$PACKAGE_DIR" \
+        --platform manylinux2014_x86_64 \
+        --only-binary=:all: \
+        --python-version 3.12 \
+        --implementation cp \
+        --quiet --disable-pip-version-check --no-cache-dir || \
+    pip install -r "$PACKAGE_DIR/requirements.txt" -t "$PACKAGE_DIR" \
+        --quiet --disable-pip-version-check --no-cache-dir
+    cd "$ORIGINAL_DIR"
+fi
+
 # Verify installation happened in the right place
-if [ ! -d "$PACKAGE_DIR/boto3" ] && [ ! -d "$PACKAGE_DIR/openai" ]; then
+if [ ! -d "$PACKAGE_DIR/openai" ]; then
     echo -e "${YELLOW}Warning: Dependencies may not have installed correctly${NC}"
 fi
-# Return to original directory to avoid any accidental modifications
-cd "$ORIGINAL_DIR"
 
 # Create zip (exclude unnecessary files)
 echo "Creating zip package..."
