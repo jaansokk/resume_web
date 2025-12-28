@@ -168,25 +168,9 @@ else
 fi
 echo ""
 
-# Step 7: Deploy API
-echo -e "${YELLOW}Step 7: Deploying API to stage: $STAGE...${NC}"
-aws apigateway create-deployment \
-    --rest-api-id "$API_ID" \
-    --region "$REGION" \
-    --stage-name "$STAGE" \
-    --description "Deployment $(date +%Y-%m-%d-%H-%M-%S)" \
-    > /dev/null 2>&1 || aws apigateway create-deployment \
-        --rest-api-id "$API_ID" \
-        --region "$REGION" \
-        --stage-name "$STAGE" \
-        --description "Deployment $(date +%Y-%m-%d-%H-%M-%S)" \
-        > /dev/null
-
-echo -e "${GREEN}✓ API deployed${NC}"
-echo ""
-
-# Step 8: Enable CORS (if needed)
-echo -e "${YELLOW}Step 8: Configuring CORS...${NC}"
+# Step 7: Enable CORS (OPTIONS preflight)
+# IMPORTANT: Any method changes require a (re)deployment to the stage to take effect on the public URL.
+echo -e "${YELLOW}Step 7: Configuring CORS (OPTIONS)...${NC}"
 # Note: CORS is handled by Lambda response headers, but we can also add OPTIONS method
 aws apigateway put-method \
     --rest-api-id "$API_ID" \
@@ -226,6 +210,23 @@ aws apigateway put-integration-response \
     > /dev/null 2>&1 || echo "OPTIONS integration response may already exist"
 
 echo -e "${GREEN}✓ CORS configured${NC}"
+echo ""
+
+# Step 8: Deploy API (after OPTIONS/CORS is configured)
+echo -e "${YELLOW}Step 8: Deploying API to stage: $STAGE...${NC}"
+aws apigateway create-deployment \
+    --rest-api-id "$API_ID" \
+    --region "$REGION" \
+    --stage-name "$STAGE" \
+    --description "Deployment $(date +%Y-%m-%d-%H-%M-%S)" \
+    > /dev/null 2>&1 || aws apigateway create-deployment \
+        --rest-api-id "$API_ID" \
+        --region "$REGION" \
+        --stage-name "$STAGE" \
+        --description "Deployment $(date +%Y-%m-%d-%H-%M-%S)" \
+        > /dev/null
+
+echo -e "${GREEN}✓ API deployed${NC}"
 echo ""
 
 # Get API URL

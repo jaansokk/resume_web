@@ -1,56 +1,83 @@
 import { useState, useEffect } from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
-import { findRelevantExperiences, classifyMessage, type ExperienceMatch } from '../utils/keywordMatching';
+import { postChat, type ChatApiResponse } from '../utils/chatApi';
+import {
+  getDefaultExperienceItems,
+  resolveExperienceItems,
+  type ContentIndexItem,
+} from '../utils/contentIndex';
 
 interface ChatSplitViewProps {
   initialMessage?: string;
 }
 
-// Default experiences to show as examples
-const defaultExamples: ExperienceMatch[] = [
-  {
-    slug: 'positium',
-    company: 'Positium',
-    role: 'Technical Project Lead',
-    period: '2025 — Present',
-    summary: 'Leading the Estonian Mobility Modelling initiative — a 2-year nationwide prototype that transforms mobile network data into actionable mobility insights for urban planning and policy decisions.',
-    tags: ['Data Analytics', 'Python', 'Org Design', 'Big Data', 'Mobility'],
-    relevanceScore: 3,
-  },
-  {
-    slug: 'guardtime-pm',
-    company: 'Guardtime',
-    role: 'Technical Project Manager / ScrumMaster',
-    period: '2019 — 2024',
-    summary: 'Managed complex technical projects at scale, from construction asset management in Saudi Arabia to pandemic response infrastructure across the EU.',
-    tags: ['Mobile', 'KSI Blockchain', 'Agile', 'ScrumMaster', 'Enterprise'],
-    relevanceScore: 2,
-  },
-  {
-    slug: 'playtech',
-    company: 'Playtech',
-    role: 'Team Lead — Casino Branding',
-    period: '2012 — 2017',
-    summary: 'Led a front-end development team delivering branding and customization solutions for the world\'s largest gaming operators.',
-    tags: ['Gaming', 'Team Lead', 'Scrum', 'Front-end', 'B2B'],
-    relevanceScore: 1,
+type UiMessage = { role: 'user' | 'assistant'; text: string; showEmailInput?: boolean };
+
+function makeConversationId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  } catch {
+    // ignore
   }
-];
+  return `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function getClientPageContext() {
+  const path = window.location.pathname || '/';
+  const activeSlug = path.startsWith('/experience/') ? path.split('/')[2] || null : null;
+  return { path, activeSlug };
+}
+
+function extractRelatedSlugs(resp: ChatApiResponse): string[] {
+  return (resp.related || []).map((r) => r.slug).filter(Boolean);
+}
 
 export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProps) {
-  const [messages, setMessages] = useState<Array<{ text: string; type: 'user' | 'ai'; showEmailInput?: boolean }>>([]);
-  const [messageCount, setMessageCount] = useState(0);
-  const [relatedExperiences, setRelatedExperiences] = useState<ExperienceMatch[]>(defaultExamples);
+  const [conversationId, setConversationId] = useState<string>(() => makeConversationId());
+  const [messages, setMessages] = useState<UiMessage[]>([]);
+  const [relatedExperiences, setRelatedExperiences] = useState<ContentIndexItem[]>([]);
   const [activeTab, setActiveTab] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [experienceContent, setExperienceContent] = useState<Record<string, string>>({});
+  const [didBootstrap, setDidBootstrap] = useState(false);
 
   useEffect(() => {
-    if (initialMessage) {
-      handleSend(initialMessage);
+    // Bootstrap from the floating widget (ChatCard), if present.
+    const raw = sessionStorage.getItem('chat_bootstrap_v1');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as {
+          conversationId?: string;
+          messages?: UiMessage[];
+          relatedSlugs?: string[];
+        };
+        if (parsed.conversationId) setConversationId(parsed.conversationId);
+        if (Array.isArray(parsed.messages)) setMessages(parsed.messages);
+        if (Array.isArray(parsed.relatedSlugs) && parsed.relatedSlugs.length > 0) {
+          resolveExperienceItems(parsed.relatedSlugs)
+            .then((items) => setRelatedExperiences(items))
+            .catch(() => {});
+        }
+        setDidBootstrap(true);
+      } catch {
+        // ignore invalid bootstrap payload
+      } finally {
+        sessionStorage.removeItem('chat_bootstrap_v1');
+      }
     }
+
+    // Always ensure we have something in the left panel as a fallback.
+    getDefaultExperienceItems(3)
+      .then((items) => {
+        setRelatedExperiences((prev) => (prev.length > 0 ? prev : items));
+      })
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!didBootstrap && initialMessage) handleSend(initialMessage);
+  }, [didBootstrap]);
 
   // Load experience content when tabs change
   useEffect(() => {
@@ -71,58 +98,53 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
     }
   }, [activeTab, relatedExperiences]);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     if (!text.trim()) return;
-    
-    setMessages(prev => [...prev, { text, type: 'user' }]);
-    setMessageCount(prev => prev + 1);
-    const currentCount = messageCount + 1;
+
+    const nextMessages: UiMessage[] = [...messages, { role: 'user', text }];
+    setMessages(nextMessages);
     setIsLoading(true);
 
-    // Find relevant experiences
-    const experiences = findRelevantExperiences(text);
-    if (experiences.length > 0) {
-      setRelatedExperiences(experiences);
-      setActiveTab(0); // Reset to first tab when new experiences are found
-    }
+    try {
+      const resp = await postChat({
+        conversationId,
+        client: { origin: window.location.origin, page: getClientPageContext() },
+        messages: nextMessages.slice(-20).map((m) => ({ role: m.role, text: m.text })),
+      });
 
-    setTimeout(() => {
-      setIsLoading(false);
-      const classification = classifyMessage(text);
-      
-      if (currentCount === 1) {
-        if (classification === 'opportunity') {
-          setMessages(prev => [...prev, {
-            text: "That sounds promising. I've led product and engineering at Guardtime, 4Finance, and Playtech. Here are some relevant experiences.",
-            type: 'ai'
-          }]);
-        } else {
-          setMessages(prev => [...prev, {
-            text: "Great to connect. I'm a Product Owner & Technical Lead — 15 years across blockchain, fintech, and mobility data. What would you like to know?",
-            type: 'ai'
-          }]);
+      const assistantText = resp?.assistant?.text || "Sorry — I didn't get a response.";
+      const showEmailInput = Boolean(resp?.next?.askForEmail);
+      const withAssistant: UiMessage[] = [...nextMessages, { role: 'assistant', text: assistantText, showEmailInput }];
+      setMessages(withAssistant);
+
+      const slugs = extractRelatedSlugs(resp);
+      if (slugs.length > 0) {
+        const items = await resolveExperienceItems(slugs);
+        if (items.length > 0) {
+          setRelatedExperiences(items);
+          setActiveTab(0);
         }
-      } else if (currentCount === 2 || currentCount === 3) {
-        setMessages(prev => [...prev, {
-          text: "Do you want to see more examples of my past experience that would relate to this?",
-          type: 'ai'
-        }]);
-      } else if (currentCount >= 3) {
-        setMessages(prev => [...prev, {
-          text: "This could be a great fit. Could I get your email so Jaan can follow up?",
-          type: 'ai',
-          showEmailInput: true
-        }]);
       }
-    }, 400);
+    } catch (err) {
+      const message =
+        err instanceof TypeError
+          ? 'Failed to fetch (likely CORS preflight/OPTIONS is not configured on the API Gateway /chat route)'
+          : (err as Error)?.message || 'unknown error';
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: `Sorry — the chat service is unavailable right now. (${message})`,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEmailSubmit = (email: string) => {
     if (!email.trim()) return;
-    setMessages(prev => [...prev, {
-      text: "Perfect. Jaan will reach out soon.",
-      type: 'ai'
-    }]);
+    setMessages(prev => [...prev, { role: 'assistant', text: "Perfect — I’ll pass this on to Jaan." }]);
   };
 
   return (
@@ -145,7 +167,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
                       : 'bg-bg-alt border border-border text-text-dim hover:border-accent'
                   }`}
                 >
-                  {exp.company}
+                  {exp.company || exp.title || exp.slug}
                 </button>
               ))}
             </div>
@@ -159,16 +181,18 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-2xl font-bold">{relatedExperiences[activeTab].company}</h3>
-                      <span className="text-sm font-medium text-text-dim">{relatedExperiences[activeTab].period}</span>
+                      <h3 className="text-2xl font-bold">
+                        {relatedExperiences[activeTab].company || relatedExperiences[activeTab].title || relatedExperiences[activeTab].slug}
+                      </h3>
+                      <span className="text-sm font-medium text-text-dim">{relatedExperiences[activeTab].period || ''}</span>
                     </div>
-                    <div className="text-lg font-medium text-accent mb-4">{relatedExperiences[activeTab].role}</div>
+                    <div className="text-lg font-medium text-accent mb-4">{relatedExperiences[activeTab].role || ''}</div>
                   </div>
                   
-                  <p className="text-base text-text-mid leading-relaxed">{relatedExperiences[activeTab].summary}</p>
+                  <p className="text-base text-text-mid leading-relaxed">{relatedExperiences[activeTab].summary || ''}</p>
                   
                   <div className="flex gap-2 flex-wrap">
-                    {relatedExperiences[activeTab].tags.map((tag) => (
+                    {(relatedExperiences[activeTab].tags || []).map((tag) => (
                       <span key={tag} className="px-3 py-1.5 bg-bg-alt border border-border text-[0.6875rem] font-semibold uppercase tracking-wide text-text-dim">
                         {tag}
                       </span>
@@ -208,7 +232,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
             <ChatMessage
               key={idx}
               text={msg.text}
-              type={msg.type}
+              type={msg.role === 'assistant' ? 'ai' : 'user'}
               showEmailInput={msg.showEmailInput}
               onEmailSubmit={handleEmailSubmit}
             />
