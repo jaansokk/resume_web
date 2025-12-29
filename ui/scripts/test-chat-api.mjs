@@ -47,20 +47,23 @@ if (!postJson?.assistant?.text) {
 
 console.log('✓ assistant.text present');
 
-// Browser preflight simulation (many browsers will do this for application/json)
-console.log(`\nOPTIONS ${url} (preflight simulation)`);
-const optRes = await fetch(url, {
-  method: 'OPTIONS',
-  headers: {
-    Origin: 'http://localhost:4321',
-    'Access-Control-Request-Method': 'POST',
-    'Access-Control-Request-Headers': 'content-type',
-  },
-});
+// Optional: browser preflight simulation (many browsers will do this for application/json)
+// Enable with: CHECK_PREFLIGHT=1 npm run test:chat
+if (process.env.CHECK_PREFLIGHT === '1') {
+  console.log(`\nOPTIONS ${url} (preflight simulation)`);
+  const optRes = await fetch(url, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'http://localhost:4321',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'content-type',
+    },
+  });
 
-console.log('OPTIONS status:', optRes.status);
-console.log('OPTIONS ACAO:', optRes.headers.get('access-control-allow-origin'));
-console.log('OPTIONS ACAM:', optRes.headers.get('access-control-allow-methods'));
-console.log('OPTIONS body:', (await optRes.text()).slice(0, 200));
+  console.log('OPTIONS status:', optRes.status);
+  console.log('OPTIONS ACAO:', optRes.headers.get('access-control-allow-origin'));
+  console.log('OPTIONS ACAM:', optRes.headers.get('access-control-allow-methods'));
+  console.log('OPTIONS body:', (await optRes.text()).slice(0, 200));
+}
 
 
