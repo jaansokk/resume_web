@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import { postChat, type ChatApiResponse } from '../utils/chatApi';
@@ -18,6 +18,8 @@ export default function ChatCard() {
   );
   const [showMessages, setShowMessages] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
+  const didAutoScrollOnceRef = useRef(false);
 
   const getClientPageContext = () => {
     const path = window.location.pathname || '/';
@@ -95,6 +97,13 @@ export default function ChatCard() {
     setMessages(prev => [...prev, { role: 'assistant', text: "Perfect — I’ll pass this on to Jaan." }]);
   };
 
+  useEffect(() => {
+    if (!showMessages) return;
+    const behavior: ScrollBehavior = didAutoScrollOnceRef.current ? 'smooth' : 'auto';
+    chatBottomRef.current?.scrollIntoView({ behavior, block: 'end' });
+    didAutoScrollOnceRef.current = true;
+  }, [showMessages, messages.length, isLoading]);
+
   return (
     <div className="bg-bg-alt border border-border">
       <div className="px-5 py-4 border-b border-border flex justify-between items-center">
@@ -118,6 +127,7 @@ export default function ChatCard() {
             />
           ))}
           {isLoading && <div className="text-text-mid text-sm">Thinking...</div>}
+          <div ref={chatBottomRef} />
         </div>
       )}
       

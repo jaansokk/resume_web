@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import { postChat, type ChatApiResponse } from '../utils/chatApi';
@@ -48,6 +48,8 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
   const [isLoading, setIsLoading] = useState(false);
   const [experienceContent, setExperienceContent] = useState<Record<string, string>>({});
   const [didBootstrap, setDidBootstrap] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
+  const didAutoScrollOnceRef = useRef(false);
 
   useEffect(() => {
     // Bootstrap from the floating widget (ChatCard), if present.
@@ -85,6 +87,14 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
   useEffect(() => {
     if (!didBootstrap && initialMessage) handleSend(initialMessage);
   }, [didBootstrap]);
+
+  useEffect(() => {
+    // Scroll to latest message after user send and after assistant response (and when loading indicator changes).
+    // First scroll uses "auto" to avoid a jarring animation on initial load.
+    const behavior: ScrollBehavior = didAutoScrollOnceRef.current ? 'smooth' : 'auto';
+    chatBottomRef.current?.scrollIntoView({ behavior, block: 'end' });
+    didAutoScrollOnceRef.current = true;
+  }, [messages.length, isLoading]);
 
   // Load experience content when tabs change
   useEffect(() => {
@@ -247,6 +257,7 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
           {isLoading && (
             <div className="text-text-mid text-sm">Thinking...</div>
           )}
+          <div ref={chatBottomRef} />
         </div>
         
         <div className="px-5 py-4 border-t border-border flex-shrink-0">
