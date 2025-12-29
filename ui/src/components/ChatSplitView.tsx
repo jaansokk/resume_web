@@ -7,21 +7,19 @@ import {
   resolveExperienceItems,
   type ContentIndexItem,
 } from '../utils/contentIndex';
+import {
+  initOrLoadChatState,
+  loadChatState,
+  setMessages as storeSetMessages,
+  mergeRelatedSlugs,
+  type StoredMessage,
+} from '../utils/chatStore';
 
 interface ChatSplitViewProps {
   initialMessage?: string;
 }
 
 type UiMessage = { role: 'user' | 'assistant'; text: string; showEmailInput?: boolean };
-
-function makeConversationId(): string {
-  try {
-    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-  } catch {
-    // ignore
-  }
-  return `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
 
 function getClientPageContext() {
   const path = window.location.pathname || '/';
@@ -41,8 +39,8 @@ function extractRelatedSlugs(resp: ChatApiResponse): string[] {
 }
 
 export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProps) {
-  const [conversationId, setConversationId] = useState<string>(() => makeConversationId());
-  const [messages, setMessages] = useState<UiMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string>(() => initOrLoadChatState().conversationId);
+  const [messages, setMessages] = useState<StoredMessage[]>(() => initOrLoadChatState().messages || []);
   const [relatedExperiences, setRelatedExperiences] = useState<ContentIndexItem[]>([]);
   const [activeTab, setActiveTab] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,29 +50,16 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
   const didAutoScrollOnceRef = useRef(false);
 
   useEffect(() => {
-    // Bootstrap from the floating widget (ChatCard), if present.
-    const raw = sessionStorage.getItem('chat_bootstrap_v1');
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as {
-          conversationId?: string;
-          messages?: UiMessage[];
-          relatedSlugs?: string[];
-        };
-        if (parsed.conversationId) setConversationId(parsed.conversationId);
-        if (Array.isArray(parsed.messages)) setMessages(parsed.messages);
-        if (Array.isArray(parsed.relatedSlugs) && parsed.relatedSlugs.length > 0) {
-          resolveExperienceItems(parsed.relatedSlugs)
-            .then((items) => setRelatedExperiences(items))
-            .catch(() => {});
-        }
-        setDidBootstrap(true);
-      } catch {
-        // ignore invalid bootstrap payload
-      } finally {
-        sessionStorage.removeItem('chat_bootstrap_v1');
-      }
+    // Load persisted conversation (shared across pages).
+    const state = initOrLoadChatState();
+    setConversationId(state.conversationId);
+    setMessages(state.messages || []);
+    if ((state.relatedSlugs || []).length > 0) {
+      resolveExperienceItems(state.relatedSlugs)
+        .then((items) => setRelatedExperiences(items))
+        .catch(() => {});
     }
+    setDidBootstrap(true);
 
     // Always ensure we have something in the left panel as a fallback.
     getDefaultExperienceItems(3)
@@ -118,9 +103,12 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
   const handleSend = async (text: string) => {
     if (!text.trim()) return;
 
-    const nextMessages: UiMessage[] = [...messages, { role: 'user', text }];
+    const base = loadChatState();
+    const baseMessages = (base?.messages || messages) as StoredMessage[];
+    const nextMessages: StoredMessage[] = [...baseMessages, { role: 'user', text }];
     setMessages(nextMessages);
     setIsLoading(true);
+    storeSetMessages(nextMessages);
 
     try {
       const resp = await postChat({
@@ -131,11 +119,16 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
 
       const assistantText = resp?.assistant?.text || "Sorry — I didn't get a response.";
       const showEmailInput = Boolean(resp?.next?.askForEmail);
-      const withAssistant: UiMessage[] = [...nextMessages, { role: 'assistant', text: assistantText, showEmailInput }];
+      const withAssistant: StoredMessage[] = [
+        ...nextMessages,
+        { role: 'assistant', text: assistantText, showEmailInput },
+      ];
       setMessages(withAssistant);
+      storeSetMessages(withAssistant);
 
       const slugs = extractRelatedSlugs(resp);
       if (slugs.length > 0) {
+        mergeRelatedSlugs(slugs);
         const items = await resolveExperienceItems(slugs);
         if (items.length > 0) {
           setRelatedExperiences(items);
@@ -161,7 +154,11 @@ export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProp
 
   const handleEmailSubmit = (email: string) => {
     if (!email.trim()) return;
-    setMessages(prev => [...prev, { role: 'assistant', text: "Perfect — I’ll pass this on to Jaan." }]);
+    setMessages((prev) => {
+      const next = [...prev, { role: 'assistant', text: "Perfect — I’ll pass this on to Jaan." }];
+      storeSetMessages(next);
+      return next;
+    });
   };
 
   return (

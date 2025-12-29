@@ -2,24 +2,28 @@ import { useEffect, useRef, useState } from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import { postChat, type ChatApiResponse } from '../utils/chatApi';
+import {
+  initOrLoadChatState,
+  loadChatState,
+  setMessages as storeSetMessages,
+  mergeRelatedSlugs,
+  type StoredMessage,
+} from '../utils/chatStore';
 
 export default function ChatCard() {
-  const [conversationId] = useState<string>(() => {
-    try {
-      if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-    } catch {
-      // ignore
-    }
-    return `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  });
-
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string; showEmailInput?: boolean }>>(
-    [],
-  );
+  const [conversationId, setConversationId] = useState<string>(() => initOrLoadChatState().conversationId);
+  const [messages, setMessages] = useState<StoredMessage[]>(() => initOrLoadChatState().messages || []);
   const [showMessages, setShowMessages] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
   const didAutoScrollOnceRef = useRef(false);
+
+  useEffect(() => {
+    const state = initOrLoadChatState();
+    setConversationId(state.conversationId);
+    setMessages(state.messages || []);
+    if ((state.messages || []).length > 0) setShowMessages(true);
+  }, []);
 
   const getClientPageContext = () => {
     const path = window.location.pathname || '/';
@@ -44,9 +48,12 @@ export default function ChatCard() {
     if (!text.trim()) return;
     
     setShowMessages(true);
-    const nextMessages = [...messages, { role: 'user' as const, text }];
+    const base = loadChatState();
+    const baseMessages = (base?.messages || messages) as StoredMessage[];
+    const nextMessages: StoredMessage[] = [...baseMessages, { role: 'user', text }];
     setMessages(nextMessages);
     setIsLoading(true);
+    storeSetMessages(nextMessages);
 
     try {
       const resp = await postChat({
@@ -59,17 +66,16 @@ export default function ChatCard() {
       const showEmailInput = Boolean(resp?.next?.askForEmail);
       const withAssistant = [
         ...nextMessages,
-        { role: 'assistant' as const, text: assistantText, showEmailInput },
+        { role: 'assistant', text: assistantText, showEmailInput },
       ];
 
       const relatedSlugs = extractRelatedSlugs(resp);
       const shouldExpand = relatedSlugs.length > 0 || resp.classification === 'new_opportunity';
 
+      storeSetMessages(withAssistant);
+      if (relatedSlugs.length > 0) mergeRelatedSlugs(relatedSlugs);
+
       if (shouldExpand) {
-        sessionStorage.setItem(
-          'chat_bootstrap_v1',
-          JSON.stringify({ conversationId, messages: withAssistant, relatedSlugs }),
-        );
         window.location.href = '/chat';
         return;
       }
@@ -94,7 +100,11 @@ export default function ChatCard() {
 
   const handleEmailSubmit = (email: string) => {
     if (!email.trim()) return;
-    setMessages(prev => [...prev, { role: 'assistant', text: "Perfect — I’ll pass this on to Jaan." }]);
+    setMessages((prev) => {
+      const next = [...prev, { role: 'assistant', text: "Perfect — I’ll pass this on to Jaan." }];
+      storeSetMessages(next);
+      return next;
+    });
   };
 
   useEffect(() => {
