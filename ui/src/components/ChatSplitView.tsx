@@ -30,7 +30,14 @@ function getClientPageContext() {
 }
 
 function extractRelatedSlugs(resp: ChatApiResponse): string[] {
-  return (resp.related || []).map((r) => r.slug).filter(Boolean);
+  const fromRelated = (resp.related || []).map((r) => r.slug).filter(Boolean);
+  if (fromRelated.length > 0) return Array.from(new Set(fromRelated)).slice(0, 6);
+
+  const fromCitations = (resp.citations || [])
+    .filter((c) => c.type === 'experience')
+    .map((c) => c.slug)
+    .filter(Boolean);
+  return Array.from(new Set(fromCitations)).slice(0, 6);
 }
 
 export default function ChatSplitView({ initialMessage = '' }: ChatSplitViewProps) {

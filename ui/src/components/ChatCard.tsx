@@ -26,7 +26,16 @@ export default function ChatCard() {
   };
 
   const extractRelatedSlugs = (resp: ChatApiResponse): string[] => {
-    return (resp.related || []).map((r) => r.slug).filter(Boolean);
+    const fromRelated = (resp.related || []).map((r) => r.slug).filter(Boolean);
+    if (fromRelated.length > 0) return Array.from(new Set(fromRelated)).slice(0, 6);
+
+    // Fallback: if the backend didn't return related[], use experience citations as a signal
+    // to open split-view and populate left panel.
+    const fromCitations = (resp.citations || [])
+      .filter((c) => c.type === 'experience')
+      .map((c) => c.slug)
+      .filter(Boolean);
+    return Array.from(new Set(fromCitations)).slice(0, 6);
   };
 
   const handleSend = async (text: string) => {
