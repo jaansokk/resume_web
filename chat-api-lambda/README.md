@@ -22,6 +22,11 @@ Required:
 
 Optional:
 - `OPENAI_CHAT_MODEL` - Chat model (default: `gpt-4o-mini`)
+- `OPENAI_ROUTER_MODEL` - Router model used only for routing/classification (default: `gpt-5-nano`)
+- `OPENAI_ROUTER_EFFORT` - Router reasoning effort (default: `low`)
+- `OPENAI_ROUTER_VERBOSITY` - Router text verbosity (default: `low`)
+- `OPENAI_ANSWER_EFFORT` - Answer reasoning effort (optional; if set, use Responses API for answer call)
+- `OPENAI_ANSWER_VERBOSITY` - Answer text verbosity (optional; if set, use Responses API for answer call)
 - `OPENAI_EMBED_MODEL` - Embedding model (default: `text-embedding-3-small`)
 - `EMBEDDING_DIM` - Embedding dimension (default: `1536`)
 - `OS_INDEX_ITEMS` - Items index name (default: `content_items_v1`)

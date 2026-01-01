@@ -78,7 +78,7 @@ class AnswerGenerator:
                 llm_messages.append({"role": role, "content": content})
         
         # Generate response
-        response = self.openai.chat_completion(
+        response = self.openai.answer_completion(
             messages=llm_messages,
             response_format={"type": "json_object"},
             temperature=0.7

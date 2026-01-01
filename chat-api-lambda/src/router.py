@@ -45,13 +45,12 @@ class Router:
         router_prompt = self._build_router_prompt(request, last_user_message)
         
         # Call LLM with structured JSON output
-        response = self.openai.chat_completion(
+        response = self.openai.router_completion(
             messages=[
                 {"role": "system", "content": router_prompt},
                 {"role": "user", "content": last_user_message}
             ],
             response_format={"type": "json_object"},
-            temperature=0.3
         )
         
         # Parse JSON response

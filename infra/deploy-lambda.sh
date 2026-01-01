@@ -253,6 +253,11 @@ if command -v jq &> /dev/null; then
     jq -n \
         --arg openai_key "${OPENAI_API_KEY:-}" \
         --arg chat_model "${OPENAI_CHAT_MODEL:-gpt-4o-mini}" \
+        --arg router_model "${OPENAI_ROUTER_MODEL:-gpt-5-nano}" \
+        --arg router_effort "${OPENAI_ROUTER_EFFORT:-low}" \
+        --arg router_verbosity "${OPENAI_ROUTER_VERBOSITY:-low}" \
+        --arg answer_effort "${OPENAI_ANSWER_EFFORT:-}" \
+        --arg answer_verbosity "${OPENAI_ANSWER_VERBOSITY:-}" \
         --arg embed_model "${OPENAI_EMBED_MODEL:-text-embedding-3-small}" \
         --arg embed_dim "${EMBEDDING_DIM:-1536}" \
         --arg opensearch_endpoint "${OPENSEARCH_ENDPOINT:-${AOSS_ENDPOINT:-}}" \
@@ -266,6 +271,11 @@ if command -v jq &> /dev/null; then
           Variables: {
             OPENAI_API_KEY: $openai_key,
             OPENAI_CHAT_MODEL: $chat_model,
+            OPENAI_ROUTER_MODEL: $router_model,
+            OPENAI_ROUTER_EFFORT: $router_effort,
+            OPENAI_ROUTER_VERBOSITY: $router_verbosity,
+            OPENAI_ANSWER_EFFORT: $answer_effort,
+            OPENAI_ANSWER_VERBOSITY: $answer_verbosity,
             OPENAI_EMBED_MODEL: $embed_model,
             EMBEDDING_DIM: $embed_dim,
             OPENSEARCH_ENDPOINT: $opensearch_endpoint,
@@ -286,7 +296,12 @@ import os
 env_vars = {
     "Variables": {
         "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", ""),
-        "OPENAI_CHAT_MODEL": os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini"),
+        "OPENAI_CHAT_MODEL": os.environ.get("OPENAI_CHAT_MODEL", "gpt-5-mini"),
+        "OPENAI_ROUTER_MODEL": os.environ.get("OPENAI_ROUTER_MODEL", "gpt-5-nano"),
+        "OPENAI_ROUTER_EFFORT": os.environ.get("OPENAI_ROUTER_EFFORT", "low"),
+        "OPENAI_ROUTER_VERBOSITY": os.environ.get("OPENAI_ROUTER_VERBOSITY", "low"),
+        "OPENAI_ANSWER_EFFORT": os.environ.get("OPENAI_ANSWER_EFFORT", "low"),
+        "OPENAI_ANSWER_VERBOSITY": os.environ.get("OPENAI_ANSWER_VERBOSITY", "medium"),
         "OPENAI_EMBED_MODEL": os.environ.get("OPENAI_EMBED_MODEL", "text-embedding-3-small"),
         "EMBEDDING_DIM": os.environ.get("EMBEDDING_DIM", "1536"),
         "OPENSEARCH_ENDPOINT": os.environ.get("OPENSEARCH_ENDPOINT") or os.environ.get("AOSS_ENDPOINT", ""),
@@ -309,7 +324,12 @@ else
 {
   "Variables": {
     "OPENAI_API_KEY": "$(escape_json "${OPENAI_API_KEY:-}")",
-    "OPENAI_CHAT_MODEL": "$(escape_json "${OPENAI_CHAT_MODEL:-gpt-4o-mini}")",
+    "OPENAI_CHAT_MODEL": "$(escape_json "${OPENAI_CHAT_MODEL:-gpt-5-mini}")",
+    "OPENAI_ROUTER_MODEL": "$(escape_json "${OPENAI_ROUTER_MODEL:-gpt-5-nano}")",
+    "OPENAI_ROUTER_EFFORT": "$(escape_json "${OPENAI_ROUTER_EFFORT:-low}")",
+    "OPENAI_ROUTER_VERBOSITY": "$(escape_json "${OPENAI_ROUTER_VERBOSITY:-low}")",
+    "OPENAI_ANSWER_EFFORT": "$(escape_json "${OPENAI_ANSWER_EFFORT:-low}")",
+    "OPENAI_ANSWER_VERBOSITY": "$(escape_json "${OPENAI_ANSWER_VERBOSITY:-medium}")",
     "OPENAI_EMBED_MODEL": "$(escape_json "${OPENAI_EMBED_MODEL:-text-embedding-3-small}")",
     "EMBEDDING_DIM": "$(escape_json "${EMBEDDING_DIM:-1536}")",
     "OPENSEARCH_ENDPOINT": "$(escape_json "${OPENSEARCH_ENDPOINT:-${AOSS_ENDPOINT:-}}")",
