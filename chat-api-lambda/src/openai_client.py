@@ -4,6 +4,7 @@ OpenAI client for embeddings and chat completion.
 import os
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
+from openai import BadRequestError
 
 
 class OpenAIClient:
@@ -18,6 +19,18 @@ class OpenAIClient:
         self.embed_model = os.environ.get("OPENAI_EMBED_MODEL", "text-embedding-3-small")
         self.chat_model = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")
         self.embedding_dim = int(os.environ.get("EMBEDDING_DIM", "1536"))
+
+    def _supports_custom_temperature(self) -> bool:
+        """
+        Some models only support the default temperature (1) and reject custom values.
+        When unsure, prefer a safe default: allow temperature for most models, but
+        disable for known families that reject custom temperature.
+        """
+        model = (self.chat_model or "").lower()
+        # gpt-5* models currently reject custom temperature values in this project setup.
+        if model.startswith("gpt-5"):
+            return False
+        return True
     
     def embed(self, text: str) -> List[float]:
         """Generate embedding for a single text."""
@@ -47,6 +60,16 @@ class OpenAIClient:
             content = msg.get("content") or msg.get("text", "")
             formatted_messages.append({"role": role, "content": content})
         
+        # Some models (e.g. gpt-5-mini) only allow the default temperature (1).
+        # If a call site provides a non-default temperature, drop it for those models.
+        if "temperature" in kwargs and not self._supports_custom_temperature():
+            try:
+                temp = float(kwargs.get("temperature"))
+            except Exception:
+                temp = None
+            if temp is None or temp != 1.0:
+                kwargs.pop("temperature", None)
+
         params = {
             "model": self.chat_model,
             "messages": formatted_messages,
@@ -56,7 +79,16 @@ class OpenAIClient:
         if response_format:
             params["response_format"] = response_format
         
-        response = self.client.chat.completions.create(**params)
+        try:
+            response = self.client.chat.completions.create(**params)
+        except BadRequestError as e:
+            # One-time retry without temperature if the model rejects custom temperature.
+            msg = str(e)
+            if "temperature" in msg and ("Only the default (1) value is supported" in msg or "unsupported_value" in msg):
+                params.pop("temperature", None)
+                response = self.client.chat.completions.create(**params)
+            else:
+                raise
         
         # Extract content
         content = response.choices[0].message.content
