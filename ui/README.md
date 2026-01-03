@@ -11,6 +11,30 @@ npm run dev
 
 Visit `http://localhost:4321` to see the site.
 
+## Local chat API wiring (dev)
+
+The UI defaults to calling **same-origin** `POST /api/chat`.
+
+During local dev, Astro proxies `/api/chat` to the FastAPI service:
+- `/api/chat` → `${CHAT_API_PROXY_TARGET:-http://127.0.0.1:8000}/chat`
+
+### `ui/.env`
+
+Create `ui/.env` with:
+
+```bash
+# Where Astro should proxy /api/chat during `npm run dev`
+CHAT_API_PROXY_TARGET=http://127.0.0.1:8000
+```
+
+Notes:
+- `CHAT_API_PROXY_TARGET` is **server-side** (Astro dev server), so it does **not** need a `PUBLIC_` prefix.
+- You generally do **not** need `PUBLIC_CHAT_API_URL` for local dev anymore (the default `/api/chat` is recommended).
+
+### Common “chat unavailable” cause
+
+If the UI shows a 500 from the chat service, check the FastAPI logs first. A common cause is an **invalid** `OPENAI_API_KEY` in the environment where you run Uvicorn.
+
 ## Project Structure
 
 - `/src/pages/` - Astro routes

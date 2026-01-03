@@ -4,6 +4,11 @@ Local FastAPI chat API service (Qdrant-backed).
 
 ## Local run (dev)
 
+### Where to put `.env`
+
+Put it in **`chat-api-service/.env`** (next to `requirements.txt`), not under `app/`.
+The service loads `chat-api-service/.env` and `chat-api-service/.env.local` on startup.
+
 Create an env file (or export env vars):
 - `OPENAI_API_KEY`
 - `OPENAI_CHAT_MODEL` (default in code: `gpt-4o-mini`)
@@ -17,15 +22,16 @@ Create an env file (or export env vars):
 Install:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+# Conda (recommended)
+conda create -n resume-web-api python=3.11 -y
+conda activate resume-web-api
 pip install -r requirements.txt
 ```
 
 Run:
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000 --log-level debug
 ```
 
 

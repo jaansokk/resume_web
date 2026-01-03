@@ -27,7 +27,7 @@ Legacy (deprecated) architecture:
 - **Node.js 18+** (needs native `fetch`)
 - **aws-vault** (optional; only needed if you want AWS-backed legacy flows)
 - **Corepack** (recommended for `pnpm` without global installs)
-- **Python 3.11+** (for `chat-api-service/`)
+- **Conda** + **Python 3.11+** (for `chat-api-service/`)
 - **Docker** (for local Qdrant via `docker-compose.yml`)
 
 Enable Corepack once:
@@ -132,8 +132,9 @@ npm run ingest:all
 
 ```bash
 cd chat-api-service
-python -m venv .venv
-source .venv/bin/activate
+# Create a dedicated env (recommended)
+conda create -n resume-web-api python=3.11 -y
+conda activate resume-web-api
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
@@ -148,7 +149,7 @@ curl http://127.0.0.1:8000/healthz
 
 ```bash
 cd chat-api-service
-source .venv/bin/activate
+conda activate resume-web-api
 pip install -r requirements-dev.txt
 pytest -q
 ```
