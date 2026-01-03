@@ -5,14 +5,16 @@ import os
 from typing import Any
 
 from .models import ChatRequest, ChatResponse
+from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
 from .qdrant_client import QdrantClient
 from .retrieval import RetrievalService, is_ui_visible_item
 
 
 class ChatPipeline:
-    def __init__(self, *, openai: OpenAIClient, qdrant: QdrantClient):
+    def __init__(self, *, openai: OpenAIClient, anthropic: AnthropicClient, qdrant: QdrantClient):
         self.openai = openai
+        self.anthropic = anthropic
         self.qdrant = qdrant
         self.retrieval = RetrievalService(qdrant)
 
@@ -65,7 +67,7 @@ class ChatPipeline:
 
 Return ONLY valid JSON, no markdown formatting."""
 
-        raw = self.openai.router(
+        raw = self.anthropic.router(
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": last_user_text},
@@ -177,7 +179,7 @@ Return ONLY valid JSON, no markdown formatting."""
                 continue
             msgs.append({"role": m.role, "content": m.text})
 
-        raw = self.openai.answer(messages=msgs)
+        raw = self.anthropic.answer(messages=msgs)
         try:
             out = json.loads(raw)
         except Exception:

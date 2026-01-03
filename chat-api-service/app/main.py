@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.requests import Request
 
 from .models import ChatRequest, ChatResponse
+from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
 from .pipeline import ChatPipeline
 from .qdrant_client import QdrantClient, QdrantConfig
@@ -36,7 +37,13 @@ def _load_dotenv() -> None:
 
 def create_app() -> FastAPI:
     _load_dotenv()
-    logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper())
+ 
+    logging.basicConfig(
+        level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     app = FastAPI(title="resume-web chat api", version="0.1.0")
 
     @app.exception_handler(Exception)
@@ -50,9 +57,11 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def _startup_log() -> None:
-        key = os.environ.get("OPENAI_API_KEY", "")
+        openai_key = os.environ.get("OPENAI_API_KEY", "")
+        anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
         log.info("Config: QDRANT_URL=%s", os.environ.get("QDRANT_URL", "http://127.0.0.1:6333"))
-        log.info("Config: OPENAI_API_KEY set=%s prefix=%s", bool(key), (key[:12] if key else ""))
+        log.info("Config: OPENAI_API_KEY set=%s prefix=%s", bool(openai_key), (openai_key[:12] if openai_key else ""))
+        log.info("Config: ANTHROPIC_API_KEY set=%s prefix=%s", bool(anthropic_key), (anthropic_key[:12] if anthropic_key else ""))
 
     qdrant_url = os.environ.get("QDRANT_URL", "http://127.0.0.1:6333").strip()
     qdrant_items = os.environ.get("QDRANT_COLLECTION_ITEMS", "content_items_v1").strip()
@@ -60,7 +69,8 @@ def create_app() -> FastAPI:
 
     qdrant = QdrantClient(QdrantConfig(url=qdrant_url, collection_items=qdrant_items, collection_chunks=qdrant_chunks))
     openai = OpenAIClient()
-    pipeline = ChatPipeline(openai=openai, qdrant=qdrant)
+    anthropic = AnthropicClient()
+    pipeline = ChatPipeline(openai=openai, anthropic=anthropic, qdrant=qdrant)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -68,7 +78,8 @@ def create_app() -> FastAPI:
 
     @app.post("/chat", response_model=ChatResponse)
     def chat(req: ChatRequest) -> ChatResponse:
-        _ = os.environ.get("OPENAI_API_KEY", "")  # ensure env is present early (OpenAIClient enforces)
+        _ = os.environ.get("OPENAI_API_KEY", "")  # ensure env is present early (OpenAIClient enforces for embeddings)
+        _ = os.environ.get("ANTHROPIC_API_KEY", "")  # ensure env is present early (AnthropicClient enforces for chat)
         return pipeline.handle(req)
 
     return app
