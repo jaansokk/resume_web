@@ -37,7 +37,9 @@ This repo contains multiple specs, but **not every spec is relevant for every ta
 
 ### Backend/RAG/Indexing (planned monorepo work)
 
-> These docs become relevant once you start building `chat-api-lambda/`, `ingest/`, `infra/`, and `shared/` from `_specs/repo-structure.md`. Until then, only consult them when you’re designing interfaces or preparing the upcoming restructure.
+> **Current baseline (source of truth):** self-hosted Chat API service + Qdrant on a single AWS Lightsail instance, fronted by a reverse proxy (Caddy or Nginx).
+>
+> Legacy architecture (Lambda + OpenSearch Serverless) is still documented for reference, but is marked **DEPRECATED** in the relevant specs.
 
 #### `_specs/repo-structure.md`
 - **Use when**: creating the monorepo folders, moving code, setting up packages, or wiring boundaries between UI / API / ingest / infra / shared.
@@ -46,16 +48,21 @@ This repo contains multiple specs, but **not every spec is relevant for every ta
 #### `_specs/chat-api-rag-contract.md`
 - **Use when**: implementing the `/chat` API, request/response JSON shape, UI directives, retrieval + generation steps, and validation rules.
 - **Answers**: “What does the chat API return and how should RAG behave?”
-- **Depends on**: `_specs/opensearch-index-design.md` for index fields and retrieval constraints.
+- **Depends on**: `_specs/qdrant-index-design.md` for vector store schema and retrieval constraints.
+
+#### `_specs/qdrant-index-design.md`
+- **Use when**: defining Qdrant collections, payload schema, vector dimensions, and retrieval/validation rules.
+- **Answers**: “How do we store/search content for RAG safely in Qdrant?”
 
 #### `_specs/opensearch-index-design.md`
-- **Use when**: defining OpenSearch indexes/mappings, embedding dimensions, retrieval rules, and “related items” selection constraints (never surface background in UI).
-- **Answers**: “How do we store/search content for RAG safely?”
+- **Status**: **DEPRECATED** (legacy OpenSearch Serverless architecture).
+- **Use when**: referencing the legacy OpenSearch indexes/mappings and retrieval rules during migration/cleanup.
+- **Answers**: “How did the OpenSearch-based RAG store/search content?”
 
 #### `_specs/ingestion-pipeline.md`
-- **Use when**: building the ingestion CLI, chunking/embedding, exporting UI content index JSON, and bulk indexing to OpenSearch.
+- **Use when**: building the ingestion CLI, chunking/embedding, exporting UI content index JSON, and indexing/upserting vectors into Qdrant.
 - **Answers**: “How do we turn markdown into searchable chunks + UI artifacts?”
-- **Depends on**: `_specs/opensearch-index-design.md` for mappings/dimensions and indexing rules.
+- **Depends on**: `_specs/qdrant-index-design.md` for payload schema, vector dimensions, and indexing rules.
 
 ---
 

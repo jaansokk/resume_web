@@ -4,7 +4,7 @@
 Implement a reproducible ingestion pipeline that:
 - Reads Astro content collection Markdown from `../ui/src/content/**`
 - Exports a UI-friendly content graph JSON (experience/projects only)
-- Chunks + embeds content and bulk indexes it into OpenSearch Serverless (experience/projects/background)
+- Chunks + embeds content and indexes it into Qdrant (experience/projects/background)
 
 MVP target: run ingestion on 3–5 experience entries end-to-end (plus optionally 1–2 background docs).
 
@@ -73,10 +73,10 @@ Shape (suggested):
   ]
 }
 
-### B) OpenSearch documents
-Index ALL types into OpenSearch:
-- `content_items_v1`  (one doc per item: experience/project/background)
-- `content_chunks_v1` (many docs per item: experience/project/background)
+### B) Qdrant collections
+Index ALL types into Qdrant:
+- `content_items_v1`  (one point per item: experience/project/background)
+- `content_chunks_v1` (many points per item: experience/project/background)
 
 Indexing rules for `background`:
 - `type="background"`
@@ -89,7 +89,7 @@ Indexing rules for `background`:
 From repo root:
 
 - `pnpm ingest:export`  -> generates content-index.json (experience/projects only)
-- `pnpm ingest:vectors` -> chunks + embeddings + bulk indexing (all types)
+- `pnpm ingest:vectors` -> chunks + embeddings + indexing/upserts (all types)
 - `pnpm ingest:all`     -> export + vectors
 
 ---
@@ -128,14 +128,14 @@ For each chunk:
     - for experience/projects: `${title} — ${company} — ${role}\n\n`
     - for background: `${title}\n\n`
 
-Also embed user queries at runtime in the Lambda (not part of ingestion).
+Also embed user queries at runtime in the chat API service (not part of ingestion).
 
 ---
 
-## Indexing step (OpenSearch)
-Use bulk indexing:
-- Upsert `content_items_v1` by `slug`
-- Upsert `content_chunks_v1` by `${slug}::${chunkId}`
+## Indexing step (Qdrant)
+Use point upserts:
+- Upsert `content_items_v1` by deterministic point ID (see `_specs/qdrant-index-design.md`)
+- Upsert `content_chunks_v1` by deterministic point ID (see `_specs/qdrant-index-design.md`)
 
 Idempotency:
 - Compute a hash for each source file (frontmatter + body).
@@ -163,10 +163,16 @@ After ingesting 3–5 experience entries (+ optional background docs):
 - Missing required frontmatter fields -> fail fast with a clear error.
 - Oversized chunks -> split further.
 - OpenAI transient errors -> retry with backoff (max 3).
-- OpenSearch auth failures -> print the exact endpoint + policy hints and exit.
+- Qdrant connectivity failures -> print the Qdrant URL and exit.
 
 ---
 
 ## Local dev (optional)
-Provide a `docker-compose.yml` in `ingest/` for local OpenSearch testing.
-Keep in mind AWS Serverless auth differs; local is only for faster iteration on mappings + bulk indexing.
+Provide a `docker-compose.yml` for local Qdrant testing.
+Local dev is recommended for iterating on payload schema and end-to-end retrieval behavior.
+
+---
+
+## DEPRECATED: OpenSearch indexing references
+If you still need the legacy OpenSearch pipeline during migration/cleanup, see:
+- `_specs/opensearch-index-design.md`

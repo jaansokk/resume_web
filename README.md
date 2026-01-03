@@ -2,7 +2,25 @@
 
 This repo contains:
 - `ui/`: Astro resume site (currently uses `package-lock.json` / npm)
-- `ingest/`: Node-based ingestion CLI (chunk + embed + index into OpenSearch Serverless)
+- `chat-api-service/`: **NEW baseline (planned)** long-lived chat API orchestrator service (Qdrant-backed), deployed on Lightsail behind a reverse proxy
+- `ingest/`: ingestion CLI (chunk + embed + index/upsert vectors)
+- `chat-api-lambda/`: **DEPRECATED** legacy Lambda-based chat API (OpenSearch-backed) kept during migration/cleanup
+- `infra-vps/`: **NEW baseline (planned)** Lightsail deploy assets (Docker Compose, Caddy/Nginx config, scripts)
+- `infra/`: **DEPRECATED** legacy Lambda/OpenSearch deployment scripts kept during migration/cleanup
+
+## Current architecture (baseline)
+Target baseline is a **single AWS Lightsail instance** running:
+- Reverse proxy (Caddy or Nginx) terminating TLS and routing `/api/*`
+- Chat API service (orchestrator) implementing `/chat`
+- Qdrant (vector store)
+
+Key specs:
+- `_specs/chat-api-rag-contract.md`
+- `_specs/qdrant-index-design.md`
+- `_specs/ingestion-pipeline.md`
+
+Legacy (deprecated) architecture:
+- Lambda + API Gateway + OpenSearch Serverless (kept for reference during migration/cleanup)
 
 ## Prerequisites
 
@@ -24,10 +42,12 @@ Preferred variables:
 - `OPENAI_API_KEY`
 - `OPENAI_EMBEDDING_MODEL` (default: `text-embedding-3-small`)
 - `OPENAI_EMBEDDING_DIM` (optional; OpenAI `dimensions` parameter)
-- `AOSS_ENDPOINT`
-- `AOSS_ITEMS_INDEX` (default: `content_items_v1`)
-- `AOSS_CHUNKS_INDEX` (default: `content_chunks_v1`)
-- `AWS_REGION` (default: `eu-central-1`)
+- `QDRANT_URL` (e.g. `http://127.0.0.1:6333` or `http://qdrant:6333`)
+- `QDRANT_COLLECTION_ITEMS` (default: `content_items_v1`)
+- `QDRANT_COLLECTION_CHUNKS` (default: `content_chunks_v1`)
+
+DEPRECATED (legacy OpenSearch ingestion / verification):
+- `AOSS_ENDPOINT`, `AOSS_ITEMS_INDEX`, `AOSS_CHUNKS_INDEX`, `AWS_REGION`
 
 ## Running ingestion (from repo root)
 
@@ -43,7 +63,7 @@ Outputs:
 - `ingest/exported-content/content-index.json`
 - `ui/public/content-index.json`
 
-### 2) Verify OpenSearch Serverless access (AWS creds required)
+### 2) Verify OpenSearch Serverless access (DEPRECATED; AWS creds required)
 
 Run via `aws-vault`:
 
@@ -69,7 +89,9 @@ Writes debug dumps:
 aws-vault exec resume-web-ingest -- npm run ingest:vectors -- --no-index
 ```
 
-- **Embed + index (full run)** (OpenAI key + AWS required):
+- **Embed + index (full run)**:
+  - NEW baseline: OpenAI key + reachable Qdrant
+  - DEPRECATED legacy: OpenAI key + AWS (OpenSearch Serverless)
 
 ```bash
 aws-vault exec resume-web-ingest -- npm run ingest:vectors

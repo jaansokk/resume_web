@@ -1,3 +1,12 @@
+## DEPRECATED (legacy OpenSearch Serverless architecture)
+This spec is kept for migration/cleanup reference only.
+
+New baseline:
+- Qdrant is the vector store.
+- See `_specs/qdrant-index-design.md` for the active index/collection design.
+
+---
+
 ## Goal
 Define the MVP OpenSearch (Serverless) index design for a portfolio RAG system:
 - Store structured “content item” metadata (for UI cards/tabs).
