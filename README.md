@@ -25,8 +25,10 @@ Legacy (deprecated) architecture:
 ## Prerequisites
 
 - **Node.js 18+** (needs native `fetch`)
-- **aws-vault** (you’re using profile/user `resume-web-ingest`)
+- **aws-vault** (optional; only needed if you want AWS-backed legacy flows)
 - **Corepack** (recommended for `pnpm` without global installs)
+- **Python 3.11+** (for `chat-api-service/`)
+- **Docker** (for local Qdrant via `docker-compose.yml`)
 
 Enable Corepack once:
 
@@ -45,6 +47,7 @@ Preferred variables:
 - `QDRANT_URL` (e.g. `http://127.0.0.1:6333` or `http://qdrant:6333`)
 - `QDRANT_COLLECTION_ITEMS` (default: `content_items_v1`)
 - `QDRANT_COLLECTION_CHUNKS` (default: `content_chunks_v1`)
+- `QDRANT_NAMESPACE_UUID` (optional; deterministic UUIDv5 namespace for point IDs)
 
 DEPRECATED (legacy OpenSearch ingestion / verification):
 - `AOSS_ENDPOINT`, `AOSS_ITEMS_INDEX`, `AOSS_CHUNKS_INDEX`, `AWS_REGION`
@@ -86,7 +89,7 @@ Writes debug dumps:
 - **Embed only** (OpenAI key required, no AWS indexing):
 
 ```bash
-aws-vault exec resume-web-ingest -- npm run ingest:vectors -- --no-index
+npm run ingest:vectors -- --no-index
 ```
 
 - **Embed + index (full run)**:
@@ -94,7 +97,7 @@ aws-vault exec resume-web-ingest -- npm run ingest:vectors -- --no-index
   - DEPRECATED legacy: OpenAI key + AWS (OpenSearch Serverless)
 
 ```bash
-aws-vault exec resume-web-ingest -- npm run ingest:vectors
+npm run ingest:vectors
 ```
 
 ### 4) Full “all” command
@@ -102,7 +105,68 @@ aws-vault exec resume-web-ingest -- npm run ingest:vectors
 Runs export + vectors:
 
 ```bash
-aws-vault exec resume-web-ingest -- npm run ingest:all
+npm run ingest:all
+```
+
+## Local dev: Qdrant + Chat API + UI (end-to-end)
+
+### 1) Start local Qdrant
+
+From repo root:
+
+```bash
+docker compose up -d
+```
+
+Qdrant will be reachable at `http://127.0.0.1:6333`.
+
+### 2) Run ingestion into Qdrant
+
+Ensure you have `OPENAI_API_KEY` set and (optionally) `QDRANT_URL=http://127.0.0.1:6333`.
+
+```bash
+npm run ingest:all
+```
+
+### 3) Run the FastAPI chat service
+
+```bash
+cd chat-api-service
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:8000/healthz
+```
+
+### 4) Run API tests
+
+```bash
+cd chat-api-service
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+### 5) Run the UI against the local service
+
+The UI defaults to calling **same-origin** `POST /api/chat`. During dev, Astro proxies:\n- `/api/chat` → `${CHAT_API_PROXY_TARGET:-http://127.0.0.1:8000}/chat`
+
+```bash
+cd ui
+npm ci
+npm run dev
+```
+
+Optional (to point the dev proxy somewhere else later, e.g. Lightsail):
+
+```bash
+CHAT_API_PROXY_TARGET=http://<host>:8000 npm run dev
 ```
 
 ## (Optional) Using pnpm

@@ -24,3 +24,5 @@ node_modules/
 
 
 ingest/exported-content/**/*
+
+**/__pycache__/

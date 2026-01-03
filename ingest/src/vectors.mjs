@@ -5,14 +5,14 @@ import { parseFrontmatter } from "./lib/frontmatter.mjs";
 import { sha256Hex } from "./lib/hash.mjs";
 import { chunkMarkdownBody } from "./lib/chunking.mjs";
 import { embedTexts, makeChunkCacheKey } from "./lib/openai-embeddings.mjs";
-import { buildBulkNdjsonIndex, bulkUpsert, countDocs } from "./lib/opensearch-bulk.mjs";
 import { loadEnv } from "./lib/load-env.mjs";
+import { ensureCollection, upsertPoints, uuidv5 } from "./lib/qdrant-rest.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 
-const DEFAULT_ENDPOINT = "https://09eid9cakc659fdreqsj.eu-central-1.aoss.amazonaws.com";
+const DEFAULT_QDRANT_URL = "http://127.0.0.1:6333";
 
 const UI_CONTENT_ROOT = path.join(repoRoot, "ui", "src", "content");
 const CACHE_FILE = path.join(repoRoot, "ingest", "exported-content", "embeddings-cache.json");
@@ -152,20 +152,11 @@ async function main() {
   const noIndex = getArgFlag("--no-index");
   const limit = Number(getArgValue("--limit") || "0") || undefined;
 
-  // Backward-compatible env names:
-  const endpoint =
-    process.env.AOSS_ENDPOINT ||
-    process.env.OPENSEARCH_ENDPOINT ||
-    process.env.OS_ENDPOINT ||
-    DEFAULT_ENDPOINT;
-  const ITEMS_INDEX =
-    process.env.AOSS_ITEMS_INDEX ||
-    process.env.OS_INDEX_ITEMS ||
-    "content_items_v1";
-  const CHUNKS_INDEX =
-    process.env.AOSS_CHUNKS_INDEX ||
-    process.env.OS_INDEX_CHUNKS ||
-    "content_chunks_v1";
+  // Qdrant config (new baseline)
+  const QDRANT_URL = (process.env.QDRANT_URL || DEFAULT_QDRANT_URL).trim();
+  const ITEMS_COLLECTION = (process.env.QDRANT_COLLECTION_ITEMS || "content_items_v1").trim();
+  const CHUNKS_COLLECTION = (process.env.QDRANT_COLLECTION_CHUNKS || "content_chunks_v1").trim();
+  const NAMESPACE_UUID = (process.env.QDRANT_NAMESPACE_UUID || "1d0b5b2a-7a1c-4fb6-8f7b-6a8c8a2c3f4d").trim();
 
   const model =
     process.env.OPENAI_EMBEDDING_MODEL ||
@@ -173,8 +164,10 @@ async function main() {
     "text-embedding-3-small";
   const dimensions = process.env.OPENAI_EMBEDDING_DIM ? Number(process.env.OPENAI_EMBEDDING_DIM) : undefined;
 
-  console.log(`AOSS endpoint: ${endpoint}`);
-  console.log(`Indexes: items=${ITEMS_INDEX} chunks=${CHUNKS_INDEX}`);
+  const embeddingDim = dimensions || Number(process.env.EMBEDDING_DIM || "1536");
+
+  console.log(`Qdrant URL: ${QDRANT_URL}`);
+  console.log(`Collections: items=${ITEMS_COLLECTION} chunks=${CHUNKS_COLLECTION}`);
   console.log(`Embedding model: ${model}${dimensions ? ` (dimensions=${dimensions})` : ""}`);
   console.log(`Mode: ${dryRun ? "dry-run" : noIndex ? "embed-only" : "embed+index"}`);
 
@@ -292,44 +285,52 @@ async function main() {
     return;
   }
 
-  // Bulk indexing
-  const bulkBlocks = [];
-
-  for (const doc of itemDocs) {
-    // NOTE (OpenSearch Serverless): Bulk API does NOT support custom document IDs (_id).
-    // Store the slug in the document and let AOSS generate the document ID.
-    bulkBlocks.push(buildBulkNdjsonIndex({ index: ITEMS_INDEX, id: undefined, doc }));
-  }
-  for (const doc of chunkDocs) {
-    assert(Array.isArray(doc.embedding), `Missing embedding for ${doc.slug}__${doc.chunkId}`);
-    // NOTE (OpenSearch Serverless): Bulk API does NOT support custom document IDs (_id).
-    // We include slug+chunkId as fields for deterministic lookup if needed.
-    bulkBlocks.push(buildBulkNdjsonIndex({ index: CHUNKS_INDEX, id: undefined, doc }));
-  }
-
-  console.log(`Indexing to AOSS: operations=${bulkBlocks.length}`);
-  await bulkUpsert({
-    endpoint,
-    ndjson: bulkBlocks,
-    refresh: process.env.AOSS_REFRESH || process.env.OS_REFRESH // optional; avoid refresh=true
+  console.log("Ensuring Qdrant collections exist...");
+  // Metadata collection (no real vectors needed; we store a tiny dummy vector)
+  await ensureCollection({
+    url: QDRANT_URL,
+    name: ITEMS_COLLECTION,
+    vectorName: "dummy",
+    dim: 1,
+    distance: "Cosine"
+  });
+  // Chunks collection
+  await ensureCollection({
+    url: QDRANT_URL,
+    name: CHUNKS_COLLECTION,
+    vectorName: "embedding",
+    dim: embeddingDim,
+    distance: "Cosine"
   });
 
-  // Serverless is eventually consistent; counts may lag briefly. Retry a few times.
-  let itemsCount;
-  let chunksCount;
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    try {
-      itemsCount = await countDocs({ endpoint, index: ITEMS_INDEX });
-      chunksCount = await countDocs({ endpoint, index: CHUNKS_INDEX });
-      break;
-    } catch (e) {
-      if (attempt === 5) throw e;
-      await sleep(500 * attempt);
-    }
+  // Upsert items
+  const itemPoints = itemDocs.map((doc) => ({
+    id: uuidv5(NAMESPACE_UUID, doc.slug),
+    vectors: { dummy: [0] },
+    payload: doc
+  }));
+
+  // Upsert chunks
+  const chunkPoints = chunkDocs.map((doc) => {
+    assert(Array.isArray(doc.embedding), `Missing embedding for ${doc.slug}__${doc.chunkId}`);
+    const { embedding, ...payload } = doc;
+    return {
+      id: uuidv5(NAMESPACE_UUID, `${doc.slug}::${doc.chunkId}`),
+      vectors: { embedding },
+      payload
+    };
+  });
+
+  console.log(`Upserting to Qdrant: items=${itemPoints.length} chunks=${chunkPoints.length}`);
+  // Chunk into batches to avoid giant requests
+  const BATCH = Number(process.env.QDRANT_BATCH || "128");
+  for (let i = 0; i < itemPoints.length; i += BATCH) {
+    await upsertPoints({ url: QDRANT_URL, collection: ITEMS_COLLECTION, points: itemPoints.slice(i, i + BATCH) });
   }
-  if (itemsCount && chunksCount) {
-    console.log(`AOSS counts: ${ITEMS_INDEX}=${itemsCount.count} ${CHUNKS_INDEX}=${chunksCount.count}`);
+  for (let i = 0; i < chunkPoints.length; i += BATCH) {
+    await upsertPoints({ url: QDRANT_URL, collection: CHUNKS_COLLECTION, points: chunkPoints.slice(i, i + BATCH) });
   }
+
   console.log("Done.");
 }
 
