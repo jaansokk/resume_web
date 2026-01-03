@@ -59,7 +59,9 @@ def create_app() -> FastAPI:
     async def _startup_log() -> None:
         openai_key = os.environ.get("OPENAI_API_KEY", "")
         anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        model_provider = os.environ.get("MODEL_PROVIDER", "anthropic").lower().strip()
         log.info("Config: QDRANT_URL=%s", os.environ.get("QDRANT_URL", "http://127.0.0.1:6333"))
+        log.info("Config: MODEL_PROVIDER=%s", model_provider)
         log.info("Config: OPENAI_API_KEY set=%s prefix=%s", bool(openai_key), (openai_key[:12] if openai_key else ""))
         log.info("Config: ANTHROPIC_API_KEY set=%s prefix=%s", bool(anthropic_key), (anthropic_key[:12] if anthropic_key else ""))
 
@@ -78,8 +80,8 @@ def create_app() -> FastAPI:
 
     @app.post("/chat", response_model=ChatResponse)
     def chat(req: ChatRequest) -> ChatResponse:
-        _ = os.environ.get("OPENAI_API_KEY", "")  # ensure env is present early (OpenAIClient enforces for embeddings)
-        _ = os.environ.get("ANTHROPIC_API_KEY", "")  # ensure env is present early (AnthropicClient enforces for chat)
+        # OpenAI is always needed for embeddings
+        # Anthropic or OpenAI needed for chat/router based on MODEL_PROVIDER
         return pipeline.handle(req)
 
     return app

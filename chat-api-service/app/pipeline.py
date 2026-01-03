@@ -17,6 +17,11 @@ class ChatPipeline:
         self.anthropic = anthropic
         self.qdrant = qdrant
         self.retrieval = RetrievalService(qdrant)
+        
+        # MODEL_PROVIDER: "openai" or "anthropic" (default: "anthropic")
+        self.model_provider = os.environ.get("MODEL_PROVIDER", "anthropic").lower().strip()
+        if self.model_provider not in ("openai", "anthropic"):
+            self.model_provider = "anthropic"
 
     def handle(self, req: ChatRequest) -> ChatResponse:
         last_user_text = ""
@@ -67,12 +72,20 @@ class ChatPipeline:
 
 Return ONLY valid JSON, no markdown formatting."""
 
-        raw = self.anthropic.router(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": last_user_text},
-            ]
-        )
+        if self.model_provider == "anthropic":
+            raw = self.anthropic.router(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": last_user_text},
+                ]
+            )
+        else:
+            raw = self.openai.router(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": last_user_text},
+                ]
+            )
 
         try:
             out = json.loads(raw)
@@ -179,7 +192,10 @@ Return ONLY valid JSON, no markdown formatting."""
                 continue
             msgs.append({"role": m.role, "content": m.text})
 
-        raw = self.anthropic.answer(messages=msgs)
+        if self.model_provider == "anthropic":
+            raw = self.anthropic.answer(messages=msgs)
+        else:
+            raw = self.openai.answer(messages=msgs)
         try:
             out = json.loads(raw)
         except Exception:

@@ -10,10 +10,10 @@ from anthropic import Anthropic
 class AnthropicClient:
     def __init__(self) -> None:
         api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-        if not api_key:
-            raise ValueError("Missing ANTHROPIC_API_KEY")
-
-        self.client = Anthropic(api_key=api_key)
+        # Don't raise immediately - allow initialization even without key
+        # This lets users choose OpenAI without needing Anthropic key
+        self.api_key = api_key
+        self.client = Anthropic(api_key=api_key) if api_key else None
         self.chat_model = os.environ.get("ANTHROPIC_CHAT_MODEL", "claude-sonnet-4-20250514")
         self.router_model = os.environ.get("ANTHROPIC_ROUTER_MODEL", "claude-sonnet-4-20250514")
         self.max_tokens = int(os.environ.get("ANTHROPIC_MAX_TOKENS", "4096"))
@@ -23,6 +23,9 @@ class AnthropicClient:
         Returns raw JSON string.
         Anthropic requires system messages to be passed separately.
         """
+        if not self.client:
+            raise ValueError("Missing ANTHROPIC_API_KEY - cannot use Anthropic client")
+        
         # Separate system message from conversation messages
         system_content = ""
         conversation_messages: list[dict[str, Any]] = []
