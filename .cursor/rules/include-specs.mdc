@@ -1,10 +1,6 @@
 ---
-description: Include only the specs index; consult only the relevant spec(s) linked from it per task
-globs:
-  - _specs/spec-index.md
-alwaysApply: true
+alwaysApply: false
 ---
-
 Use `_specs/spec-index.md` to decide which spec(s) apply to the current task.
 Only consult/include the spec(s) referenced there that are relevant to the prompt at hand.
 Specs are the source of truth for scope and acceptance criteria.
