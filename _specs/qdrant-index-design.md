@@ -37,6 +37,8 @@ Optional fields:
 - `keywords`: string[]
 - `heroImage`: string
 - `gallery`: string[]
+- `urlPath`: string (canonical UI path for the item; optional)
+- `highlights`: string[] (optional curated proof points; short bullets)
 - `links`: object (optional graph edges)
 - For experience/project: `company`, `role`, `period`, optional `startDate`, `endDate`
 
@@ -124,5 +126,5 @@ Alternative approach (acceptable for MVP):
 ---
 
 ## DEPRECATED: OpenSearch index design
-See `_specs/opensearch-index-design.md` for legacy OpenSearch mappings and query recipes.
+See `_specs/_archive/opensearch-index-design.md` for legacy OpenSearch mappings and query recipes.
 

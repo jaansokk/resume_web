@@ -1,3 +1,10 @@
+## ARCHIVED
+Archived during v2 spec consolidation. Active v2 IA lives in:
+- `_specs/user-flow-v2.md`
+- `_specs/ia-content.md`
+
+---
+
 ## Product brief
 
 ### Goal

@@ -1,80 +1,84 @@
-## Specs index (what to use when)
+## Specs index (v2)
 
-This repo contains multiple specs, but **not every spec is relevant for every task**. Use this index to pick the **minimum set of spec(s)** needed to do the work correctly.
+This repo has multiple specs. **Start here.**
 
-### How to use specs (selection rule)
-- Start from the **task prompt** and identify which area it touches: UI/product, chat UX behavior, content, or future backend/RAG/ingest/infra.
-- Pull in **only the spec(s)** listed for that area, plus any direct dependencies called out below.
-- If a requirement is unclear or conflicting, **ask a clarifying question** or propose a small decision and document it.
-- **Specs are the source of truth** for scope and acceptance criteria.
+Goal: include the **minimum necessary** spec(s) based on the task. If anything conflicts, defer to:
+- `_specs/user-flow-v2.md` (product/UX flow source of truth)
+- the relevant API contract (`_specs/chat-api-rag-contract.md`) for request/response shapes
 
 ---
 
-### Product & UI (current Astro app)
+## Selection rule (how to pick specs)
 
-#### `_specs/01-product-brief.md`
-- **Use when**: defining the product goal, primary users, and the “2-screen model” (home → split-view response).
-- **Answers**: “What are we building and for whom?”
-
-#### `_specs/02-requirements.md`
-- **Use when**: implementing/changing features; deciding MVP vs nice-to-have; checking acceptance criteria.
-- **Answers**: “What must work right now?” and “What’s out of scope?”
-
-#### `_specs/03-ia-content.md`
-- **Use when**: creating/changing pages, content blocks, navigation, tone/voice, or what appears in the left “related experience” area.
-- **Answers**: “What pages/content exist and how should they read?”
-
-#### `_specs/04-chat-flow.md`
-- **Use when**: any work touching chat behavior (classification, split-view triggers, follow-up prompts, widget availability/placement).
-- **Answers**: “How should the conversation and UI state evolve?”
-- **Depends on**: `_specs/02-requirements.md` for MVP constraints.
-
-#### `_specs/05-ui-style.md`
-- **Use when**: styling/layout/interaction decisions (dark UI, square buttons, typography, focus/hover, motion).
-- **Answers**: “What should it look/feel like?”
+- Identify what you’re changing: **UX flow**, **UI**, **chat API**, **RAG**, **ingestion/content**, or **runtime/infra**.
+- Pull **only** the specs listed for that category (plus any explicitly listed dependencies).
+- Don’t load archived specs unless you’re doing migration/cleanup archaeology.
 
 ---
 
-### Backend/RAG/Indexing (planned monorepo work)
+## v2 UX / UI (primary flow)
 
-> **Current baseline (source of truth):** self-hosted Chat API service + Qdrant on a single AWS Lightsail instance, fronted by a reverse proxy (Caddy or Nginx).
->
-> Legacy architecture (Lambda + OpenSearch Serverless) is still documented for reference, but is marked **DEPRECATED** in the relevant specs.
+Use these when working on the v2 experience (handshake → chat → split view → share):
 
-#### `_specs/repo-structure.md`
-- **Use when**: creating the monorepo folders, moving code, setting up packages, or wiring boundaries between UI / API / ingest / infra / shared.
-- **Answers**: “Where does this code live?” and “How is the repo organized?”
+- `_specs/user-flow-v2.md`
+  - **Use when**: anything about the user journey or what appears on each screen.
+  - **Answers**: “What is the v2 flow and what should it feel like?”
 
-#### `_specs/chat-api-rag-contract.md`
-- **Use when**: implementing the `/chat` API, request/response JSON shape, UI directives, retrieval + generation steps, and validation rules.
-- **Answers**: “What does the chat API return and how should RAG behave?”
-- **Depends on**: `_specs/qdrant-index-design.md` for vector store schema and retrieval constraints.
+- `_specs/ia-content.md`
+  - **Use when**: information architecture, artifacts (Fit Brief / Relevant Experience), share semantics, routes like `/c/{shareId}`.
+  - **Answers**: “What exists and what’s visible?”
 
-#### `_specs/qdrant-index-design.md`
-- **Use when**: defining Qdrant collections, payload schema, vector dimensions, and retrieval/validation rules.
-- **Answers**: “How do we store/search content for RAG safely in Qdrant?”
-
-#### `_specs/opensearch-index-design.md`
-- **Status**: **DEPRECATED** (legacy OpenSearch Serverless architecture).
-- **Use when**: referencing the legacy OpenSearch indexes/mappings and retrieval rules during migration/cleanup.
-- **Answers**: “How did the OpenSearch-based RAG store/search content?”
-
-#### `_specs/ingestion-pipeline.md`
-- **Use when**: building the ingestion CLI, chunking/embedding, exporting UI content index JSON, and indexing/upserting vectors into Qdrant.
-- **Answers**: “How do we turn markdown into searchable chunks + UI artifacts?”
-- **Depends on**: `_specs/qdrant-index-design.md` for payload schema, vector dimensions, and indexing rules.
+- `_specs/chat-flow.md`
+  - **Use when**: conversational stages, chip behavior, server-driven UI transitions, tab focus policy, share suggestion behavior.
+  - **Answers**: “How should the conversation evolve and drive the UI?”
 
 ---
 
-### Engineering quality guidelines (apply to all work)
+## Chat API + artifacts (contract)
 
-- **Prefer durable fixes over hacks**: address root causes, avoid brittle special-cases, don’t “just make it work” if it creates future traps.
-- **Keep changes scoped**: smallest coherent diff that satisfies the spec; avoid unrelated refactors.
-- **Maintain consistency**: match existing patterns (Astro/React/Tailwind conventions, naming, file organization).
-- **Type safety & validation**: use TypeScript types; validate external inputs/JSON boundaries (especially for planned `/chat` contract).
-- **Accessibility & UX**: preserve keyboard UX, focus states, contrast; avoid regressions to the chat flow.
-- **Performance & correctness**: avoid unnecessary rerenders, large bundles, and unbounded loops; keep chat UI responsive.
-- **Testing/verification**: add/adjust lightweight checks where practical; at minimum, verify against the spec’s acceptance criteria and key user flows.
-- **Document decisions**: when making tradeoffs (MVP vs nice-to-have), note it briefly in code comments or the relevant spec.
+Use these when implementing/changing `/api/chat` and artifact generation:
+
+- `_specs/chat-api-rag-contract.md`
+  - **Use when**: request/response JSON (including `ui.view`, `activeTab`, `chips`, `hints.suggestShare`) and artifact shapes.
+  - **Answers**: “What does the API return and what must be validated?”
+  - **Depends on**: `_specs/qdrant-index-design.md` for payload/schema rules.
+
+---
+
+## Retrieval schema + ingestion (content → RAG)
+
+Use these when adjusting what gets stored, retrieved, and how content is authored/chunked:
+
+- `_specs/qdrant-index-design.md`
+  - **Use when**: collection payload schema (metadata + chunks) and retrieval constraints (e.g., background never becomes UI-visible experience).
+  - **Answers**: “What fields exist in the vector store and what are the retrieval rules?”
+
+- `_specs/ingestion-pipeline.md`
+  - **Use when**: markdown frontmatter expectations, chunking strategy, what gets embedded, and how to improve proof-sheet style retrieval.
+  - **Answers**: “How do we turn markdown into chunks + metadata for RAG?”
+
+---
+
+## Runtime / infra (deployment + state)
+
+Use these when changing deployment, routing, or persisted state:
+
+- `_specs/runtime-architecture.md`
+  - **Use when**: reverse proxy routing, deployment topology, and share snapshot storage (DynamoDB).
+  - **Answers**: “Where does state live and how is traffic routed?”
+
+- `_specs/repo-structure.md`
+  - **Use when**: repo layout boundaries (ui vs api vs ingest vs infra vs shared).
+  - **Answers**: “Where does this code live?”
+
+---
+
+## Archived / legacy specs (do not include by default)
+
+Archived specs live under `_specs/_archive/`:
+- Legacy v1 product/UI docs (`01-05`)
+- Legacy OpenSearch design (`opensearch-index-design.md`)
+
+Only use these if explicitly asked to reference or migrate legacy behavior.
 
 

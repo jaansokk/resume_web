@@ -1,3 +1,8 @@
+## ARCHIVED
+Archived during v2 spec consolidation. v2 styling is currently best expressed by the working UI (e.g., `ConceptA`) and `user-flow-v2.md` interaction notes.
+
+---
+
 ## UI style (v2 direction)
 
 ### Design constraints (must)

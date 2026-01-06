@@ -28,6 +28,8 @@ For `background`:
 ### Optional frontmatter fields
 All types:
 - `keywords[]`, `heroImage`, `gallery[]`, `updatedAt`
+ - `urlPath` (canonical UI path for the item; optional)
+ - `highlights[]` (optional, curated proof points; short bullets)
 
 Experience/projects:
 - `startDate`, `endDate`
@@ -39,6 +41,20 @@ Background:
 
 Notes:
 - For `background`, `company/role/period` are not required and may be absent.
+
+---
+
+## Authoring guidance (to support v2 “Relevant Experience” proof sheets)
+
+The v2 UI expects the backend to generate **grouped, evidence-backed highlights** (metrics/achievements) for “Relevant Experience”.
+
+To improve retrieval and grounding quality:
+- Prefer explicit **numbers** and measurable outcomes in the content (e.g., “reduced X by 18%”).
+- Use bullet lists under clear headings (chunking preserves bullets).
+- Consider adding `highlights[]` in frontmatter for curated proof points (optional).
+- When possible, include:
+  - constraints (“with limited data”, “in regulated context”, “2-week timeline”)
+  - your role/ownership (“I owned…”, “I led…”)
 
 ---
 
@@ -175,4 +191,4 @@ Local dev is recommended for iterating on payload schema and end-to-end retrieva
 
 ## DEPRECATED: OpenSearch indexing references
 If you still need the legacy OpenSearch pipeline during migration/cleanup, see:
-- `_specs/opensearch-index-design.md`
+- `_specs/_archive/opensearch-index-design.md`

@@ -57,12 +57,23 @@ chat is short, surgical
 - “Two quick checks so I don’t hallucinate the fit: …”
 - User answers → artifact updates instantly (like a live doc, typing animation)
 
+**Tab focus (LLM-driven)**
+- Split view always has both tabs (Fit Brief + Relevant Experience).
+- The AI can recommend focusing the user on one tab per turn (e.g., start on Relevant Experience when evidence is the best persuasion).
+- The user can always switch tabs manually.
+
+**Share link semantics**
+- The shareable link is created **only on request** (via the Share modal).
+- The link points to a public route: `/c/{shareId}`.
+- The shared view is an **immutable snapshot** (no writebacks).
+- If someone continues chatting from a shared view, it creates a **new conversation (fork)** with a new conversation ID.
+
 ---
 
 ### Aesthetic + interaction notes to get that “premium reveal” feel
 These are the small choices that make it feel “designed,” not “assembled”:
 - **One strong action per screen.** Avoid “nav + sections + chat + buttons” all at once.
-- **Motion with purpose:** transitions that *reframe* the interface (demo → Q&A, lens → tailored layout, chat → artifact).
+- **Motion with purpose:** transitions that *reframe* the interface (handshake/first screen → chat → artifact).
 - **Typography hierarchy that’s ruthless:** giant headline, tiny supporting line, no mid-sized mush.
 - **Evidence as cards/sheets, not paragraphs:** every claim links to a proof “sheet” with outcomes + constraints + your role.
 

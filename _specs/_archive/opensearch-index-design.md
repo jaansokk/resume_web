@@ -1,3 +1,8 @@
+## ARCHIVED
+Legacy OpenSearch Serverless architecture reference. Current baseline is Qdrant (see `_specs/qdrant-index-design.md`).
+
+---
+
 ## DEPRECATED (legacy OpenSearch Serverless architecture)
 This spec is kept for migration/cleanup reference only.
 
@@ -104,7 +109,6 @@ Notes:
 
 ---
 
-
 ### 2) `content_chunks_v1` (RAG chunks)
 Many documents per item, including background.
 
@@ -149,8 +153,6 @@ PUT content_chunks_v1
 Notes:
 - For MVP we keep engine/method defaults (OpenSearch Serverless tutorial defaults).
 - If you later need faster + better filtering behavior, revisit the mapping to use a specific engine/method.
-
-
 
 ---
 
@@ -202,7 +204,6 @@ When computing `relatedSlugs`:
   - `uiVisible=true`
 - Never surface `background` slugs in the left panel.
 
-
 ---
 
 ## “Related items” selection rule (for UI)
@@ -222,3 +223,5 @@ Given retrieved chunk hits:
   - Switch aliases (optional) or update env var `CHUNKS_INDEX=content_chunks_v2`.
 - If you later decide background should be stored separately (e.g., different retention or weighting),
 you can move it to a dedicated index `background_chunks_v1`. For MVP, keep it unified to reduce complexity.
+
+

@@ -1,34 +1,42 @@
-## Goal
-Define the MVP `/chat` API contract and RAG flow for a **self-hosted chat API service** running on a single **AWS Lightsail instance**, using **Qdrant** for vector retrieval, fronted by a **reverse proxy** (Caddy or Nginx).
+## Chat API + RAG contract (v2)
 
-Key requirements:
-- UI sends last N messages each request (client-managed memory).
-- Backend uses Qdrant vector retrieval + LLM generation.
-- LLM-driven tone + classification + “related items” selection.
-- Include `background` content for LLM context, but never present it as a UI artifact.
-- Response is structured JSON so UI is stable.
+This doc defines the **public API contract** for chat + artifact generation:
+- request/response JSON shapes
+- server-driven UI directives
+- artifact models (Fit Brief + Relevant Experience)
+- share snapshot lifecycle (immutable permalink)
 
-Notes:
-- The UI should call the API **via same-origin** reverse proxy (recommended): `POST /api/chat`.
-- The chat service itself may expose `POST /chat` internally; the reverse proxy routes `/api/chat` → service `/chat`.
+Runtime/infra choices (reverse proxy, hosting, DynamoDB table details) live in:
+- `_specs/runtime-architecture.md`
+
+Retrieval storage schema lives in:
+- `_specs/qdrant-index-design.md`
 
 ---
 
 ## Endpoints (MVP)
 
-### POST /api/chat (recommended public endpoint)
-Generates next assistant message + UI directives.
+### 1) `POST /api/chat`
+Generates:
+- next assistant message
+- updated artifacts (Fit Brief + Relevant Experience)
+- UI directives (chat vs split)
+- UX hints (e.g. suggest which split tab to focus, suggest Share)
 
-Request (suggested):
+#### Request
+
 ```json
 {
   "conversationId": "uuid-v4",
   "client": {
     "origin": "https://your-domain.example.com",
-    "page": { "path": "/experience/guardtime", "activeSlug": "guardtime-po" }
+    "page": { "path": "/v2", "referrerShareId": null },
+    "ui": {
+      "view": "chat",
+      "split": { "activeTab": "brief" }
+    }
   },
   "messages": [
-    { "role": "system", "text": "optional short client context" },
     { "role": "user", "text": "..." },
     { "role": "assistant", "text": "..." }
   ]
@@ -36,191 +44,206 @@ Request (suggested):
 ```
 
 Rules:
-- UI should send only the last ~8–20 messages (bounded).
-- Optionally include a rolling summary later (not required in MVP).
-- Response (suggested):
+- The UI sends the last ~8–20 messages (bounded).
+- The UI includes the current `client.ui` so the model can be tactful (e.g., don’t keep suggesting the other tab every turn).
+- `referrerShareId` is optional and only used for analytics/tone (“came from a shared link”).
+
+#### Response
 
 ```json
 {
   "assistant": { "text": "..." },
-
-  "classification": "new_opportunity" | "general_talk",
-  "tone": "warm" | "direct" | "neutral" | "enthusiastic",
-
-  "related": [
-    { "slug": "positium-mobility", "reason": "..." },
-    { "slug": "guardtime-po", "reason": "..." }
-  ],
-
-  "citations": [
-    { "type": "experience", "slug": "guardtime-po", "chunkId": 3 },
-    { "type": "background", "slug": "principles", "chunkId": 1 }
-  ],
-
-  "next": {
-    "offerMoreExamples": true,
-    "askForEmail": false
+  "ui": {
+    "view": "chat"
+  },
+  "hints": {
+    "suggestShare": false,
+    "suggestTab": null
+  },
+  "chips": ["B2B SaaS product", "Consumer fintech", "AI/ML platform"],
+  "artifacts": {
+    "fitBrief": {
+      "title": "Fit brief — Jaan Sokk",
+      "sections": [
+        { "id": "need", "title": "What I think you need", "content": "..." },
+        { "id": "proof", "title": "Where I’ve done this before", "content": "..." }
+      ]
+    },
+    "relevantExperience": {
+      "groups": [
+        {
+          "title": "Most relevant",
+          "items": [
+            {
+              "slug": "guardtime-po",
+              "type": "experience",
+              "title": "GuardTime",
+              "role": "Product Owner",
+              "period": "2024–2025",
+              "bullets": [
+                "..."
+              ],
+              "whyRelevant": "Optional one-liner"
+            }
+          ]
+        }
+      ]
+    }
   }
 }
 ```
 
-UI behavior:
-- Use related[].slug to drive the left panel (cards/tabs).
-- Never display background as cards/tabs; ignore type="background" for any UI artifact selection.
-- Citations are optional for debugging; if shown, UI should hide background citations by default.
-- If slugs are invalid, backend must drop them and return fallback slugs.
-
-
-
-## Explicit end-to-end flow (who calls what)
-
-### Actors
-- **UI (browser on the site)**: holds chat memory (last N messages) and calls `/api/chat`.
-- **Reverse proxy (Caddy)**: terminates TLS and routes `/api/*` to the chat API service.
-- **Chat API service (`/chat`)**: orchestrator; validates input/output, calls OpenAI + Qdrant, enforces rules (e.g., background not surfaced as UI items).
-- **OpenAI Embeddings**: turns retrieval text into a vector.
-- **Qdrant**: vector store over content chunks, returns top chunk hits.
-- **OpenAI Chat Model**: generates structured JSON output (classification/tone/assistant text/related slugs).
-
-### Preconditions (outside the request)
-- Ingestion has created and populated:
-  - `content_items_v1` (metadata: experience/project/background)
-  - `content_chunks_v1` (chunk embeddings: experience/project/background)
-- Background items exist only for LLM context and are either:
-  - flagged `uiVisible=false` in metadata, and/or
-  - excluded from any UI-facing export (e.g., `content-index.json`)
-
-### Sequence (single user message)
-1) **UI → Reverse proxy → Chat API service**: `POST /api/chat`
-   - UI includes `messages[]` (last N turns) so Chat API has conversational context.
-   - UI includes `client.page` so the model can optionally tailor responses (“I’m on your Guardtime page…”).
-
-2) **Chat API service → OpenAI Chat (Router)**
-   - Purpose: make the experience feel LLM-driven:
-     - classification (`new_opportunity` vs `general_talk`)
-     - tone/style direction
-     - retrieval query rewrite for vector search (“what should we search for?”)
-     - stage flags (`offerMoreExamples`, `askForEmail`)
-   - Output: strict JSON, e.g.:
-     - `classification`, `tone`, `retrievalQuery`, `suggestedRelatedSlugs`, `next{...}`
-   - Validation: `suggestedRelatedSlugs` must be experience/project only (never background).
-
-3) **Chat API service → OpenAI Embeddings**: compute retrieval vector
-   - Input text is either:
-     - router `retrievalQuery`, or
-     - last user message (fallback)
-   - Output: `queryEmbedding: number[]` with length `EMBEDDING_DIM`
-
-4) **Chat API service → Qdrant**: vector search in `content_chunks_v1`
-   - Service sends a vector search using the embedding vector.
-   - For MVP, retrieve a larger candidate pool (e.g., `k=30..50`) for better post-processing.
-
-5) **Chat API service post-processes retrieval results**
-   - Split hits by `type`:
-     - **experience/project**: primary evidence for examples and factual claims
-     - **background**: secondary context (principles/books/preferences)
-   - Enforce caps:
-     - `maxBackgroundChunks = 2`
-     - `maxMainChunks = 10` (experience/project)
-   - Compute candidate related slugs **only from experience/project hits**:
-     - group hits by `slug`
-     - rank by score aggregation or hit count
-     - take top 3–6 slugs
-   - Never compute UI-related slugs from background hits.
-
-6) **Chat API service → OpenAI Chat (Answer)**: generate grounded assistant response
-   - Inputs:
-     - recent messages (from UI)
-     - router output (classification/tone/flags) if router used
-     - selected retrieved chunks (type, slug, chunkId, section, text)
-   - Instructions:
-     - use retrieved text as source of truth for experience/project claims
-     - background may influence tone/preferences but should not invent facts
-     - if insufficient info, ask 1 clarifying question
-     - return strict JSON: `assistant.text`, `classification`, `tone`, `related[]`, `citations[]`, `next{...}`
-
-7) **Chat API service validates and sanitizes response JSON**
-   - Validate JSON schema (zod).
-   - Validate `related[].slug`:
-     - exists in `content_items_v1` (or other canonical source)
-     - is NOT background
-   - If invalid/empty:
-     - fallback to top slugs from step 5 (experience/project only)
-
-8) **Chat API service → UI**: return final JSON
-   - UI appends `assistant.text` to chat
-   - UI updates left panel using `related[]`
-   - UI may store/display citations (optional; hide background by default)
+Rules:
+- `ui.view` is **server-driven**:
+  - `"chat"` = single-column
+  - `"split"` = workspace (chat + left tabs)
+- `hints.suggestTab` is an **LLM/server suggestion** for which split tab to focus:
+  - `"brief"` or `"experience"` means “subtly highlight that tab”
+  - `null` means “no suggestion”
+  - UI should not auto-switch tabs purely based on this hint (user remains in control).
+- `chips[]` are optional (UX acceleration).
+- `hints.suggestShare` is optional:
+  - `true` means “it may be a good moment to share” (UI can subtly highlight the Share button)
+  - it does not open the modal; Share remains user-initiated.
+- Artifacts are returned as **rendered state** (not diffs) in MVP.
 
 ---
 
-## RAG pipeline summary (MVP)
+### 2) `POST /api/share`
+Creates an **immutable share snapshot** and returns a permalink.
 
-### Step 1) Router LLM call (structured JSON) — optional but recommended
-- Output: classification, tone, retrievalQuery, next-step flags, optional suggested related slugs.
-- Validation: never allow background slugs in related.
+The UI should call this only after the user provides **LinkedIn OR email** in the Share modal.
 
-### Step 2) Retrieval (vector search)
-- Embed retrieval text (OpenAI embeddings).
-- Vector search Qdrant `content_chunks_v1`.
-- Cap background chunks; prioritize experience/project chunks.
+#### Request
 
-### Step 3) Answer LLM call (grounded generation)
-- Provide retrieved chunks as context.
-- Return strict JSON response for UI.
+```json
+{
+  "createdByContact": "linkedin.com/in/yourprofile-or-email@example.com",
+  "snapshot": {
+    "conversationId": "uuid-v4",
+    "createdAt": "2026-01-06T12:34:56.000Z",
+    "ui": {
+      "view": "split",
+      "split": { "activeTab": "brief" }
+    },
+    "messages": [
+      { "role": "user", "text": "..." },
+      { "role": "assistant", "text": "..." }
+    ],
+    "artifacts": {
+      "fitBrief": { "title": "...", "sections": [] },
+      "relevantExperience": { "groups": [] }
+    }
+  }
+}
+```
 
-### Step 4) Validate + return
-- zod validation
-- slug validation
-- fallback behavior
+Rules:
+- Snapshot stores **rendered artifacts only** (no retrieval citations).
+- The server must validate and sanitize `snapshot`:
+  - bound `messages` length
+  - validate artifact shapes
+  - ensure `ui` values are valid
 
----
+#### Response
 
-## Hosting / networking note (Lightsail + reverse proxy)
-Recommended:
-- Serve UI and `/api/*` from the **same domain**.
-- Reverse proxy terminates TLS and routes `/api/*` to the chat API service container.
-- This avoids browser CORS complexity entirely.
+```json
+{
+  "shareId": "opaque-id",
+  "path": "/c/opaque-id"
+}
+```
 
----
-
-## Env vars (MVP)
-- OPENAI_API_KEY
-- OPENAI_CHAT_MODEL
-- OPENAI_EMBED_MODEL
-- EMBEDDING_DIM
-- QDRANT_URL=http://qdrant:6333 (or http://127.0.0.1:6333)
-- QDRANT_COLLECTION_ITEMS=content_items_v1
-- QDRANT_COLLECTION_CHUNKS=content_chunks_v1
-
-Optional (only if you expose API cross-origin instead of same-origin proxying):
-- ALLOWED_ORIGINS=https://your-domain.example.com
-
-Optional tuning:
-- MAX_BACKGROUND_CHUNKS=4
-- MAX_MAIN_CHUNKS=10
-- RETRIEVAL_K=40
-
----
-
-## Observability (MVP)
-Log per request:
-- conversationId
-- latency: embed, search, router, answer
-- #chunks retrieved, top slugs
-Never log:
-- OPENAI_API_KEY
-- full user transcript in production logs (optional: truncate)
+Rules:
+- Share links are guess-resistant opaque IDs.
+- Share links **never expire**.
 
 ---
 
-## DEPRECATED: Legacy Lambda + OpenSearch Serverless architecture
-This section is kept only for migration/cleanup reference.
+### 3) `GET /api/share/{shareId}`
+Fetches a previously created share snapshot for rendering `/c/{shareId}`.
 
-Legacy actors:
-- **API Gateway**: HTTPS entry point.
-- **Lambda (`/chat`)**: orchestrator.
-- **OpenSearch Serverless**: vector store.
+#### Response
 
-Legacy notes:
-- The new baseline replaces OpenSearch with Qdrant and runs the orchestrator as a long-lived service on a Lightsail instance behind a reverse proxy.
+```json
+{
+  "shareId": "opaque-id",
+  "createdAt": "2026-01-06T12:34:56.000Z",
+  "snapshot": {
+    "conversationId": "uuid-v4",
+    "ui": { "view": "split", "split": { "activeTab": "brief" } },
+    "messages": [],
+    "artifacts": {
+      "fitBrief": { "title": "...", "sections": [] },
+      "relevantExperience": { "groups": [] }
+    }
+  }
+}
+```
+
+Rules:
+- This is a **read-only snapshot**.
+- If the user continues chatting from `/c/{shareId}`, the UI starts a new conversation ID and calls `POST /api/chat`.
+- Fork does **not** inherit any captured LinkedIn/email.
+
+---
+
+## Artifact models (normative)
+
+### Fit Brief
+`fitBrief.sections[]` is a list of sections. Sections may be omitted if:
+- not enough evidence
+- not enough confidence
+
+The model must prefer omission over hallucination.
+
+Suggested section IDs (initial template):
+- `need` — What I think you need
+- `proof` — Where I’ve done this before
+- `risks` — Risks I’d watch
+- `plan` — First 30/60/90 days
+- `questions` — Questions I’d ask in interview
+
+### Relevant Experience
+Grouped sections:
+- `relevantExperience.groups[]`
+  - each group has `title` and `items[]`
+
+Each item:
+- references a `slug` and `type` (`experience` or `project`)
+- provides 2–4 grounded bullets (metrics/achievements when possible)
+- can include an optional `whyRelevant`
+
+---
+
+## RAG behavior (MVP summary)
+
+### Retrieval intent (LLM-assisted)
+The service uses an LLM “router” step to produce:
+- a retrieval query rewrite
+- recommended `ui.view` + `ui.split.activeTab`
+- suggested chips
+
+### Vector retrieval
+- Retrieve candidate chunks from the corpus.
+- Use background content for tone/context only; never surface background as “Relevant Experience”.
+
+### Answer + artifact generation
+The model generates:
+- `assistant.text`
+- `ui` directives
+- `artifacts.fitBrief` and `artifacts.relevantExperience`
+
+### Validation / sanitization
+The service must validate response JSON and enforce:
+- `ui.view` and `activeTab` allowed values
+- `relevantExperience` only contains `type in ("experience","project")`
+- bounded lengths (messages, bullets, sections) to keep UI stable
+
+---
+
+## Legacy note
+
+The older Lambda/OpenSearch architecture is deprecated and may be moved to `_specs/_archive/` later.
+
+
