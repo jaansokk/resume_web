@@ -29,6 +29,7 @@ This should be the user flow of the new version
 	2. “Hiring for Product Engineer / AI Engineer”
 	3. “Just browsing”
 	4. “Something else”
+    
 ### Screen 2: First Interaction
 - User clicks a button on Screen 1 → the interface expands into full chat.
 - Still single column.
