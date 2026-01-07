@@ -1,4 +1,9 @@
-export function Header() {
+interface HeaderProps {
+  onContactClick?: () => void;
+  isContactActive?: boolean;
+}
+
+export function Header({ onContactClick, isContactActive }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
       <div className="flex items-center gap-3">
@@ -20,12 +25,17 @@ export function Header() {
         >
           LinkedIn
         </a>
-        <a 
-          href="#" 
-          className="text-xs text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors uppercase tracking-wider"
+        <button
+          type="button"
+          onClick={onContactClick}
+          className={`text-xs transition-colors uppercase tracking-wider ${
+            isContactActive
+              ? 'text-[var(--v2-accent)]'
+              : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
+          }`}
         >
           Contact
-        </a>
+        </button>
       </nav>
     </header>
   );

@@ -15,6 +15,8 @@ interface ChatViewProps {
   isLoading: boolean;
   chips: string[];
   onChipSelect: (chip: string) => void;
+  onContactClick?: () => void;
+  isContactActive?: boolean;
 }
 
 export function ChatView({ 
@@ -24,7 +26,9 @@ export function ChatView({
   onSend, 
   isLoading,
   chips,
-  onChipSelect
+  onChipSelect,
+  onContactClick,
+  isContactActive,
 }: ChatViewProps) {
   const [contentOverflows, setContentOverflows] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -52,7 +56,7 @@ export function ChatView({
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
-      <Header />
+      <Header onContactClick={onContactClick} isContactActive={isContactActive} />
       <BackgroundOverlay />
 
       {/* Main content area */}

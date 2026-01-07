@@ -19,6 +19,8 @@ interface SplitViewProps {
   showModal: boolean;
   onModalOpen: () => void;
   onModalClose: () => void;
+  onContactClick?: () => void;
+  isContactActive?: boolean;
 }
 
 export function SplitView({ 
@@ -32,11 +34,13 @@ export function SplitView({
   artifacts,
   showModal,
   onModalOpen,
-  onModalClose
+  onModalClose,
+  onContactClick,
+  isContactActive,
 }: SplitViewProps) {
   return (
     <div className="v2-concept h-screen flex flex-col overflow-hidden">
-      <Header />
+      <Header onContactClick={onContactClick} isContactActive={isContactActive} />
       
       {/* Split view - fixed height, no page scroll */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden pt-14">

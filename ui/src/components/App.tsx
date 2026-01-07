@@ -5,6 +5,7 @@ import type { ViewMode, Message } from './types';
 import { HandshakeView } from './views/HandshakeView';
 import { ChatView } from './views/ChatView';
 import { SplitView } from './views/SplitView';
+import { ContactView } from './views/ContactView';
 
 export default function ConceptAApp() {
   const [conversationId] = useState(() => uuidv4());
@@ -12,10 +13,19 @@ export default function ConceptAApp() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('handshake');
+  const [lastNonContactView, setLastNonContactView] = useState<Exclude<ViewMode, 'contact'>>('handshake');
   const [chips, setChips] = useState<string[]>([]);
   const [artifacts, setArtifacts] = useState<Artifacts | null>(null);
   const [activeTab, setActiveTab] = useState<'brief' | 'experience'>('brief');
   const [showModal, setShowModal] = useState(false);
+
+  const toggleContact = () => {
+    setViewMode((curr) => {
+      if (curr === 'contact') return lastNonContactView;
+      setLastNonContactView(curr);
+      return 'contact';
+    });
+  };
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -105,6 +115,8 @@ export default function ConceptAApp() {
           onInputChange={setInputValue}
           onSend={handleSend}
           isLoading={isLoading}
+          onContactClick={toggleContact}
+          isContactActive={false}
         />
       );
 
@@ -118,6 +130,8 @@ export default function ConceptAApp() {
           isLoading={isLoading}
           chips={chips}
           onChipSelect={handleChipSelect}
+          onContactClick={toggleContact}
+          isContactActive={false}
         />
       );
 
@@ -135,8 +149,13 @@ export default function ConceptAApp() {
           showModal={showModal}
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}
+          onContactClick={toggleContact}
+          isContactActive={false}
         />
       );
+
+    case 'contact':
+      return <ContactView onClose={toggleContact} />;
 
     default:
       return null;

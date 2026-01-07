@@ -1,4 +1,4 @@
-export type ViewMode = 'handshake' | 'chat' | 'split';
+export type ViewMode = 'handshake' | 'chat' | 'split' | 'contact';
 
 export interface Message {
   role: 'user' | 'assistant';
