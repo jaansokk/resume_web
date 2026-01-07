@@ -4,7 +4,8 @@ import json
 import os
 from typing import Any
 
-from .models import ChatRequest, ChatResponse
+from .models import ChatRequest, ChatResponse, UIDirective, UISplit, Hints, AssistantResponse
+from .models import Artifacts, FitBrief, FitBriefSection, RelevantExperience, RelevantExperienceGroup, RelevantExperienceItem
 from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
 from .qdrant_client import QdrantClient
@@ -55,20 +56,31 @@ class ChatPipeline:
         page_context = ""
         if page and page.path:
             page_context = f"\nUser is currently on page: {page.path}"
-            if page.activeSlug:
-                page_context += f" (viewing: {page.activeSlug})"
 
-        system_prompt = f"""You are a router for a resume/portfolio chat system. Analyze the user's message and return a JSON object with:
+        # Detect current conversation stage based on message count and client UI state
+        message_count = len(req.messages)
+        current_view = "chat"
+        if req.client and req.client.ui:
+            current_view = req.client.ui.view
 
-1. **classification**: "new_opportunity" or "general_talk"
-2. **tone**: "warm", "direct", "neutral", or "enthusiastic"
-3. **retrievalQuery**: A rewritten query optimized for vector search to find relevant experience/project examples (1-2 sentences)
-4. **suggestedRelatedSlugs**: Array of 0-3 slug strings for relevant experience/project items (optional)
-5. **next**: Object with:
-   - "offerMoreExamples": boolean
-   - "askForEmail": boolean
+        system_prompt = f"""You are a router for a resume/portfolio chat system. Analyze the user's message and conversation context, then return a JSON object with:
 
-{page_context}
+1. **retrievalQuery**: A rewritten query optimized for vector search to find relevant experience/project examples (1-2 sentences)
+2. **ui**: Object with:
+   - "view": "chat" or "split" (recommend "split" after 2-4 meaningful exchanges when you have enough context to start producing artifacts)
+   - "split": {{"activeTab": "brief" or "experience"}} (only if view is "split")
+3. **chips**: Array of 3-4 suggested follow-up phrases (strings) that help guide the conversation. Can be empty if an open-ended response is better.
+4. **hints**: Object with:
+   - "suggestTab": "brief" or "experience" or null (subtle hint for which tab to focus when in split view)
+
+Context:
+- Current message count: {message_count}
+- Current view: {current_view}{page_context}
+
+Guidelines:
+- First message: stay in "chat" view, provide chips to help clarify intent/domain
+- After 2-4 messages with meaningful context: transition to "split" view
+- In split view: continue providing relevant chips and optionally suggest which tab is most relevant
 
 Return ONLY valid JSON, no markdown formatting."""
 
@@ -92,24 +104,16 @@ Return ONLY valid JSON, no markdown formatting."""
         except Exception:
             out = {}
 
-        classification = out.get("classification", "general_talk")
-        if classification not in ("new_opportunity", "general_talk"):
-            classification = "general_talk"
-        tone = out.get("tone", "neutral")
-        if tone not in ("warm", "direct", "neutral", "enthusiastic"):
-            tone = "neutral"
         retrieval_query = out.get("retrievalQuery") or last_user_text
-        next_flags = out.get("next") if isinstance(out.get("next"), dict) else {}
+        ui_directive = out.get("ui") if isinstance(out.get("ui"), dict) else {"view": "chat"}
+        chips = out.get("chips") if isinstance(out.get("chips"), list) else []
+        hints = out.get("hints") if isinstance(out.get("hints"), dict) else {}
 
         return {
-            "classification": classification,
-            "tone": tone,
             "retrievalQuery": retrieval_query,
-            "suggestedRelatedSlugs": out.get("suggestedRelatedSlugs") or [],
-            "next": {
-                "offerMoreExamples": bool(next_flags.get("offerMoreExamples", False)),
-                "askForEmail": bool(next_flags.get("askForEmail", False)),
-            },
+            "ui": ui_directive,
+            "chips": chips,
+            "hints": hints,
         }
 
     def _answer(self, *, req: ChatRequest, router_out: dict[str, Any], retrieval_results: dict[str, Any]) -> dict[str, Any]:
@@ -127,61 +131,77 @@ Return ONLY valid JSON, no markdown formatting."""
             context_parts.append(f"{label}\n{text}")
 
         context_text = "\n\n---\n\n".join(context_parts)
-        classification = router_out.get("classification", "general_talk")
-        tone = router_out.get("tone", "neutral")
-        next_flags = router_out.get("next", {})
+        ui_directive = router_out.get("ui", {"view": "chat"})
+        chips = router_out.get("chips", [])
+        hints = router_out.get("hints", {})
 
-        tone_guidance_map = {
-            "warm": "Be friendly, personable, and approachable. Use a conversational, warm tone.",
-            "direct": "Be concise, professional, and to the point. Avoid unnecessary pleasantries.",
-            "neutral": "Be professional and balanced. Use a neutral, informative tone.",
-            "enthusiastic": "Be energetic and positive. Show genuine interest and excitement.",
-        }
-        tone_guidance = tone_guidance_map.get(tone, tone_guidance_map["neutral"])
+        # Determine if we need to produce artifacts
+        should_produce_artifacts = ui_directive.get("view") == "split"
 
-        classification_guidance = {
-            "new_opportunity": """This appears to be a new opportunity (hiring, project, contract).
-- Confirm interest and ask 1 clarifying question (role/company/problem)
-- Be helpful and show relevant experience
-- Keep response scannable and PM-oriented""",
-            "general_talk": """This is general conversation or browsing.
-- Invite browsing or ask what they want to explore
-- Be helpful and informative
-- Keep responses short and scannable""",
-        }.get(classification, "")
-
-        system_prompt = f"""You are a helpful assistant representing a PM/PO professional's portfolio/resume website.
-
-{tone_guidance}
-
-{classification_guidance}
+        system_prompt = f"""You are a helpful assistant representing Jaan Sokk's PM/PO professional portfolio/resume website.
 
 **Context from portfolio content:**
 {context_text}
 
+**Current UI state:**
+- View: {ui_directive.get("view", "chat")}
+- Producing artifacts: {"yes" if should_produce_artifacts else "no"}
+
 **Rules:**
 - Use retrieved text as the source of truth for experience/project claims
 - Background content may influence tone/preferences but should not invent facts
-- If insufficient info, ask 1 clarifying question
+- If insufficient info, ask 1-2 short clarifying questions
 - Keep responses short, scannable, and PM-oriented
 - Never mention "background" content explicitly in your response
 
 **Response format (JSON):**
 {{
-  "assistant": {{"text": "Your response text here"}},
-  "classification": "{classification}",
-  "tone": "{tone}",
-  "related": [
-    {{"slug": "slug-name", "reason": "Brief reason why this is relevant"}}
-  ],
-  "citations": [
-    {{"type": "experience", "slug": "slug-name", "chunkId": 1}}
-  ],
-  "next": {{
-    "offerMoreExamples": {str(bool(next_flags.get("offerMoreExamples", False))).lower()},
-    "askForEmail": {str(bool(next_flags.get("askForEmail", False))).lower()}
+  "assistant": {{"text": "Your response text here (2-3 sentences max)"}},
+  "ui": {{
+    "view": "{ui_directive.get("view", "chat")}",
+    "split": {{"activeTab": "{ui_directive.get("split", {}).get("activeTab", "brief")}"}}
+  }},
+  "hints": {{
+    "suggestTab": null or "brief" or "experience"
+  }},
+  "chips": {json.dumps(chips)},
+  "artifacts": {{
+    "fitBrief": {{
+      "title": "Fit Brief — Jaan Sokk / [inferred role]",
+      "sections": [
+        {{"id": "need", "title": "What I think you need", "content": "..."}},
+        {{"id": "proof", "title": "Where I've done this before", "content": "..."}},
+        {{"id": "risks", "title": "Risks I'd watch", "content": "..."}},
+        {{"id": "plan", "title": "First 30/60/90 days", "content": "..."}},
+        {{"id": "questions", "title": "Questions I'd ask in interview", "content": "..."}}
+      ]
+    }},
+    "relevantExperience": {{
+      "groups": [
+        {{
+          "title": "Most relevant",
+          "items": [
+            {{
+              "slug": "slug-from-retrieval",
+              "type": "experience",
+              "title": "Company name",
+              "role": "Role title",
+              "period": "2024-2025",
+              "bullets": ["Specific achievement with metrics", "Another grounded claim"],
+              "whyRelevant": "Brief relevance statement"
+            }}
+          ]
+        }}
+      ]
+    }}
   }}
 }}
+
+**Artifact generation rules (only when view is "split"):**
+- fitBrief: Infer what the user needs based on context; omit sections if not confident
+- relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background")
+- Each experience item must have 2-4 grounded bullets with outcomes/metrics when possible
+- If producing artifacts, keep assistant.text brief (e.g., "Two quick checks so I don't hallucinate the fit: what's the team size, and is this greenfield or existing product?")
 
 Return ONLY valid JSON, no markdown formatting."""
 
@@ -210,65 +230,110 @@ Return ONLY valid JSON, no markdown formatting."""
         retrieval_results: dict[str, Any],
         answer_out: dict[str, Any],
     ) -> dict[str, Any]:
-        classification = answer_out.get("classification") or router_out.get("classification") or "general_talk"
-        if classification not in ("new_opportunity", "general_talk"):
-            classification = "general_talk"
-        tone = answer_out.get("tone") or router_out.get("tone") or "neutral"
-        if tone not in ("warm", "direct", "neutral", "enthusiastic"):
-            tone = "neutral"
-
+        # Assistant text
         assistant = answer_out.get("assistant") if isinstance(answer_out.get("assistant"), dict) else {}
         assistant_text = (assistant.get("text") if isinstance(assistant, dict) else None) or ""
         if not isinstance(assistant_text, str) or not assistant_text.strip():
             assistant_text = "I'd be happy to help! What do you have in mind today?"
 
-        # Citations: use retrieved chunk metadata. Include background for debugging, but UI can hide it.
-        citations: list[dict[str, Any]] = []
-        for c in retrieval_results.get("chunks") or []:
-            ctype = c.get("type")
-            if ctype not in ("experience", "project", "background"):
-                continue
-            citations.append({"type": ctype, "slug": c.get("slug", ""), "chunkId": int(c.get("chunkId", 0))})
+        # UI directive
+        ui_raw = answer_out.get("ui") or router_out.get("ui") or {"view": "chat"}
+        ui_view = ui_raw.get("view") if isinstance(ui_raw, dict) else "chat"
+        if ui_view not in ("chat", "split"):
+            ui_view = "chat"
+        
+        ui_directive: dict[str, Any] = {"view": ui_view}
+        if ui_view == "split":
+            split_raw = ui_raw.get("split") if isinstance(ui_raw, dict) else {}
+            active_tab = split_raw.get("activeTab") if isinstance(split_raw, dict) else "brief"
+            if active_tab not in ("brief", "experience"):
+                active_tab = "brief"
+            ui_directive["split"] = {"activeTab": active_tab}
 
-        # Related: validate that slugs exist and are uiVisible (never background).
-        related_in = answer_out.get("related") if isinstance(answer_out.get("related"), list) else []
-        related_out: list[dict[str, Any]] = []
-        seen: set[str] = set()
+        # Hints
+        hints_raw = answer_out.get("hints") or router_out.get("hints") or {}
+        suggest_tab = hints_raw.get("suggestTab") if isinstance(hints_raw, dict) else None
+        if suggest_tab not in ("brief", "experience", None):
+            suggest_tab = None
 
-        def try_add_slug(slug: str, reason: str | None) -> None:
-            slug = (slug or "").strip()
-            if not slug or slug in seen:
-                return
-            payload = self.qdrant.get_item_by_slug(slug)
-            if not is_ui_visible_item(payload):
-                return
-            related_out.append({"slug": slug, "reason": reason})
-            seen.add(slug)
+        # Chips
+        chips_raw = answer_out.get("chips") or router_out.get("chips") or []
+        chips = [str(c).strip() for c in (chips_raw if isinstance(chips_raw, list) else [])]
+        chips = [c for c in chips if c][:6]  # Limit to 6
 
-        for r in related_in:
-            if not isinstance(r, dict):
-                continue
-            try_add_slug(str(r.get("slug") or ""), (str(r.get("reason")) if r.get("reason") is not None else None))
+        # Artifacts (only if split view)
+        artifacts: dict[str, Any] = {}
+        if ui_view == "split":
+            artifacts_raw = answer_out.get("artifacts") if isinstance(answer_out.get("artifacts"), dict) else {}
+            
+            # Fit Brief
+            fit_brief_raw = artifacts_raw.get("fitBrief") if isinstance(artifacts_raw, dict) else {}
+            if isinstance(fit_brief_raw, dict):
+                sections_raw = fit_brief_raw.get("sections") if isinstance(fit_brief_raw.get("sections"), list) else []
+                sections = []
+                for s in sections_raw[:10]:  # Limit to 10 sections
+                    if isinstance(s, dict) and s.get("id") and s.get("title") and s.get("content"):
+                        sections.append({
+                            "id": str(s["id"]),
+                            "title": str(s["title"])[:100],
+                            "content": str(s["content"])[:2000],
+                        })
+                artifacts["fitBrief"] = {
+                    "title": str(fit_brief_raw.get("title") or "Fit Brief")[:200],
+                    "sections": sections,
+                }
 
-        if not related_out:
-            # Fallback: computed related slugs from retrieval (experience/project only).
-            for slug in (retrieval_results.get("relatedSlugs") or [])[:6]:
-                try_add_slug(str(slug), "Relevant experience")
-
-        next_flags = answer_out.get("next") if isinstance(answer_out.get("next"), dict) else {}
-        if not isinstance(next_flags, dict):
-            next_flags = {}
+            # Relevant Experience (must be grounded and UI-visible)
+            rel_exp_raw = artifacts_raw.get("relevantExperience") if isinstance(artifacts_raw, dict) else {}
+            if isinstance(rel_exp_raw, dict):
+                groups_raw = rel_exp_raw.get("groups") if isinstance(rel_exp_raw.get("groups"), list) else []
+                groups = []
+                for g in groups_raw[:5]:  # Limit to 5 groups
+                    if not isinstance(g, dict):
+                        continue
+                    items_raw = g.get("items") if isinstance(g.get("items"), list) else []
+                    items = []
+                    for item in items_raw[:10]:  # Limit to 10 items per group
+                        if not isinstance(item, dict):
+                            continue
+                        slug = str(item.get("slug") or "")
+                        item_type = str(item.get("type") or "experience")
+                        if item_type not in ("experience", "project"):
+                            continue
+                        # Validate slug exists and is UI-visible
+                        payload = self.qdrant.get_item_by_slug(slug)
+                        if not is_ui_visible_item(payload):
+                            continue
+                        
+                        bullets = item.get("bullets") if isinstance(item.get("bullets"), list) else []
+                        bullets = [str(b).strip() for b in bullets if b][:6]  # Limit to 6 bullets
+                        
+                        items.append({
+                            "slug": slug,
+                            "type": item_type,
+                            "title": str(item.get("title") or "")[:200],
+                            "role": str(item.get("role"))[:200] if item.get("role") else None,
+                            "period": str(item.get("period"))[:100] if item.get("period") else None,
+                            "bullets": bullets,
+                            "whyRelevant": str(item.get("whyRelevant"))[:500] if item.get("whyRelevant") else None,
+                        })
+                    
+                    if items:
+                        groups.append({
+                            "title": str(g.get("title") or "Relevant")[:200],
+                            "items": items,
+                        })
+                
+                if groups:
+                    artifacts["relevantExperience"] = {"groups": groups}
 
         return {
             "assistant": {"text": assistant_text},
-            "classification": classification,
-            "tone": tone,
-            "related": related_out,
-            "citations": citations,
-            "next": {
-                "offerMoreExamples": bool(next_flags.get("offerMoreExamples", False)),
-                "askForEmail": bool(next_flags.get("askForEmail", False)),
+            "ui": ui_directive,
+            "hints": {
+                "suggestShare": False,  # Always false until Share is implemented
+                "suggestTab": suggest_tab,
             },
+            "chips": chips,
+            "artifacts": artifacts,
         }
-
-

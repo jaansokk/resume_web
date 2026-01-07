@@ -5,31 +5,82 @@ export interface ChatApiMessage {
   text: string;
 }
 
+// V2 contract types
+export interface ClientUI {
+  view: 'chat' | 'split';
+  split?: {
+    activeTab: 'brief' | 'experience';
+  };
+}
+
+export interface ClientPage {
+  path: string;
+  referrerShareId?: string | null;
+}
+
 export interface ChatApiRequest {
   conversationId: string;
   client: {
     origin: string;
-    page: {
-      path: string;
-      activeSlug: string | null;
-    };
+    page: ClientPage;
+    ui: ClientUI;
   };
   messages: ChatApiMessage[];
 }
 
-export type ChatClassification = 'new_opportunity' | 'general_talk';
-export type ChatTone = 'warm' | 'direct' | 'neutral' | 'enthusiastic';
+export interface FitBriefSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface FitBrief {
+  title: string;
+  sections: FitBriefSection[];
+}
+
+export interface RelevantExperienceItem {
+  slug: string;
+  type: 'experience' | 'project';
+  title: string;
+  role?: string;
+  period?: string;
+  bullets: string[];
+  whyRelevant?: string;
+}
+
+export interface RelevantExperienceGroup {
+  title: string;
+  items: RelevantExperienceItem[];
+}
+
+export interface RelevantExperience {
+  groups: RelevantExperienceGroup[];
+}
+
+export interface Artifacts {
+  fitBrief?: FitBrief;
+  relevantExperience?: RelevantExperience;
+}
+
+export interface UIDirective {
+  view: 'chat' | 'split';
+  split?: {
+    activeTab: 'brief' | 'experience';
+  };
+}
+
+export interface Hints {
+  suggestShare?: boolean;
+  suggestTab?: 'brief' | 'experience' | null;
+}
 
 export interface ChatApiResponse {
   assistant: { text: string };
-  classification?: ChatClassification;
-  tone?: ChatTone;
-  related?: Array<{ slug: string; reason?: string }>;
-  citations?: Array<{ type: 'experience' | 'project' | 'background'; slug: string; chunkId: number }>;
-  next?: {
-    offerMoreExamples?: boolean;
-    askForEmail?: boolean;
-  };
+  ui: UIDirective;
+  hints?: Hints;
+  chips?: string[];
+  artifacts?: Artifacts;
 }
 
 function getChatApiUrl(): string {
@@ -64,5 +115,3 @@ export async function postChat(payload: ChatApiRequest): Promise<ChatApiResponse
   const raw = await res.json();
   return raw as ChatApiResponse;
 }
-
-

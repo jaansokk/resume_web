@@ -8,14 +8,20 @@ from pydantic import BaseModel, Field
 ChatRole = Literal["system", "user", "assistant"]
 
 
+class ClientUI(BaseModel):
+    view: Literal["chat", "split"] = "chat"
+    split: dict[str, str] | None = None  # {activeTab: "brief" | "experience"}
+
+
 class ClientPage(BaseModel):
     path: str | None = None
-    activeSlug: str | None = None
+    referrerShareId: str | None = None
 
 
 class Client(BaseModel):
     origin: str | None = None
     page: ClientPage | None = None
+    ui: ClientUI | None = None
 
 
 class ChatMessage(BaseModel):
@@ -29,24 +35,56 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(..., min_length=1)
 
 
-ChatClassification = Literal["new_opportunity", "general_talk"]
-ChatTone = Literal["warm", "direct", "neutral", "enthusiastic"]
+# V2 Response models
 
 
-class RelatedItem(BaseModel):
+class FitBriefSection(BaseModel):
+    id: str
+    title: str
+    content: str
+
+
+class FitBrief(BaseModel):
+    title: str
+    sections: list[FitBriefSection] = Field(default_factory=list)
+
+
+class RelevantExperienceItem(BaseModel):
     slug: str
-    reason: str | None = None
+    type: Literal["experience", "project"]
+    title: str
+    role: str | None = None
+    period: str | None = None
+    bullets: list[str] = Field(default_factory=list)
+    whyRelevant: str | None = None
 
 
-class Citation(BaseModel):
-    type: Literal["experience", "project", "background"]
-    slug: str
-    chunkId: int
+class RelevantExperienceGroup(BaseModel):
+    title: str
+    items: list[RelevantExperienceItem] = Field(default_factory=list)
 
 
-class NextFlags(BaseModel):
-    offerMoreExamples: bool = False
-    askForEmail: bool = False
+class RelevantExperience(BaseModel):
+    groups: list[RelevantExperienceGroup] = Field(default_factory=list)
+
+
+class Artifacts(BaseModel):
+    fitBrief: FitBrief | None = None
+    relevantExperience: RelevantExperience | None = None
+
+
+class UISplit(BaseModel):
+    activeTab: Literal["brief", "experience"] = "brief"
+
+
+class UIDirective(BaseModel):
+    view: Literal["chat", "split"] = "chat"
+    split: UISplit | None = None
+
+
+class Hints(BaseModel):
+    suggestShare: bool = False
+    suggestTab: Literal["brief", "experience"] | None = None
 
 
 class AssistantResponse(BaseModel):
@@ -55,10 +93,7 @@ class AssistantResponse(BaseModel):
 
 class ChatResponse(BaseModel):
     assistant: AssistantResponse
-    classification: ChatClassification
-    tone: ChatTone
-    related: list[RelatedItem] = Field(default_factory=list)
-    citations: list[Citation] = Field(default_factory=list)
-    next: NextFlags = Field(default_factory=NextFlags)
-
-
+    ui: UIDirective
+    hints: Hints = Field(default_factory=Hints)
+    chips: list[str] = Field(default_factory=list)
+    artifacts: Artifacts = Field(default_factory=Artifacts)
