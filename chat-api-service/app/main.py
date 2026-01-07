@@ -5,14 +5,17 @@ import logging
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.requests import Request
+from starlette.concurrency import run_in_threadpool
 
-from .models import ChatRequest, ChatResponse
+from .models import ChatRequest, ChatResponse, ContactRequest, ContactResponse
 from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
 from .pipeline import ChatPipeline
 from .qdrant_client import QdrantClient, QdrantConfig
+from .email_sender import load_smtp_config_from_env, send_contact_email
 
 
 log = logging.getLogger("resume_web_chat_api")
@@ -83,6 +86,41 @@ def create_app() -> FastAPI:
         # OpenAI is always needed for embeddings
         # Anthropic or OpenAI needed for chat/router based on MODEL_PROVIDER
         return pipeline.handle(req)
+
+    @app.post("/contact", response_model=ContactResponse)
+    async def contact(req: ContactRequest, request: Request) -> ContactResponse:
+        # Basic bot protection: honeypot should be empty.
+        if (req.website or "").strip():
+            # Pretend success to avoid tipping off bots.
+            return ContactResponse(ok=True)
+
+        try:
+            smtp_config = load_smtp_config_from_env()
+        except Exception as e:
+            log.error("SMTP config error: %s", e)
+            raise HTTPException(status_code=500, detail="Email is not configured") from e
+
+        user_agent = request.headers.get("user-agent")
+        client_ip = request.client.host if request.client else None
+        origin = (request.headers.get("origin") or "").strip() or None
+
+        # Run blocking SMTP I/O in threadpool to keep the event loop responsive.
+        try:
+            await run_in_threadpool(
+                send_contact_email,
+                config=smtp_config,
+                contact=req.contact,
+                message=req.message,
+                origin=origin,
+                page_path=req.pagePath,
+                user_agent=user_agent,
+                client_ip=client_ip,
+            )
+        except Exception:
+            log.exception("Failed sending contact email")
+            raise HTTPException(status_code=502, detail="Failed to send email")
+
+        return ContactResponse(ok=True)
 
     return app
 

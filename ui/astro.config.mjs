@@ -15,6 +15,12 @@ export default defineConfig({
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api\/chat$/, '/chat'),
         },
+        // Same-origin dev proxy: UI calls /api/contact, proxy forwards to FastAPI /contact.
+        '/api/contact': {
+          target: process.env.CHAT_API_PROXY_TARGET || 'http://127.0.0.1:8000',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api\/contact$/, '/contact'),
+        },
       },
     },
   },

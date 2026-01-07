@@ -97,3 +97,19 @@ class ChatResponse(BaseModel):
     hints: Hints = Field(default_factory=Hints)
     chips: list[str] = Field(default_factory=list)
     artifacts: Artifacts = Field(default_factory=Artifacts)
+
+
+# Contact form models
+
+
+class ContactRequest(BaseModel):
+    contact: str = Field(..., min_length=3, max_length=200)  # email or LinkedIn or phone
+    message: str = Field(..., min_length=3, max_length=5000)
+    # Optional metadata to help you debug spam / trace origin
+    pagePath: str | None = None
+    # Honeypot field: should be empty. Bots often fill it.
+    website: str | None = None
+
+
+class ContactResponse(BaseModel):
+    ok: bool = True

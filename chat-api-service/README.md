@@ -34,6 +34,18 @@ The service loads `chat-api-service/.env` and `chat-api-service/.env.local` on s
 - `QDRANT_COLLECTION_ITEMS` (default: `content_items_v1`)
 - `QDRANT_COLLECTION_CHUNKS` (default: `content_chunks_v1`)
 
+**Contact form email (SMTP):**
+- `SMTP_HOST` (required) - e.g. `smtp.zone.eu`
+- `SMTP_PORT` (required) - `465` (SSL/TLS) or `587` (STARTTLS)
+- `SMTP_USE_SSL` (optional) - `true` for port 465 (defaults based on port)
+- `SMTP_USE_STARTTLS` (optional) - `true` for port 587 (defaults based on port)
+- `SMTP_USERNAME` (optional but usually required) - mailbox username/login
+- `SMTP_PASSWORD` (optional but usually required) - mailbox password
+- `SMTP_FROM_EMAIL` (required) - From address used when sending (must match provider rules)
+- `CONTACT_TO_EMAIL` (required) - your destination email (usually your own)
+- `CONTACT_SUBJECT_PREFIX` (optional) - default: `[resume-web] Contact`
+- `SMTP_TIMEOUT_SECONDS` (optional) - default: `10`
+
 ### Install
 
 ```bash

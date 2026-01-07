@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Header } from '../shared/Header';
 import { BackgroundOverlay } from '../shared/BackgroundOverlay';
+import { postContact } from '../../utils/contactApi';
 
 interface ContactViewProps {
   onClose: () => void;
@@ -10,13 +11,14 @@ export function ContactView({ onClose }: ContactViewProps) {
   const [contact, setContact] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
     return contact.trim().length > 0 && message.trim().length > 0;
   }, [contact, message]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -25,8 +27,20 @@ export function ContactView({ onClose }: ContactViewProps) {
       return;
     }
 
-    // UI only (no backend)
-    setIsSubmitted(true);
+    setIsSending(true);
+    try {
+      await postContact({
+        contact,
+        message,
+        pagePath: window.location.pathname,
+        website: '',
+      });
+      setIsSubmitted(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to send message.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -130,21 +144,21 @@ export function ContactView({ onClose }: ContactViewProps) {
                   <button
                     type="button"
                     onClick={onClose}
-                    className="text-xs uppercase tracking-wider text-[var(--v2-text-secondary)] hover:text-[var(--v2-text-secondary)] transition-colors"
+                    className="text-xs uppercase tracking-wider text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
                   >
                     Back
                   </button>
 
                   <button
                     type="submit"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || isSending}
                     className={`rounded-xl px-5 py-3 text-sm font-medium transition-all border ${
                       canSubmit
                         ? 'bg-[var(--v2-accent)] text-black border-transparent hover:opacity-90'
                         : 'bg-black/20 text-[var(--v2-text-secondary)] border-[var(--v2-border)] cursor-not-allowed'
                     }`}
                   >
-                    Send
+                    {isSending ? 'Sending…' : 'Send'}
                   </button>
                 </div>
               </div>
