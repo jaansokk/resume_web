@@ -12,7 +12,7 @@ export function Header({ onContactClick, isContactActive }: HeaderProps) {
       </div>
       <nav className="flex items-center gap-6">
         <a 
-          href="#" 
+          href="/cv" 
           className="text-xs text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors uppercase tracking-wider"
         >
           CV
