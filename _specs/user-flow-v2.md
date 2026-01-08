@@ -49,9 +49,13 @@ Sections animate in one by one (first display):
 - “First 30/60/90 days” (instant credibility)
 - “Questions I’d ask in interview” (power move)
 **Button: "Share"**
+- Share button sits in the same row as the tabs, **aligned right** (to the right of “Fit Brief / Relevant Experience”).
+- Share is **not specific to a single tab**; it shares/exports the workspace (both artifacts).
 Opens modal with 2 steps
 - Great! Let's swap LinkedIn's to stay in touch!Single line input field.
-- Buttons: Copy link to this conversation; Downlad PDF
+- Buttons:
+  - Copy link to this conversation (creates a share snapshot at `/c/{shareId}` that includes both artifacts)
+  - Download PDF (generated from the same snapshot; PDF includes **Fit Brief + Relevant Experience**)
 **Right: chat: **
 chat is short, surgical
 - “Two quick checks so I don’t hallucinate the fit: …”

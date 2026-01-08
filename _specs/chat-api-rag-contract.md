@@ -54,7 +54,8 @@ Rules:
 {
   "assistant": { "text": "..." },
   "ui": {
-    "view": "chat"
+    "view": "split",
+    "split": { "activeTab": "brief" }
   },
   "hints": {
     "suggestShare": false,
@@ -97,6 +98,9 @@ Rules:
 - `ui.view` is **server-driven**:
   - `"chat"` = single-column
   - `"split"` = workspace (chat + left tabs)
+- `ui.split` is **required when** `ui.view="split"`:
+  - `ui.split.activeTab` is `"brief"` or `"experience"` (server recommendation for initial focus)
+- `ui.split` is optional/ignored when `ui.view="chat"`.
 - `hints.suggestTab` is an **LLM/server suggestion** for which split tab to focus:
   - `"brief"` or `"experience"` means “subtly highlight that tab”
   - `null` means “no suggestion”
@@ -140,10 +144,16 @@ The UI should call this only after the user provides **LinkedIn OR email** in th
 
 Rules:
 - Snapshot stores **rendered artifacts only** (no retrieval citations).
+- Snapshot `artifacts` must include both:
+  - `fitBrief`
+  - `relevantExperience`
 - The server must validate and sanitize `snapshot`:
   - bound `messages` length
   - validate artifact shapes
   - ensure `ui` values are valid
+
+PDF note (UX requirement):
+- The “Download PDF” action should generate a PDF from this same share snapshot, and it must include **Fit Brief + Relevant Experience**.
 
 #### Response
 

@@ -114,6 +114,9 @@ When Share is initiated:
 - UI collects LinkedIn OR email (required to unlock share actions).
 - Server creates an immutable share snapshot and returns `shareId`.
 - UI shows a permalink: `/c/{shareId}`.
+- Share actions should operate on the **workspace snapshot** (both artifacts), not just the currently active tab:
+  - Copy link points to a snapshot containing Fit Brief + Relevant Experience.
+  - Download PDF generates a PDF that includes Fit Brief + Relevant Experience.
 
 Shared link behavior:
 - Read-only snapshot.

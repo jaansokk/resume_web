@@ -105,6 +105,7 @@ Within each section:
 ## Share flow (modal, 2-step)
 
 Share is **optional** and initiated by the user (e.g., clicking “Share” in split view).
+Share applies to the **workspace** (both artifacts), not to a single active tab.
 
 ### Step 1: Capture contact (required to proceed)
 Capture **LinkedIn OR email**.
@@ -115,8 +116,10 @@ Capture **LinkedIn OR email**.
 
 ### Step 2: Share actions
 When contact is provided, the system creates an **immutable share snapshot** and reveals:
-- **Copy link**: permalink to the shared conversation at `/c/{shareId}`
-- **Download PDF**: optional (planned)
+- **Copy link**: permalink to the shared conversation at `/c/{shareId}`.
+  - The snapshot includes **messages + rendered Fit Brief + rendered Relevant Experience** (independent of which tab is active).
+- **Download PDF**: generates a PDF artifact from the same share snapshot.
+  - PDF includes **Fit Brief + Relevant Experience**.
 
 **Immutability + forking**
 - Share links never expire.
