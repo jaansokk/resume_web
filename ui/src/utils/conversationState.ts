@@ -32,3 +32,12 @@ export function saveConversationState(state: ConversationState): void {
   }
 }
 
+export function clearConversationState(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+

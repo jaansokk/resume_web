@@ -25,6 +25,17 @@ export function markHasSeenSplit(): void {
   window.dispatchEvent(new Event(NAV_EVENT_NAME));
 }
 
+export function clearHasSeenSplit(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(HAS_SEEN_SPLIT_KEY);
+  } catch {
+    // ignore
+  }
+
+  window.dispatchEvent(new Event(NAV_EVENT_NAME));
+}
+
 export function subscribeNavStateChanged(cb: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
 

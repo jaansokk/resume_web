@@ -5,8 +5,8 @@ import type { Message } from './types';
 import { HandshakeView } from './views/HandshakeView';
 import { ChatView } from './views/ChatView';
 import { SplitView } from './views/SplitView';
-import { markHasSeenSplit } from '../utils/navState';
-import { loadConversationState, saveConversationState } from '../utils/conversationState';
+import { markHasSeenSplit, clearHasSeenSplit } from '../utils/navState';
+import { loadConversationState, saveConversationState, clearConversationState } from '../utils/conversationState';
 
 type MainViewMode = 'handshake' | 'chat' | 'split';
 
@@ -123,6 +123,20 @@ export default function ConceptAApp() {
     setShowModal(false);
   };
 
+  const handleStartOver = () => {
+    // Clear all conversation state
+    clearConversationState();
+    clearHasSeenSplit();
+    
+    // Reset all state to initial values
+    setMessages([]);
+    setInputValue('');
+    setChips([]);
+    setArtifacts(null);
+    setActiveTab('brief');
+    setViewMode('handshake');
+  };
+
   // Render appropriate view based on current mode
   switch (viewMode) {
     case 'handshake':
@@ -162,6 +176,7 @@ export default function ConceptAApp() {
           showModal={showModal}
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}
+          onStartOver={handleStartOver}
         />
       );
 

@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Header } from '../shared/Header';
 import { ChatMessage } from '../chat/ChatMessage';
 import { LoadingIndicator } from '../chat/LoadingIndicator';
 import { ChatInput } from '../chat/ChatInput';
+import { StartOverButton } from '../chat/StartOverButton';
 import { ArtifactsPanel } from '../artifacts/ArtifactsPanel';
 import { ShareModal } from '../modals/ShareModal';
+import { Modal } from '../modals/Modal';
 import type { Message } from '../types';
 import type { Artifacts } from '../../utils/chatApi';
 
@@ -19,6 +22,7 @@ interface SplitViewProps {
   showModal: boolean;
   onModalOpen: () => void;
   onModalClose: () => void;
+  onStartOver: () => void;
 }
 
 export function SplitView({ 
@@ -33,7 +37,22 @@ export function SplitView({
   showModal,
   onModalOpen,
   onModalClose,
+  onStartOver,
 }: SplitViewProps) {
+  const [showStartOverModal, setShowStartOverModal] = useState(false);
+
+  const handleStartOverClick = () => {
+    setShowStartOverModal(true);
+  };
+
+  const handleStartOverConfirm = () => {
+    setShowStartOverModal(false);
+    onStartOver();
+  };
+
+  const handleStartOverCancel = () => {
+    setShowStartOverModal(false);
+  };
   return (
     <div className="v2-concept h-screen flex flex-col overflow-hidden">
       <Header />
@@ -50,6 +69,14 @@ export function SplitView({
         
         {/* Right: Chat */}
         <div className="flex-1 lg:w-1/2 flex flex-col bg-[var(--v2-bg-elevated)] overflow-hidden">
+          {/* Chat heading with Start Over button */}
+          <div className="flex-shrink-0 px-6 py-4 border-b border-[var(--v2-border-subtle)] flex items-center justify-between">
+            <h2 className="text-lg font-medium text-[var(--v2-text)]">
+              {artifacts?.fitBrief?.title || 'Conversation'}
+            </h2>
+            <StartOverButton onClick={handleStartOverClick} />
+          </div>
+          
           {/* Scrollable chat area */}
           <div className="flex-1 overflow-y-auto p-6 pb-4">
             <div className="space-y-6">
@@ -76,6 +103,26 @@ export function SplitView({
       
       {/* Share Modal */}
       <ShareModal isOpen={showModal} onClose={onModalClose} />
+      
+      {/* Start Over Modal */}
+      <Modal
+        isOpen={showStartOverModal}
+        onClose={handleStartOverCancel}
+        title="Start over?"
+        primaryButton={{
+          label: 'Start over',
+          onClick: handleStartOverConfirm,
+          variant: 'destructive',
+        }}
+        secondaryButton={{
+          label: 'Cancel',
+          onClick: handleStartOverCancel,
+        }}
+      >
+        <p className="text-sm text-[var(--v2-text-tertiary)]">
+          This clears the brief + chat and returns to the start screen.
+        </p>
+      </Modal>
     </div>
   );
 }

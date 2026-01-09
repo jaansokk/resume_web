@@ -23,6 +23,9 @@ export function ShareModal({ isOpen, onClose }: ShareModalProps) {
     onClose();
   };
 
+  // Custom modal for Share flow (multi-step with custom layouts)
+  // Note: We keep this custom instead of using the generic Modal component
+  // because it has a 2-step flow with custom input fields and button layouts
   return (
     <div 
       className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in" 

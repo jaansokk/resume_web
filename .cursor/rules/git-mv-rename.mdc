@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Always use `git mv` when moving or renaming files, so the git history remains persistent.
