@@ -5,6 +5,8 @@ import { ChatMessage } from './chat/ChatMessage';
 import type { Message } from './types';
 import type { Artifacts } from '../utils/chatApi';
 import { getShare } from '../utils/shareApi';
+import { markHasSeenSplit } from '../utils/navState';
+import { saveConversationState } from '../utils/conversationState';
 
 function extractShareIdFromPath(pathname: string): string | null {
   // Expect /c/<shareId>
@@ -23,7 +25,17 @@ export default function SharedConversationApp() {
 
   const shareId = useMemo(() => {
     if (typeof window === 'undefined') return null;
-    return extractShareIdFromPath(window.location.pathname);
+    // In production, Caddy rewrites /c/<id> -> /c/ but the browser URL stays /c/<id>,
+    // so pathname extraction works.
+    const fromPath = extractShareIdFromPath(window.location.pathname);
+    if (fromPath) return fromPath;
+    // In local dev (no rewrite), allow /c/?shareId=<id>
+    try {
+      const url = new URL(window.location.href);
+      return url.searchParams.get('shareId');
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -44,8 +56,31 @@ export default function SharedConversationApp() {
         }));
         setMessages(msgs);
         setArtifacts((snap.artifacts as unknown as Artifacts) || null);
-        if (snap.ui?.split?.activeTab === 'experience') setActiveTab('experience');
+        const tab = snap.ui?.split?.activeTab === 'experience' ? 'experience' : 'brief';
+        setActiveTab(tab);
         if ((snap.artifacts as any)?.fitBrief?.title) setTitle((snap.artifacts as any).fitBrief.title);
+
+        // Important UX behavior:
+        // - Mark that the user has "seen split" so the header label becomes "Fit Brief & Experience"
+        // - Seed localStorage conversation state so navigating to /cv and back to "/" doesn't drop the user to Handshake.
+        //   We intentionally "fork" to a new conversationId per spec (shared links shouldn't inherit the original ID).
+        try {
+          markHasSeenSplit();
+          const forkId =
+            typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+              ? crypto.randomUUID()
+              : String(snap.conversationId || 'shared');
+          saveConversationState({
+            conversationId: forkId,
+            viewMode: 'split',
+            messages: msgs,
+            chips: [],
+            artifacts: (snap.artifacts as unknown as Artifacts) || null,
+            activeTab: tab,
+          });
+        } catch {
+          // ignore localStorage issues
+        }
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Failed to load share snapshot.');
