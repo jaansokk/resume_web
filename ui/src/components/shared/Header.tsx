@@ -38,7 +38,7 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
         transparent ? 'bg-transparent' : 'bg-[var(--v2-bg)]/80 backdrop-blur-md',
       ].join(' ')}
     >
-      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+      <div className="px-6 flex items-center justify-between h-14">
         {/* Brand - non-clickable */}
         <div className="flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-[var(--v2-accent)]" />
