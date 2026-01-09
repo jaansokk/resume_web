@@ -1,0 +1,59 @@
+---
+import SharedConversationApp from '../../components/SharedConversationApp';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <title>Shared — Jaan Sokk</title>
+  </head>
+  <body>
+    <SharedConversationApp client:load />
+  </body>
+</html>
+
+<style is:global>
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+  
+  :root {
+    --v2-bg: #0a0a0a;
+    --v2-bg-elevated: #141414;
+    --v2-bg-card: #1a1a1a;
+    --v2-text: #e6e6e6;
+    --v2-text-secondary: #9f9f9f;
+    --v2-text-tertiary: #616161;
+    --v2-accent: #a4c6be;
+    --v2-accent-dim: rgba(164, 198, 190, 0.15);
+    --v2-border: #2a2a2a;
+    --v2-border-subtle: #1e1e1e;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    background: var(--v2-bg);
+    color: var(--v2-text);
+    line-height: 1.6;
+  }
+  
+  .v2-concept {
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--v2-bg);
+    color: var(--v2-text);
+    min-height: 100vh;
+  }
+</style>
+
+

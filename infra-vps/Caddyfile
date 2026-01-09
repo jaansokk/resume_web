@@ -17,6 +17,11 @@
     reverse_proxy api:8000
   }
 
+  # Share links are dynamic IDs, but the UI is a static build.
+  # Rewrite /c/<shareId> -> /c/ (serves /c/index.html), which reads the shareId from window.location.pathname.
+  @shareLink path_regexp shareLink ^/c/[^/]+/?$
+  rewrite @shareLink /c/
+
   # UI (static build output from Astro)
   root * /srv/ui
   file_server

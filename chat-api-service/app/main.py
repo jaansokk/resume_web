@@ -11,12 +11,21 @@ from fastapi.requests import Request
 from starlette.concurrency import run_in_threadpool
 import httpx
 
-from .models import ChatRequest, ChatResponse, ContactRequest, ContactResponse
+from .models import (
+    ChatRequest,
+    ChatResponse,
+    ContactRequest,
+    ContactResponse,
+    ShareCreateRequest,
+    ShareCreateResponse,
+    ShareGetResponse,
+)
 from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
 from .pipeline import ChatPipeline
 from .qdrant_client import QdrantClient, QdrantConfig
 from .email_sender import load_smtp_config_from_env, send_contact_email
+from .share_store import ShareStore
 
 
 log = logging.getLogger("resume_web_chat_api")
@@ -144,6 +153,49 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=502, detail="Failed to send email")
 
         return ContactResponse(ok=True)
+
+    @app.post("/share", response_model=ShareCreateResponse)
+    def create_share(req: ShareCreateRequest) -> ShareCreateResponse:
+        # Validate required artifact presence per contract:
+        # snapshot.artifacts must include BOTH fitBrief and relevantExperience.
+        if req.snapshot.artifacts.fitBrief is None or req.snapshot.artifacts.relevantExperience is None:
+            raise HTTPException(status_code=400, detail="snapshot.artifacts must include fitBrief and relevantExperience")
+
+        # Bound transcript to keep snapshots sane.
+        messages = req.snapshot.messages[-60:]
+        snapshot = req.snapshot.model_dump()
+        snapshot["messages"] = [m.model_dump() for m in messages]
+
+        try:
+            store = ShareStore()
+            created = store.create_share(created_by_contact=req.createdByContact, snapshot=snapshot)
+        except Exception as e:
+            log.exception("Failed creating share snapshot")
+            raise HTTPException(status_code=503, detail="Share storage is not configured") from e
+
+        share_id = created["shareId"]
+        return ShareCreateResponse(shareId=share_id, path=f"/c/{share_id}")
+
+    @app.get("/share/{shareId}", response_model=ShareGetResponse)
+    def get_share(shareId: str) -> ShareGetResponse:
+        try:
+            store = ShareStore()
+            item = store.get_share(share_id=shareId)
+        except Exception as e:
+            log.exception("Failed reading share snapshot")
+            raise HTTPException(status_code=503, detail="Share storage is not configured") from e
+
+        if not item:
+            raise HTTPException(status_code=404, detail="Not found")
+
+        snapshot = item.get("snapshot") or {}
+        created_at = str(item.get("createdAt") or snapshot.get("createdAt") or "")
+        out = {
+            "shareId": item.get("shareId"),
+            "createdAt": created_at,
+            "snapshot": snapshot,
+        }
+        return ShareGetResponse.model_validate(out)
 
     return app
 

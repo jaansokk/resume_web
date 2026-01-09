@@ -143,4 +143,39 @@ This will create collections (if needed) and upsert items/chunks into:
 - `content_items_v1`
 - `content_chunks_v1`
 
+## 8) Enable Share (DynamoDB)
+
+Share requires DynamoDB access from the API container.
+
+### A) Create the DynamoDB table (once)
+
+Create `conversation_share_snapshots_v1` with:
+- partition key: `shareId` (string)
+
+You can do this via console or CLI.
+
+### B) Create AWS credentials for runtime access
+
+Lightsail instances don't have an EC2 instance role by default, so the simplest approach is:
+- create an IAM user (or access keys for an existing deploy user) with DynamoDB permissions
+- store `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` in `infra-vps/.env` on the server
+
+Minimal policy template is in:
+- `infra-vps/iam/dynamodb-share-runtime-policy.json`
+
+### C) Configure env on the server
+
+In `infra-vps/.env`:
+- `AWS_REGION=eu-central-1`
+- `AWS_ACCESS_KEY_ID=...`
+- `AWS_SECRET_ACCESS_KEY=...`
+- `DDB_TABLE_SHARE_SNAPSHOTS=conversation_share_snapshots_v1`
+
+Then rebuild:
+
+```bash
+cd ~/resume_web/infra-vps
+docker compose up -d --build
+```
+
 

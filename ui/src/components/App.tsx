@@ -165,6 +165,7 @@ export default function ConceptAApp() {
     case 'split':
       return (
         <SplitView
+          conversationId={conversationId}
           messages={messages}
           inputValue={inputValue}
           onInputChange={setInputValue}

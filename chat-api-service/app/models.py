@@ -113,3 +113,30 @@ class ContactRequest(BaseModel):
 
 class ContactResponse(BaseModel):
     ok: bool = True
+
+
+# Share snapshot models (DynamoDB-backed)
+
+
+class ShareSnapshot(BaseModel):
+    conversationId: str
+    createdAt: str
+    ui: UIDirective
+    messages: list[ChatMessage] = Field(default_factory=list)
+    artifacts: Artifacts
+
+
+class ShareCreateRequest(BaseModel):
+    createdByContact: str = Field(..., min_length=3, max_length=200)
+    snapshot: ShareSnapshot
+
+
+class ShareCreateResponse(BaseModel):
+    shareId: str
+    path: str
+
+
+class ShareGetResponse(BaseModel):
+    shareId: str
+    createdAt: str
+    snapshot: ShareSnapshot

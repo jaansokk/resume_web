@@ -11,6 +11,7 @@ import type { Message } from '../types';
 import type { Artifacts } from '../../utils/chatApi';
 
 interface SplitViewProps {
+  conversationId: string;
   messages: Message[];
   inputValue: string;
   onInputChange: (value: string) => void;
@@ -26,6 +27,7 @@ interface SplitViewProps {
 }
 
 export function SplitView({ 
+  conversationId,
   messages, 
   inputValue, 
   onInputChange, 
@@ -102,7 +104,14 @@ export function SplitView({
       </div>
       
       {/* Share Modal */}
-      <ShareModal isOpen={showModal} onClose={onModalClose} />
+      <ShareModal
+        isOpen={showModal}
+        onClose={onModalClose}
+        conversationId={conversationId}
+        activeTab={activeTab}
+        messages={messages}
+        artifacts={artifacts}
+      />
       
       {/* Start Over Modal */}
       <Modal
