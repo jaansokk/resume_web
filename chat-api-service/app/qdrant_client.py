@@ -27,6 +27,34 @@ class QdrantClient:
     def close(self) -> None:
         self._http.close()
 
+    def ensure_collections_exist(self, *, embedding_dim: int) -> None:
+        """
+        Ensure the required collections exist.
+
+        In this repo, ingestion creates:
+        - items collection: named vector "dummy" (dim=1) for metadata points
+        - chunks collection: named vector "embedding" (dim=embedding_dim) for semantic search
+
+        If you deploy the API before running ingestion, Qdrant will be empty; we still
+        create the collections so the API doesn't 500 on first request.
+        """
+        self._ensure_collection(name=self.cfg.collection_items, vector_name="dummy", dim=1, distance="Cosine")
+        self._ensure_collection(
+            name=self.cfg.collection_chunks, vector_name="embedding", dim=embedding_dim, distance="Cosine"
+        )
+
+    def _ensure_collection(self, *, name: str, vector_name: str, dim: int, distance: str) -> None:
+        # GET /collections/{name}
+        res = self._http.get(f"/collections/{name}")
+        if res.status_code == 200:
+            return
+        if res.status_code != 404:
+            res.raise_for_status()
+
+        body = {"vectors": {vector_name: {"size": dim, "distance": distance}}}
+        put = self._http.put(f"/collections/{name}", json=body)
+        put.raise_for_status()
+
     def search_chunks(self, *, vector: list[float], limit: int) -> list[dict[str, Any]]:
         """
         Returns raw Qdrant points (with payload + score).

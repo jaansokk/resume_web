@@ -116,4 +116,31 @@ If TLS fails:
 - confirm DNS A record points to the correct static IP
 - check Caddy logs: `docker compose logs -f caddy`
 
+## 7) Populate Qdrant (required for real RAG answers)
+
+If you deploy before running ingestion, Qdrant will be empty. The API now auto-creates
+collections so it won't crash, but results will be generic until you index content.
+
+Recommended approach: **SSH tunnel** into Qdrant (Qdrant ports are bound to `127.0.0.1` on the VM).
+
+1) From your laptop, open a tunnel:
+
+```bash
+ssh -L 6333:127.0.0.1:6333 ubuntu@jaan.sokkphoto.com
+```
+
+2) In another terminal on your laptop, run ingestion against the tunnel:
+
+```bash
+cd /path/to/resume_web
+export QDRANT_URL=http://127.0.0.1:6333
+export OPENAI_API_KEY=...   # required for embeddings
+
+npm run ingest:all
+```
+
+This will create collections (if needed) and upsert items/chunks into:
+- `content_items_v1`
+- `content_chunks_v1`
+
 

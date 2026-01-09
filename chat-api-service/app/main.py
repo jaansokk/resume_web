@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.requests import Request
 from starlette.concurrency import run_in_threadpool
+import httpx
 
 from .models import ChatRequest, ChatResponse, ContactRequest, ContactResponse
 from .anthropic_client import AnthropicClient
@@ -73,6 +74,15 @@ def create_app() -> FastAPI:
     qdrant_chunks = os.environ.get("QDRANT_COLLECTION_CHUNKS", "content_chunks_v1").strip()
 
     qdrant = QdrantClient(QdrantConfig(url=qdrant_url, collection_items=qdrant_items, collection_chunks=qdrant_chunks))
+    # Optional: create required collections if missing (fresh deploy before ingestion).
+    # Default is OFF so missing collections fail loudly and you don't accidentally run without data.
+    if os.environ.get("QDRANT_AUTO_CREATE_COLLECTIONS", "0").strip() == "1":
+        try:
+            embedding_dim = int(os.environ.get("EMBEDDING_DIM", "1536"))
+            qdrant.ensure_collections_exist(embedding_dim=embedding_dim)
+            log.info("Ensured Qdrant collections exist (QDRANT_AUTO_CREATE_COLLECTIONS=1).")
+        except Exception:
+            log.exception("Failed ensuring Qdrant collections exist.")
     openai = OpenAIClient()
     anthropic = AnthropicClient()
     pipeline = ChatPipeline(openai=openai, anthropic=anthropic, qdrant=qdrant)
@@ -85,7 +95,20 @@ def create_app() -> FastAPI:
     def chat(req: ChatRequest) -> ChatResponse:
         # OpenAI is always needed for embeddings
         # Anthropic or OpenAI needed for chat/router based on MODEL_PROVIDER
-        return pipeline.handle(req)
+        try:
+            return pipeline.handle(req)
+        except httpx.HTTPStatusError as e:
+            # Most common production misconfig: Qdrant is up, but collections aren't created yet.
+            if e.response is not None and e.response.status_code == 404:
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "Qdrant collection not found. Run ingestion to create/populate collections "
+                        "(e.g. `npm run ingest:all` against the server's Qdrant), or set "
+                        "QDRANT_AUTO_CREATE_COLLECTIONS=1 to auto-create empty collections at startup."
+                    ),
+                ) from e
+            raise
 
     @app.post("/contact", response_model=ContactResponse)
     async def contact(req: ContactRequest, request: Request) -> ContactResponse:

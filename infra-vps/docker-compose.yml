@@ -38,7 +38,11 @@ services:
     restart: unless-stopped
     volumes:
       - qdrant_data:/qdrant/storage
-    # Not published publicly (kept internal); use SSH tunnel if you need admin access.
+    # Published ONLY on localhost for safe admin/ingest access via SSH tunnel:
+    #   ssh -L 6333:127.0.0.1:6333 ubuntu@<server>
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
     expose:
       - "6333"
       - "6334"
