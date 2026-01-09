@@ -10,27 +10,28 @@ This doc defines **what exists** (views/states, artifacts, share objects) and **
 
 The product has a **single, consistent header** across all views/routes.
 
-### Brand / home
-- **Left side**: brand/name (“Jaan Sokk”).
-- Clicking the brand always navigates to the **Handshake (home) screen**.
+### Brand (left side)
+- **"Jaan Sokk"** — non-clickable branding (no home link).
+- A separate "Start Over" action will be added later for explicit conversation reset.
 
 ### Main menu links (right side)
 
-**Base links (always visible, in this order after the conditional link):**
-- **CV**
-- **LinkedIn**
-- **Contact**
+**Conditional "resume experience" link (first link in menu, always visible):**
+- **If the user has reached Split view** at least once (stored in `localStorage`), show: **"Fit Brief & Experience"**
+- **Else**, show: **"Chat"**
+- Links to **`/`** (main experience route).
+- Useful for returning to main experience from `/cv` or `/contact`.
 
-**Conditional “resume experience” link (first link in menu):**
-- The menu MAY include a conditional first link that resumes the v2 experience.
-- **If the user has entered Split view at least once** in the current browsing context, show: **“Fit Brief & Experience”**
-- Else, show: **“Chat”**
+**Base links (always visible, following the conditional link):**
+- **CV** — links to `/cv`
+- **LinkedIn** — external link
+- **Contact** — links to `/contact`
 
 **Notes**
-- “Entered Expanded Chat” means the user has progressed beyond Handshake into the full chat UI (e.g., after selecting a quick reply or sending the first message).
-- Split view takes precedence over Chat because it’s the more advanced state.
+- Split view takes precedence over Chat because it's the more advanced state.
 - The conditional link is placed first so the positioning of **CV / LinkedIn / Contact** remains unchanged.
-- The conditional link navigates back to the primary v2 experience and restores the most advanced state the user has seen (Chat or Split).
+- **State persistence**: Conversation state (messages, artifacts, viewMode, hasSeenSplit) is stored in `localStorage` and persists across tabs, page reloads, and browser sessions.
+- **Auto-restore**: On mount at any route, the app checks `localStorage` and restores the last conversation state if present.
 
 ---
 
@@ -159,8 +160,20 @@ When contact is provided, the system creates an **immutable share snapshot** and
 
 ## Routes (user-facing)
 
-Minimum routes implied by the product:
-- Primary v2 route (exact path can change during implementation)
-- Shared conversation route: `/c/{shareId}`
+The product uses **real routes** (not URL params) for clean navigation and browser back/forward support.
+
+### Primary routes
+- **`/`** — Main experience (Handshake → Chat → Split)
+  - Auto-restores conversation state from `localStorage` on mount
+  - If no saved state exists, shows Handshake (fresh conversation)
+- **`/cv`** — CV page (separate route, static or React-based)
+- **`/contact`** — Contact page (separate route, form with LinkedIn/email capture)
+- **`/c/{shareId}`** — Shared conversation snapshot (immutable, read-only or fork)
+
+### Navigation behavior
+- All routes share the same global header.
+- Browser back/forward buttons work naturally.
+- No URL params needed for view state (`?resume=1`, `?view=contact` are removed).
+- Conversation state persists across route changes via `localStorage`.
 
 

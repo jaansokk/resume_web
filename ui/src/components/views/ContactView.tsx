@@ -4,7 +4,7 @@ import { BackgroundOverlay } from '../shared/BackgroundOverlay';
 import { postContact } from '../../utils/contactApi';
 
 interface ContactViewProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function ContactView({ onClose }: ContactViewProps) {
@@ -45,7 +45,7 @@ export function ContactView({ onClose }: ContactViewProps) {
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
-      <Header onContactClick={onClose} isContactActive />
+      <Header isContactActive />
       <BackgroundOverlay />
 
       <div className="relative z-10 flex-1 flex flex-col px-6 pt-20 pb-24 justify-center">
@@ -141,13 +141,15 @@ export function ContactView({ onClose }: ContactViewProps) {
                 )}
 
                 <div className="mt-5 flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="text-xs uppercase tracking-wider text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
-                  >
-                    Back
-                  </button>
+                  {onClose && (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="text-xs uppercase tracking-wider text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
+                    >
+                      Back
+                    </button>
+                  )}
 
                   <button
                     type="submit"
@@ -156,7 +158,7 @@ export function ContactView({ onClose }: ContactViewProps) {
                       canSubmit
                         ? 'bg-[var(--v2-accent)] text-black border-transparent hover:opacity-90'
                         : 'bg-black/20 text-[var(--v2-text-secondary)] border-[var(--v2-border)] cursor-not-allowed'
-                    }`}
+                    } ${!onClose ? 'ml-auto' : ''}`}
                   >
                     {isSending ? 'Sending…' : 'Send'}
                   </button>
@@ -180,13 +182,15 @@ export function ContactView({ onClose }: ContactViewProps) {
                     Thank you — I&apos;ll get back to you soon.
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="mt-6 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium bg-[var(--v2-accent)] text-black hover:opacity-90 transition"
-                  >
-                    Close
-                  </button>
+                  {onClose && (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="mt-6 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium bg-[var(--v2-accent)] text-black hover:opacity-90 transition"
+                    >
+                      Close
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

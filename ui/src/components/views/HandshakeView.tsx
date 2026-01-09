@@ -9,8 +9,6 @@ interface HandshakeViewProps {
   onInputChange: (value: string) => void;
   onSend: (text: string) => void;
   isLoading: boolean;
-  onContactClick?: () => void;
-  isContactActive?: boolean;
 }
 
 export function HandshakeView({ 
@@ -18,8 +16,6 @@ export function HandshakeView({
   onInputChange, 
   onSend, 
   isLoading,
-  onContactClick,
-  isContactActive,
 }: HandshakeViewProps) {
   const [showSubline, setShowSubline] = useState(false);
   const [showButtons, setShowButtons] = useState(false);
@@ -35,7 +31,7 @@ export function HandshakeView({
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
-      <Header onContactClick={onContactClick} isContactActive={isContactActive} transparent />
+      <Header transparent />
       <BackgroundOverlay />
 
       {/* Main content area */}

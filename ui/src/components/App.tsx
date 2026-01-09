@@ -1,78 +1,47 @@
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { postChat, type Artifacts, type ClientUI } from '../utils/chatApi';
-import type { ViewMode, Message } from './types';
+import type { Message } from './types';
 import { HandshakeView } from './views/HandshakeView';
 import { ChatView } from './views/ChatView';
 import { SplitView } from './views/SplitView';
-import { ContactView } from './views/ContactView';
 import { markHasSeenSplit } from '../utils/navState';
-import { loadConversationSessionState, saveConversationSessionState } from '../utils/sessionState';
+import { loadConversationState, saveConversationState } from '../utils/conversationState';
+
+type MainViewMode = 'handshake' | 'chat' | 'split';
 
 export default function ConceptAApp() {
-  const initialSession = typeof window !== 'undefined' ? loadConversationSessionState() : null;
+  // Always auto-restore from localStorage on mount
+  const savedState = typeof window !== 'undefined' ? loadConversationState() : null;
 
-  const [conversationId] = useState(() => initialSession?.conversationId ?? uuidv4());
-  const [messages, setMessages] = useState<Message[]>(() => initialSession?.messages ?? []);
+  const [conversationId] = useState(() => savedState?.conversationId ?? uuidv4());
+  const [messages, setMessages] = useState<Message[]>(() => savedState?.messages ?? []);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('handshake');
-  const [lastNonContactView, setLastNonContactView] = useState<Exclude<ViewMode, 'contact'>>(
-    initialSession?.lastNonContactView ?? 'handshake',
-  );
-  const [chips, setChips] = useState<string[]>(() => initialSession?.chips ?? []);
-  const [artifacts, setArtifacts] = useState<Artifacts | null>(() => initialSession?.artifacts ?? null);
-  const [activeTab, setActiveTab] = useState<'brief' | 'experience'>(() => initialSession?.activeTab ?? 'brief');
+  const [viewMode, setViewMode] = useState<MainViewMode>(() => savedState?.viewMode ?? 'handshake');
+  const [chips, setChips] = useState<string[]>(() => savedState?.chips ?? []);
+  const [artifacts, setArtifacts] = useState<Artifacts | null>(() => savedState?.artifacts ?? null);
+  const [activeTab, setActiveTab] = useState<'brief' | 'experience'>(() => savedState?.activeTab ?? 'brief');
   const [showModal, setShowModal] = useState(false);
 
+  // If restoring split view, ensure nav label is updated on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const view = params.get('view');
-    const resume = params.get('resume');
-
-    if (view === 'contact') {
-      setLastNonContactView('handshake');
-      setViewMode('contact');
-      return;
-    }
-
-    // Resume link (Chat / Fit Brief & Experience): restore last known non-contact view state.
-    if (resume === '1' && initialSession) {
-      setViewMode(initialSession.viewMode);
-      setLastNonContactView(initialSession.lastNonContactView);
-      // If restoring split view, ensure nav label is updated
-      if (initialSession.viewMode === 'split') {
-        markHasSeenSplit();
-      }
+    if (savedState?.viewMode === 'split') {
+      markHasSeenSplit();
     }
   }, []);
 
+  // Auto-save conversation state to localStorage whenever it changes
   useEffect(() => {
-    // Persist conversation state for cross-route navigation (e.g., /cv -> resume).
-    // Only persist non-contact states.
-    if (viewMode === 'contact') return;
-    saveConversationSessionState({
+    saveConversationState({
       conversationId,
       viewMode,
-      lastNonContactView,
       messages,
       chips,
       artifacts,
       activeTab,
     });
-  }, [conversationId, viewMode, lastNonContactView, messages, chips, artifacts, activeTab]);
-
-  const toggleContact = () => {
-    setViewMode((curr) => {
-      if (curr === 'contact') {
-        window.history.replaceState({}, '', window.location.pathname);
-        return lastNonContactView;
-      }
-      setLastNonContactView(curr);
-      window.history.replaceState({}, '', '/?view=contact');
-      return 'contact';
-    });
-  };
+  }, [conversationId, viewMode, messages, chips, artifacts, activeTab]);
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -163,8 +132,6 @@ export default function ConceptAApp() {
           onInputChange={setInputValue}
           onSend={handleSend}
           isLoading={isLoading}
-          onContactClick={toggleContact}
-          isContactActive={false}
         />
       );
 
@@ -178,8 +145,6 @@ export default function ConceptAApp() {
           isLoading={isLoading}
           chips={chips}
           onChipSelect={handleChipSelect}
-          onContactClick={toggleContact}
-          isContactActive={false}
         />
       );
 
@@ -197,13 +162,8 @@ export default function ConceptAApp() {
           showModal={showModal}
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}
-          onContactClick={toggleContact}
-          isContactActive={false}
         />
       );
-
-    case 'contact':
-      return <ContactView onClose={toggleContact} />;
 
     default:
       return null;

@@ -1,44 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getResumeNavLabel, subscribeNavStateChanged, type ResumeNavLabel } from '../../utils/navState';
 
-function isCVPathname(pathname: string): boolean {
-  // Normalize: drop query/hash handled elsewhere; trim trailing slashes.
-  const normalized = pathname.replace(/\/+$/, '');
-  if (!normalized) return false;
+type ActivePage = 'resume' | 'cv' | 'contact';
 
-  const segments = normalized.split('/').filter(Boolean);
-  const last = segments[segments.length - 1];
-  const secondLast = segments[segments.length - 2];
-
-  // Supports:
-  // - /cv, /cv/
-  // - /<base>/cv, /<base>/cv/
-  // - /cv/index.html (some static hosts)
-  if (last === 'cv') return true;
-  if (secondLast === 'cv' && last === 'index.html') return true;
-  return false;
+function detectActivePage(pathname: string): ActivePage {
+  const normalized = pathname.replace(/\/+$/, '').toLowerCase();
+  
+  if (normalized.includes('/contact')) return 'contact';
+  if (normalized.includes('/cv')) return 'cv';
+  return 'resume';
 }
 
 interface HeaderProps {
-  onContactClick?: () => void;
-  isContactActive?: boolean;
   transparent?: boolean;
-  activePage?: 'resume' | 'cv';
+  activePage?: ActivePage;
+  isContactActive?: boolean; // Legacy prop for compatibility
 }
 
-export function Header({ onContactClick, isContactActive, transparent, activePage }: HeaderProps) {
+export function Header({ transparent, activePage, isContactActive }: HeaderProps) {
   const [resumeLabel, setResumeLabel] = useState<ResumeNavLabel>(() => getResumeNavLabel());
 
   useEffect(() => {
     return subscribeNavStateChanged(() => setResumeLabel(getResumeNavLabel()));
   }, []);
 
-  const isCVPage = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return isCVPathname(window.location.pathname);
-  }, []);
-
-  const isCVActive = activePage ? activePage === 'cv' : isCVPage;
+  const currentPage = useMemo(() => {
+    if (activePage) return activePage;
+    if (isContactActive) return 'contact'; // Legacy support
+    if (typeof window === 'undefined') return 'resume';
+    return detectActivePage(window.location.pathname);
+  }, [activePage, isContactActive]);
 
   return (
     <header
@@ -48,16 +39,18 @@ export function Header({ onContactClick, isContactActive, transparent, activePag
       ].join(' ')}
     >
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
-        <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        {/* Brand - non-clickable */}
+        <div className="flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-[var(--v2-accent)]" />
           <span className="text-sm font-medium">Jaan Sokk</span>
-        </a>
+        </div>
 
         <nav className="flex items-center gap-6">
+          {/* Conditional first link: Chat or Fit Brief & Experience */}
           <a
-            href="/?resume=1"
+            href="/"
             className={`text-xs uppercase tracking-wider transition-colors ${
-              !isCVActive && !isContactActive
+              currentPage === 'resume'
                 ? 'text-[var(--v2-accent)]'
                 : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
             }`}
@@ -68,7 +61,7 @@ export function Header({ onContactClick, isContactActive, transparent, activePag
           <a
             href="/cv"
             className={`text-xs uppercase tracking-wider transition-colors ${
-              isCVActive
+              currentPage === 'cv'
                 ? 'text-[var(--v2-accent)]'
                 : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
             }`}
@@ -85,26 +78,16 @@ export function Header({ onContactClick, isContactActive, transparent, activePag
             LinkedIn
           </a>
 
-          {onContactClick ? (
-            <button
-              type="button"
-              onClick={onContactClick}
-              className={`text-xs transition-colors uppercase tracking-wider ${
-                isContactActive
-                  ? 'text-[var(--v2-accent)]'
-                  : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
-              }`}
-            >
-              Contact
-            </button>
-          ) : (
-            <a
-              href="/?view=contact"
-              className="text-xs text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors uppercase tracking-wider"
-            >
-              Contact
-            </a>
-          )}
+          <a
+            href="/contact"
+            className={`text-xs uppercase tracking-wider transition-colors ${
+              currentPage === 'contact'
+                ? 'text-[var(--v2-accent)]'
+                : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
+            }`}
+          >
+            Contact
+          </a>
         </nav>
       </div>
     </header>

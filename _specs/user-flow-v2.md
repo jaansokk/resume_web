@@ -23,16 +23,20 @@ This should be the user flow of the new version
 ### Global header (navigation)
 
 The header is consistent across the site:
-- **Brand**: Clicking “Jaan Sokk” always returns to the **Handshake (home) screen**.
+- **Brand**: "Jaan Sokk" is **non-clickable** (branding only). A separate "Start Over" action will be added later for explicit conversation reset.
 - **Main menu (right)**:
   - Conditional first link (always shown):
     - If the user has reached Split view: **Fit Brief & Experience**
     - Else: **Chat**
-  - Then always: **CV / LinkedIn / Contact**
+    - Links to `/` (main experience route)
+    - Useful for returning to main experience from `/cv` or `/contact`
+  - Then always: **CV** (links to `/cv`) / **LinkedIn** (external) / **Contact** (links to `/contact`)
 
 Notes:
-- “Handshake” is the **home/empty-state presentation** of the same conversation experience as Chat (no transcript yet).
+- "Handshake" is the **home/empty-state presentation** of the same conversation experience as Chat (no transcript yet).
 - Clicking **Chat** may render the Handshake layout if the user has not sent a message yet.
+- **State persistence**: Conversation state (messages, artifacts, viewMode) is stored in `localStorage` and persists across tabs, page reloads, and browser sessions.
+- **Auto-restore**: On mount, the app always checks `localStorage` and restores the last conversation state if present.
 
 ### Screen 1: “Handshake” (chat-first, but zero clutter)
 **Visible elements**
@@ -97,13 +101,23 @@ These are the small choices that make it feel “designed,” not “assembled�
 
 ---
 
-## Navigation acceptance criteria
+## Routes & Navigation acceptance criteria
 
-- **Consistency**: The main menu is consistent across views/routes: it always contains **CV**, **LinkedIn**, **Contact**.
+### Routes
+- **`/`** — Main experience (Handshake → Chat → Split). Auto-restores state from `localStorage`.
+- **`/cv`** — CV page (separate route, uses same global header).
+- **`/contact`** — Contact page (separate route, uses same global header).
+- **`/c/{shareId}`** — Shared conversation snapshot (immutable, read-only or fork).
+
+### Navigation behavior
+- **Consistency**: The main menu is consistent across all routes: it always contains the conditional first link + **CV**, **LinkedIn**, **Contact**.
 - **Conditional link behavior**:
   - If the user has not reached Split view, the menu shows **Chat** as the first link.
   - After the user reaches Split view, the menu shows **Fit Brief & Experience** as the first link (takes precedence over Chat).
-- **Home behavior**: Clicking “Jaan Sokk” always returns to the **Handshake (home) screen**.
+  - Always links to `/` (main experience).
+- **Brand behavior**: "Jaan Sokk" is **non-clickable** branding (no home link to avoid accidental conversation loss).
+- **Browser navigation**: Back/forward buttons work naturally across routes (`/`, `/cv`, `/contact`).
+- **State persistence**: Conversation state persists in `localStorage` across tabs and sessions; always auto-restored on mount.
 
 
 ---
