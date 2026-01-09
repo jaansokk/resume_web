@@ -6,6 +6,34 @@ This doc defines **what exists** (views/states, artifacts, share objects) and **
 
 ---
 
+## Global header navigation (consistent across views)
+
+The product has a **single, consistent header** across all views/routes.
+
+### Brand / home
+- **Left side**: brand/name (“Jaan Sokk”).
+- Clicking the brand always navigates to the **Handshake (home) screen**.
+
+### Main menu links (right side)
+
+**Base links (always visible, in this order after the conditional link):**
+- **CV**
+- **LinkedIn**
+- **Contact**
+
+**Conditional “resume experience” link (first link in menu):**
+- The menu MAY include a conditional first link that resumes the v2 experience.
+- **If the user has entered Split view at least once** in the current browsing context, show: **“Fit Brief & Experience”**
+- Else, show: **“Chat”**
+
+**Notes**
+- “Entered Expanded Chat” means the user has progressed beyond Handshake into the full chat UI (e.g., after selecting a quick reply or sending the first message).
+- Split view takes precedence over Chat because it’s the more advanced state.
+- The conditional link is placed first so the positioning of **CV / LinkedIn / Contact** remains unchanged.
+- The conditional link navigates back to the primary v2 experience and restores the most advanced state the user has seen (Chat or Split).
+
+---
+
 ## Primary experience (single flow, in-place transforms)
 
 This product is a **single, self-contained flow**. No floating widget on other pages.

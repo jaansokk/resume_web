@@ -35,7 +35,7 @@ export function HandshakeView({
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
-      <Header onContactClick={onContactClick} isContactActive={isContactActive} />
+      <Header onContactClick={onContactClick} isContactActive={isContactActive} transparent />
       <BackgroundOverlay />
 
       {/* Main content area */}

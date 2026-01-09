@@ -20,6 +20,20 @@ I will be adding it to a linkedin post, it will be available publicly.Goal: gath
 ## New UI (v2)
 This should be the user flow of the new version
 
+### Global header (navigation)
+
+The header is consistent across the site:
+- **Brand**: Clicking “Jaan Sokk” always returns to the **Handshake (home) screen**.
+- **Main menu (right)**:
+  - Conditional first link (always shown):
+    - If the user has reached Split view: **Fit Brief & Experience**
+    - Else: **Chat**
+  - Then always: **CV / LinkedIn / Contact**
+
+Notes:
+- “Handshake” is the **home/empty-state presentation** of the same conversation experience as Chat (no transcript yet).
+- Clicking **Chat** may render the Handshake layout if the user has not sent a message yet.
+
 ### Screen 1: “Handshake” (chat-first, but zero clutter)
 **Visible elements**
 - Centered chat bubble (not a full chat window yet) with a single opening line:**“Hey — I’m Jaan. What kind of product are you building?”**
@@ -80,6 +94,16 @@ These are the small choices that make it feel “designed,” not “assembled�
 - **Motion with purpose:** transitions that *reframe* the interface (handshake/first screen → chat → artifact).
 - **Typography hierarchy that’s ruthless:** giant headline, tiny supporting line, no mid-sized mush.
 - **Evidence as cards/sheets, not paragraphs:** every claim links to a proof “sheet” with outcomes + constraints + your role.
+
+---
+
+## Navigation acceptance criteria
+
+- **Consistency**: The main menu is consistent across views/routes: it always contains **CV**, **LinkedIn**, **Contact**.
+- **Conditional link behavior**:
+  - If the user has not reached Split view, the menu shows **Chat** as the first link.
+  - After the user reaches Split view, the menu shows **Fit Brief & Experience** as the first link (takes precedence over Chat).
+- **Home behavior**: Clicking “Jaan Sokk” always returns to the **Handshake (home) screen**.
 
 
 ---
