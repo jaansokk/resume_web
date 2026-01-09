@@ -42,8 +42,23 @@ If the UI shows a 500 from the chat service, check the FastAPI logs first. A com
   - `/chat` - Split view with related experience and chat
   - `/browse` - Timeline view of all experience
 - `/src/components/` - React components for interactive features
-- `/src/content/experience/` - Content collections (Markdown files)
+- `/src/content/config.ts` - Content collections schema (public)
+- `/src/content/experience/` - Experience content (Markdown). This is typically a **symlink** to a sibling private repo.
 - `/src/utils/` - Utility functions for keyword matching
+
+## Keeping Markdown content out of the public repo
+
+If you plan to make `resume_web/` public, you can keep the Markdown source in a sibling directory:
+
+- Public repo: `resume_web/`
+- Private content: `resume_web_content/ui/src/content/experience/*.md` (and optionally `projects/`, `background/`)
+
+This repo expects `ui/src/content/experience` to be a symlink to:
+`../../../../resume_web_content/ui/src/content/experience`
+
+Notes:
+- The UI build still renders the content on the website, so **site scraping is still possible**. This only prevents scraping the content via the public git repo.
+- If you previously committed Markdown files, removing them now does **not** remove them from git history. To truly purge, you’ll need a history rewrite before going public.
 
 ## Features
 

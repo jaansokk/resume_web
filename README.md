@@ -56,6 +56,20 @@ DEPRECATED (legacy OpenSearch ingestion / verification):
 
 You can run ingestion **without pnpm** (recommended) since `ingest/` has no external dependencies.
 
+## Keeping Markdown content out of this repo (optional)
+
+If you plan to make `resume_web/` public, you can keep the Markdown source content in a sibling directory, e.g.:
+
+- Public repo: `resume_web/`
+- Private content: `resume_web_content/ui/src/content/**`
+
+This workspace is set up so `ui/src/content/experience` is a symlink to the sibling private folder, and ingestion will also auto-detect that sibling folder.
+
+If you prefer explicit config (useful in CI/deploy), set:
+- `RESUME_UI_CONTENT_ROOT=../resume_web_content/ui/src/content`
+
+Important: removing Markdown files from the working tree does **not** remove them from git history. If you already committed sensitive content, you’ll need to rewrite history before making the repo public.
+
 ### 1) Export UI content index (no AWS/OpenAI needed)
 
 ```bash

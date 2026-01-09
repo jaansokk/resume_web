@@ -2,7 +2,7 @@
 
 ## Goal
 Implement a reproducible ingestion pipeline that:
-- Reads Astro content collection Markdown from `../ui/src/content/**`
+- Reads Astro content collection Markdown from `../ui/src/content/**` (or an external content root)
 - Exports a UI-friendly content graph JSON (experience/projects only)
 - Chunks + embeds content and indexes it into Qdrant (experience/projects/background)
 
@@ -11,10 +11,21 @@ MVP target: run ingestion on 3–5 experience entries end-to-end (plus optionall
 ---
 
 ## Inputs
-Source markdown lives in:
+Source markdown lives in one of two setups:
+
+### A) In-repo (simple)
 - `ui/src/content/experience/*.md`
 - `ui/src/content/projects/*.md`
 - `ui/src/content/background/*.md`   <-- new type
+
+### B) Out-of-repo (recommended if `resume_web/` becomes public)
+
+Keep Markdown in a sibling private directory (example):
+- `../resume_web_content/ui/src/content/experience/*.md`
+
+The ingestion CLI supports an override:
+- `RESUME_UI_CONTENT_ROOT` (preferred), or `UI_CONTENT_ROOT`, or `RESUME_CONTENT_ROOT`
+  - Example: `RESUME_UI_CONTENT_ROOT=../resume_web_content/ui/src/content`
 
 Each file contains frontmatter + body.
 

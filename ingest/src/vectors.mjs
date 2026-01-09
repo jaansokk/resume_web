@@ -1,3 +1,4 @@
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +15,24 @@ const repoRoot = path.resolve(__dirname, "..", "..");
 
 const DEFAULT_QDRANT_URL = "http://127.0.0.1:6333";
 
-const UI_CONTENT_ROOT = path.join(repoRoot, "ui", "src", "content");
+function resolveUiContentRoot() {
+  // Optional override if you keep content outside the public repo.
+  // Example: RESUME_UI_CONTENT_ROOT=../resume_web_content/ui/src/content
+  const fromEnv =
+    (process.env.RESUME_UI_CONTENT_ROOT || process.env.UI_CONTENT_ROOT || process.env.RESUME_CONTENT_ROOT || "").trim();
+  if (fromEnv) return path.resolve(repoRoot, fromEnv);
+
+  // Convenience default for this workspace layout:
+  //   resume_web/ (this repo)
+  //   resume_web_content/ (private content repo) sitting beside it
+  const sibling = path.resolve(repoRoot, "..", "resume_web_content", "ui", "src", "content");
+  if (fsSync.existsSync(sibling)) return sibling;
+
+  // Fallback: content checked into this repo.
+  return path.join(repoRoot, "ui", "src", "content");
+}
+
+const UI_CONTENT_ROOT = resolveUiContentRoot();
 const CACHE_FILE = path.join(repoRoot, "ingest", "exported-content", "embeddings-cache.json");
 const DEBUG_DIR = path.join(repoRoot, "ingest", "exported-content", "debug");
 
@@ -170,6 +188,7 @@ async function main() {
   console.log(`Collections: items=${ITEMS_COLLECTION} chunks=${CHUNKS_COLLECTION}`);
   console.log(`Embedding model: ${model}${dimensions ? ` (dimensions=${dimensions})` : ""}`);
   console.log(`Mode: ${dryRun ? "dry-run" : noIndex ? "embed-only" : "embed+index"}`);
+  console.log(`Using UI content root: ${UI_CONTENT_ROOT}`);
 
   const experienceDir = path.join(UI_CONTENT_ROOT, "experience");
   const projectsDir = path.join(UI_CONTENT_ROOT, "projects");
