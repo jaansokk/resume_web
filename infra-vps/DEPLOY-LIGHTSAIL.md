@@ -8,10 +8,16 @@ Pick one:
 
 - **Same domain (recommended by specs)**: `https://<domain>/api/*` proxies to the API container
   - Example: `https://jaan.example.com/api/chat`
+- **No custom domain**: use the **Lightsail public hostname** (typically like `https://<name>.<region>.cs.amazonlightsail.com/api/chat`)
+  - This works fine if you “don’t care” about the domain, but still want **HTTPS**
 - **Dedicated API subdomain**: `https://api.<domain>/chat` (UI can use `PUBLIC_CHAT_API_BASE_URL`)
   - You *can* do this, but same-origin is simplest (no CORS headaches).
 
 This stack assumes **same-origin** routing on `/api/*`.
+
+Important TLS note:
+- Public certificate issuers (incl. Let's Encrypt) generally **do not issue certs for bare IP addresses**.
+- So if you want `https://...`, you need a **hostname** (custom domain or Lightsail hostname).
 
 ## 1) Ensure the `cli` AWS identity can manage Lightsail
 
@@ -94,6 +100,10 @@ cd infra-vps
 docker compose up -d --build
 docker compose logs -f --tail=200
 ```
+
+For your case (UI + API on the same host):
+- Set `DOMAIN=jaan.sokkphoto.com`
+- Create DNS `A` record `jaan` → `<lightsail-static-ip>` at zone.eu
 
 ## 6) Validate
 

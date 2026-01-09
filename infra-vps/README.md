@@ -3,6 +3,7 @@
 This folder contains the **baseline production deployment** for `resume_web` on a **single AWS Lightsail instance**:
 
 - **Caddy**: TLS termination + reverse proxy for `/api/*` (same-origin)
+- **UI**: Astro static build served by Caddy (`/`)
 - **chat-api-service**: FastAPI app (`/chat`, `/contact`, `/healthz`)
 - **Qdrant**: vector DB (private on the Docker network)
 
@@ -24,6 +25,7 @@ If you tell me your desired domain (e.g. `jaan.example.com`) and whether you use
 
 - `docker-compose.yml`: production stack
 - `Caddyfile`: reverse proxy rules for `/api/*`
+- `caddy/Dockerfile`: builds the UI and bakes it into the Caddy image
 - `.env.example`: environment variables to copy into `.env`
 - `iam/lightsail-deploy-policy.json`: minimal policy for a deploy IAM user
 - `scripts/`: CLI helpers (permission check + provisioning skeleton)

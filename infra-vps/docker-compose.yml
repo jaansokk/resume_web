@@ -2,7 +2,9 @@ name: resume-web
 
 services:
   caddy:
-    image: caddy:2.8
+    build:
+      context: ..
+      dockerfile: infra-vps/caddy/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"
@@ -11,7 +13,6 @@ services:
       DOMAIN: ${DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

@@ -17,11 +17,9 @@
     reverse_proxy api:8000
   }
 
-  # Optional: if you also serve the UI from this instance later, add:
-  # root * /srv/ui
-  # file_server
-
-  respond 404
+  # UI (static build output from Astro)
+  root * /srv/ui
+  file_server
 }
 
 
