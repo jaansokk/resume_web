@@ -1,0 +1,27 @@
+{
+  # Expect these via docker-compose env:
+  # - DOMAIN (e.g. jaan.example.com)
+  # - ACME_EMAIL (for Let's Encrypt account email)
+  email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+  encode gzip zstd
+
+  # API: same-origin /api/* -> internal FastAPI routes
+  # handle_path strips the matching prefix, so:
+  # - /api/chat -> /chat
+  # - /api/contact -> /contact
+  # - /api/healthz -> /healthz
+  handle_path /api/* {
+    reverse_proxy api:8000
+  }
+
+  # Optional: if you also serve the UI from this instance later, add:
+  # root * /srv/ui
+  # file_server
+
+  respond 404
+}
+
+

@@ -1,0 +1,67 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LightsailRead",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:Get*",
+        "lightsail:List*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LightsailInstanceLifecycle",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:CreateInstances",
+        "lightsail:DeleteInstance",
+        "lightsail:RebootInstance",
+        "lightsail:StartInstance",
+        "lightsail:StopInstance"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LightsailNetworking",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:OpenInstancePublicPorts",
+        "lightsail:CloseInstancePublicPorts",
+        "lightsail:AllocateStaticIp",
+        "lightsail:ReleaseStaticIp",
+        "lightsail:AttachStaticIp",
+        "lightsail:DetachStaticIp"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LightsailSSHKeyPair",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:DownloadDefaultKeyPair",
+        "lightsail:GetKeyPair",
+        "lightsail:CreateKeyPair",
+        "lightsail:DeleteKeyPair"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LightsailDNSOptional",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:CreateDomain",
+        "lightsail:DeleteDomain",
+        "lightsail:GetDomains",
+        "lightsail:GetDomain",
+        "lightsail:CreateDomainEntry",
+        "lightsail:DeleteDomainEntry",
+        "lightsail:GetDomainAccess",
+        "lightsail:GetDomainEntries"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+
+

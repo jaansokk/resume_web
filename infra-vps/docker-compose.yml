@@ -1,0 +1,50 @@
+name: resume-web
+
+services:
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ../chat-api-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      # Ensure container-to-container Qdrant connectivity by default.
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+    expose:
+      - "8000"
+    depends_on:
+      - qdrant
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.6
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    # Not published publicly (kept internal); use SSH tunnel if you need admin access.
+    expose:
+      - "6333"
+      - "6334"
+
+volumes:
+  qdrant_data:
+  caddy_data:
+  caddy_config:
+
+
