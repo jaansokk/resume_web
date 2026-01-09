@@ -19,8 +19,6 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
   const [error, setError] = useState<string | null>(null);
   const [sharePath, setSharePath] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const shareUrl = useMemo(() => {
     if (!sharePath) return null;
     if (typeof window === 'undefined') return sharePath;
@@ -83,6 +81,8 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
       // Fallback: do nothing; user can manually copy from the input field.
     }
   };
+
+  if (!isOpen) return null;
 
   // Custom modal for Share flow (multi-step with custom layouts)
   // Note: We keep this custom instead of using the generic Modal component
