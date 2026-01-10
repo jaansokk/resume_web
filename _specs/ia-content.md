@@ -129,6 +129,41 @@ Within each section:
 - Content should be supported by retrieved text from the corpus.
 - If evidence is weak, the assistant should ask clarifying questions or omit claims.
 
+**Note on content structure**:
+In the source markdown (for RAG/ingestion), each role follows a recruiter-skimmable structure:
+- `summary` (1-2 lines) — visible by default
+- `## Impact` (3-5 bullets) — visible by default
+- `## Context` (optional) — visible by default
+- `## Key projects` (1-4 subsections) — collapsed by default in CV view, but fully indexed for RAG
+
+---
+
+## Authoring guidance (to support v2 "Relevant Experience" proof sheets)
+
+The v2 UI expects the backend to generate **grouped, evidence-backed highlights** (metrics/achievements) for "Relevant Experience".
+
+### Content structure (experience markdown)
+
+Each role entry should be recruiter-skimmable by default with progressive disclosure:
+
+**Required sections (visible by default):**
+- `summary` (1-2 lines in frontmatter) — Mission statement for the role
+- `## Impact` (3-5 bullets) — Key outcomes, metrics, achievements
+- `## Context` (optional) — Small "scope" facts (stakeholders, tech, domain)
+
+**Optional sections (progressive disclosure):**
+- `## Key projects` — 1-4 detailed project subsections (collapsed by default in UI)
+  - Each project uses `### Project title` with optional one-liner
+  - Contains `**Impact:**` bullets (2-4) and optional `**Details:**` paragraph or bullets
+  - Optional `**Links:**` for case studies, repos, artifacts
+
+To improve retrieval and grounding quality:
+- Prefer explicit **numbers** and measurable outcomes in the content (e.g., "reduced X by 18%").
+- Use bullet lists under clear headings (chunking preserves bullets).
+- When possible, include:
+  - constraints ("with limited data", "in regulated context", "2-week timeline")
+  - your role/ownership ("I owned…", "I led…")
+
 ---
 
 ## Share flow (modal, 2-step)

@@ -53,19 +53,6 @@ Background:
 Notes:
 - For `background`, `company/role/period` are not required and may be absent.
 
----
-
-## Authoring guidance (to support v2 “Relevant Experience” proof sheets)
-
-The v2 UI expects the backend to generate **grouped, evidence-backed highlights** (metrics/achievements) for “Relevant Experience”.
-
-To improve retrieval and grounding quality:
-- Prefer explicit **numbers** and measurable outcomes in the content (e.g., “reduced X by 18%”).
-- Use bullet lists under clear headings (chunking preserves bullets).
-- Consider adding `highlights[]` in frontmatter for curated proof points (optional).
-- When possible, include:
-  - constraints (“with limited data”, “in regulated context”, “2-week timeline”)
-  - your role/ownership (“I owned…”, “I led…”)
 
 ---
 
@@ -180,7 +167,7 @@ After ingesting 3–5 experience entries (+ optional background docs):
    - embed a test query text
    - search `content_chunks_v1`
    - confirm top hits include expected experience slugs
-   - confirm background appears for “principles / beliefs / books” queries
+   - confirm background appears for "principles / beliefs / books" queries
 4) Confirm UI can render cards from `content-index.json` and link to pages.
    - verify that background does NOT appear anywhere in browse/cards.
 

@@ -70,31 +70,6 @@ If you prefer explicit config (useful in CI/deploy), set:
 
 Important: removing Markdown files from the working tree does **not** remove them from git history. If you already committed sensitive content, you’ll need to rewrite history before making the repo public.
 
-### Build-time content workflow for CV page
-
-The CV page (`/cv`) renders directly from markdown at build time using Astro content collections.
-
-**Local development:** The symlink (`ui/src/content/experience` → `../../../resume_web_content/ui/src/content/experience`) makes content available to Astro at build time.
-
-**CI/deployment workflow (ephemeral content injection):**
-
-1. Checkout both repos in your CI environment
-2. Copy/symlink content into `resume_web/ui/src/content/` (workspace-only; never commit):
-   ```bash
-   cp -r ../resume_web_content/ui/src/content/* resume_web/ui/src/content/
-   ```
-3. Run the build (Astro reads content at build time; `dist/` does not contain source `.md` files):
-   ```bash
-   cd resume_web/ui && npm ci && npm run build
-   ```
-4. Deploy `dist/` (the built static site)
-5. Cleanup (optional; CI workspace is typically discarded automatically)
-
-The build-time injection keeps markdown out of the public repo as long as:
-- Private content is never committed to `resume_web/`
-- CI/build environment has controlled access to the private content repo
-
-
 ### 1) Export UI content index (no AWS/OpenAI needed)
 
 ```bash
