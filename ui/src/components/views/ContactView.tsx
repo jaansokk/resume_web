@@ -7,20 +7,53 @@ interface ContactViewProps {
   onClose?: () => void;
 }
 
+function isValidEmail(value: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(value);
+}
+
+function isValidLinkedInUrl(value: string): boolean {
+  // LinkedIn profile URLs can be:
+  // - https://www.linkedin.com/in/username
+  // - https://linkedin.com/in/username
+  // - http://www.linkedin.com/in/username
+  // - www.linkedin.com/in/username
+  // - linkedin.com/in/username
+  const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]{3,100}\/?$/i;
+  return linkedInRegex.test(value);
+}
+
+function isValidContact(value: string): boolean {
+  const trimmed = value.trim();
+  return isValidEmail(trimmed) || isValidLinkedInUrl(trimmed);
+}
+
 export function ContactView({ onClose }: ContactViewProps) {
   const [contact, setContact] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showValidationError, setShowValidationError] = useState(false);
+
+  const isContactValid = useMemo(() => {
+    return contact.trim().length === 0 || isValidContact(contact);
+  }, [contact]);
 
   const canSubmit = useMemo(() => {
-    return contact.trim().length > 0 && message.trim().length > 0;
-  }, [contact, message]);
+    return contact.trim().length > 0 && message.trim().length > 0 && isContactValid;
+  }, [contact, message, isContactValid]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setShowValidationError(false);
+
+    if (!isContactValid) {
+      setShowValidationError(true);
+      setError('Please enter a valid email address or LinkedIn profile URL (e.g., linkedin.com/in/yourname)');
+      return;
+    }
 
     if (!canSubmit) {
       setError('Please add your email/LinkedIn and a short message.');
@@ -116,10 +149,23 @@ export function ContactView({ onClose }: ContactViewProps) {
                 </label>
                 <input
                   value={contact}
-                  onChange={(e) => setContact(e.target.value)}
+                  onChange={(e) => {
+                    setContact(e.target.value);
+                    setShowValidationError(false);
+                    setError(null);
+                  }}
                   placeholder="name@email.com or linkedin.com/in/..."
-                  className="w-full rounded-xl bg-black/30 border border-[var(--v2-border)] px-4 py-3 text-sm text-[var(--v2-text)] placeholder:text-[var(--v2-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--v2-accent-dim)] focus:border-[var(--v2-accent)] transition"
+                  className={`w-full rounded-xl bg-black/30 border px-4 py-3 text-sm text-[var(--v2-text)] placeholder:text-[var(--v2-text-secondary)] focus:outline-none focus:ring-2 transition ${
+                    !isContactValid && contact.trim().length > 0
+                      ? 'border-red-400/60 focus:ring-red-400/20 focus:border-red-400'
+                      : 'border-[var(--v2-border)] focus:ring-[var(--v2-accent-dim)] focus:border-[var(--v2-accent)]'
+                  }`}
                 />
+                {!isContactValid && contact.trim().length > 0 && (
+                  <div className="mt-2 text-xs text-red-300">
+                    Please enter a valid email or LinkedIn URL (e.g., linkedin.com/in/yourname)
+                  </div>
+                )}
 
                 <div className="h-5" />
 
