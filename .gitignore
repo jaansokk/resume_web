@@ -26,3 +26,6 @@ node_modules/
 ingest/exported-content/**/*
 
 **/__pycache__/
+
+_notes
+_notes/**/*

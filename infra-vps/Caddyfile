@@ -8,6 +8,35 @@
 {$DOMAIN} {
   encode gzip zstd
 
+  # ========================================
+  # SECURITY HEADERS
+  # ========================================
+  header {
+    # HSTS: Force HTTPS for 1 year (including subdomains)
+    # Remove 'preload' directive initially; add after testing
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    
+    # CSP: Content Security Policy (strict but compatible with React/Astro)
+    # Allows inline scripts/styles (required for React hydration)
+    # Restricts external resources to same-origin + specific CDNs
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    
+    # Prevent MIME type sniffing
+    X-Content-Type-Options "nosniff"
+    
+    # Referrer policy: send origin for same-origin, URL for cross-origin HTTPS
+    Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Permissions policy: disable unused browser features
+    Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+    
+    # Remove server identification
+    -Server
+  }
+
+  # ========================================
+  # API ROUTES
+  # ========================================
   # API: same-origin /api/* -> internal FastAPI routes
   # handle_path strips the matching prefix, so:
   # - /api/chat -> /chat
@@ -17,6 +46,9 @@
     reverse_proxy api:8000
   }
 
+  # ========================================
+  # UI ROUTES
+  # ========================================
   # Share links are dynamic IDs, but the UI is a static build.
   # Rewrite /c/<shareId> -> /c/ (serves /c/index.html), which reads the shareId from window.location.pathname.
   @shareLink path_regexp shareLink ^/c/[^/]+/?$

@@ -26,9 +26,39 @@ from .pipeline import ChatPipeline
 from .qdrant_client import QdrantClient, QdrantConfig
 from .email_sender import load_smtp_config_from_env, send_contact_email
 from .share_store import ShareStore
+from .rate_limiter import InMemoryRateLimiter, load_rate_limit_config_from_env
 
 
 log = logging.getLogger("resume_web_chat_api")
+
+
+def get_client_ip(request: Request) -> str:
+    """
+    Extract real client IP from request, respecting proxy headers.
+    
+    When running behind a reverse proxy (Caddy/nginx), the real client IP
+    is in X-Forwarded-For or X-Real-IP headers. FastAPI/Uvicorn must be
+    configured with --proxy-headers to trust these headers.
+    
+    Returns:
+        Client IP address string, or "unknown" if unavailable
+    """
+    # With --proxy-headers, request.client.host uses X-Forwarded-For
+    if request.client:
+        return request.client.host
+    
+    # Fallback: manually check headers (if --proxy-headers not set)
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        # X-Forwarded-For can be "client, proxy1, proxy2"
+        # Take the first (leftmost) IP as the real client
+        return forwarded_for.split(",")[0].strip()
+    
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+    
+    return "unknown"
 
 
 def _load_dotenv() -> None:
@@ -75,8 +105,10 @@ def create_app() -> FastAPI:
         model_provider = os.environ.get("MODEL_PROVIDER", "anthropic").lower().strip()
         log.info("Config: QDRANT_URL=%s", os.environ.get("QDRANT_URL", "http://127.0.0.1:6333"))
         log.info("Config: MODEL_PROVIDER=%s", model_provider)
-        log.info("Config: OPENAI_API_KEY set=%s prefix=%s", bool(openai_key), (openai_key[:12] if openai_key else ""))
-        log.info("Config: ANTHROPIC_API_KEY set=%s prefix=%s", bool(anthropic_key), (anthropic_key[:12] if anthropic_key else ""))
+        # SECURITY FIX: Don't log key prefixes (helps attackers validate partial secrets)
+        log.info("Config: OPENAI_API_KEY set=%s", bool(openai_key))
+        log.info("Config: ANTHROPIC_API_KEY set=%s", bool(anthropic_key))
+        log.info("Config: RATE_LIMIT_ENABLED=%s", os.environ.get("RATE_LIMIT_ENABLED", "1"))
 
     qdrant_url = os.environ.get("QDRANT_URL", "http://127.0.0.1:6333").strip()
     qdrant_items = os.environ.get("QDRANT_COLLECTION_ITEMS", "content_items_v1").strip()
@@ -95,13 +127,37 @@ def create_app() -> FastAPI:
     openai = OpenAIClient()
     anthropic = AnthropicClient()
     pipeline = ChatPipeline(openai=openai, anthropic=anthropic, qdrant=qdrant)
+    
+    # Rate limiter (can be disabled via RATE_LIMIT_ENABLED=0 for testing)
+    rate_limit_enabled = os.environ.get("RATE_LIMIT_ENABLED", "1").strip() == "1"
+    rate_limiter = InMemoryRateLimiter(load_rate_limit_config_from_env()) if rate_limit_enabled else None
+    if rate_limiter:
+        log.info("Rate limiting enabled: %s req/day, %s req/min burst",
+                 rate_limiter.config.daily_limit, rate_limiter.config.burst_limit)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.post("/chat", response_model=ChatResponse)
-    def chat(req: ChatRequest) -> ChatResponse:
+    def chat(req: ChatRequest, request: Request) -> ChatResponse:
+        # SECURITY: Rate limit check BEFORE expensive embeddings/LLM calls
+        if rate_limiter:
+            client_ip = get_client_ip(request)
+            allowed, reason = rate_limiter.check_limit(
+                ip=client_ip,
+                route="/chat",
+                conversation_id=req.conversationId,
+            )
+            if not allowed:
+                retry_after = rate_limiter.get_retry_after(reason)
+                log.warning("Rate limit exceeded: ip=%s reason=%s", client_ip, reason)
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Rate limit exceeded ({reason}). Try again later.",
+                    headers={"Retry-After": str(retry_after)},
+                )
+        
         # OpenAI is always needed for embeddings
         # Anthropic or OpenAI needed for chat/router based on MODEL_PROVIDER
         try:
@@ -125,6 +181,36 @@ def create_app() -> FastAPI:
         if (req.website or "").strip():
             # Pretend success to avoid tipping off bots.
             return ContactResponse(ok=True)
+        
+        # SECURITY: Rate limit contact form (5/day, 2/min per IP)
+        if rate_limiter:
+            client_ip = get_client_ip(request)
+            # Use stricter limits for contact than chat
+            contact_config = rate_limiter.config
+            # Override config temporarily for contact endpoint
+            original_daily = contact_config.daily_limit
+            original_burst = contact_config.burst_limit
+            contact_config.daily_limit = 5  # 5 per day
+            contact_config.burst_limit = 2  # 2 per minute
+            
+            allowed, reason = rate_limiter.check_limit(
+                ip=client_ip,
+                route="/contact",
+                conversation_id=None,
+            )
+            
+            # Restore original config
+            contact_config.daily_limit = original_daily
+            contact_config.burst_limit = original_burst
+            
+            if not allowed:
+                retry_after = rate_limiter.get_retry_after(reason)
+                log.warning("Contact rate limit exceeded: ip=%s reason=%s", client_ip, reason)
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many requests. Please try again later.",
+                    headers={"Retry-After": str(retry_after)},
+                )
 
         try:
             smtp_config = load_smtp_config_from_env()
@@ -133,7 +219,7 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=500, detail="Email is not configured") from e
 
         user_agent = request.headers.get("user-agent")
-        client_ip = request.client.host if request.client else None
+        client_ip = get_client_ip(request)
         origin = (request.headers.get("origin") or "").strip() or None
 
         # Run blocking SMTP I/O in threadpool to keep the event loop responsive.

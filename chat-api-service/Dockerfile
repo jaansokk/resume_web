@@ -18,7 +18,8 @@ COPY app /app/app
 
 EXPOSE 8000
 
-# Keep it simple: single-process uvicorn. Scale via Lightsail instance size.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
+# SECURITY: Enable --proxy-headers to trust X-Forwarded-For from Caddy
+# This is required for rate limiting by real client IP (not container IP)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info", "--proxy-headers"]
 
 
