@@ -61,6 +61,16 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000 --log-level debug
 ```
 
+### Running behind a reverse proxy (Caddy/nginx)
+
+If you run the API behind a reverse proxy, you typically want:
+
+- `--proxy-headers` so Uvicorn can read `X-Forwarded-For` / `Forwarded`
+- `--forwarded-allow-ips` so only your proxy is trusted to supply those headers
+
+In the production Docker setup (`infra-vps/docker-compose.yml`), this is handled in the container startup command.
+You can tune it via `FORWARDED_ALLOW_IPS` in `infra-vps/.env`.
+
 ### Model Configuration
 
 **Choosing a Provider:**
