@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Header } from './shared/Header';
-import { ArtifactsPanel } from './artifacts/ArtifactsPanel';
-import { ChatMessage } from './chat/ChatMessage';
-import type { Message } from './types';
-import type { Artifacts } from '../utils/chatApi';
-import { getShare } from '../utils/shareApi';
-import { markHasSeenSplit } from '../utils/navState';
-import { saveConversationState } from '../utils/conversationState';
+import { Header } from '../../shared/Header';
+import { ArtifactsPanel } from '../../artifacts/ArtifactsPanel';
+import { ChatMessage } from '../../chat/ChatMessage';
+import type { Message } from '../../types';
+import type { Artifacts } from '../../../utils/chatApi';
+import { getShare } from '../../../utils/shareApi';
+import { markHasSeenSplit } from '../../../utils/navState';
+import { saveConversationState } from '../../../utils/conversationState';
 
 function extractShareIdFromPath(pathname: string): string | null {
   // Expect /c/<shareId>

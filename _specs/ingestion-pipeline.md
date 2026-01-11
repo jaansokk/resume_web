@@ -36,7 +36,7 @@ All types:
 
 For `experience` and `projects`:
 - `title`, `company`, `role`, `period`, `tags[]`, `summary`
-- `subtype` (optional): e.g. `role`, `freelance`, `case-study`
+- `subtype` (optional): e.g. `role`, `freelance`, `project` 
 
 For `background`:
 - `title`, `tags[]`, `summary`

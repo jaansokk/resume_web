@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { postChat, type Artifacts, type ClientUI } from '../utils/chatApi';
-import type { Message } from './types';
+import { postChat, type Artifacts, type ClientUI } from '../../../utils/chatApi';
+import type { Message } from '../../types';
 import { HandshakeView } from './views/HandshakeView';
 import { ChatView } from './views/ChatView';
 import { SplitView } from './views/SplitView';
-import { markHasSeenSplit, clearHasSeenSplit } from '../utils/navState';
-import { loadConversationState, saveConversationState, clearConversationState } from '../utils/conversationState';
+import { markHasSeenSplit, clearHasSeenSplit } from '../../../utils/navState';
+import { loadConversationState, saveConversationState, clearConversationState } from '../../../utils/conversationState';
 
 type MainViewMode = 'handshake' | 'chat' | 'split';
 

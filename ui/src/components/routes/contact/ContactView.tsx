@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Header } from '../shared/Header';
-import { BackgroundOverlay } from '../shared/BackgroundOverlay';
-import { postContact } from '../../utils/contactApi';
+import { Header } from '../../shared/Header';
+import { BackgroundOverlay } from '../../shared/BackgroundOverlay';
+import { postContact } from '../../../utils/contactApi';
 
 interface ContactViewProps {
   onClose?: () => void;

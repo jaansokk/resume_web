@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+Before starting work new work, especially after a first prompt, always prefer asking to assuming.
+If uncertain about anything especially user intent or architecture choices, ask for clarifications first.

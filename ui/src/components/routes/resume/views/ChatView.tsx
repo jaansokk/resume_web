@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Header } from '../shared/Header';
-import { BackgroundOverlay } from '../shared/BackgroundOverlay';
-import { ChatMessage } from '../chat/ChatMessage';
-import { LoadingIndicator } from '../chat/LoadingIndicator';
-import { ChipList } from '../chat/ChipList';
-import { ChatInput } from '../chat/ChatInput';
-import type { Message } from '../types';
+import { Header } from '../../../shared/Header';
+import { BackgroundOverlay } from '../../../shared/BackgroundOverlay';
+import { ChatMessage } from '../../../chat/ChatMessage';
+import { LoadingIndicator } from '../../../chat/LoadingIndicator';
+import { ChipList } from '../../../chat/ChipList';
+import { ChatInput } from '../../../chat/ChatInput';
+import type { Message } from '../../../types';
 
 interface ChatViewProps {
   messages: Message[];

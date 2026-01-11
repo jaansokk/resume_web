@@ -1,74 +1,82 @@
-/**
- * CV View with Floating Chat Assistant
- * - Floating chat icon bottom-right
- * - Opens sticky conversation area in corner
- * - Familiar pattern from support chat widgets
- */
-
-import { useState, useRef, useEffect } from 'react';
-import { CVContent } from './CVContent';
-import { CVTableOfContents } from './CVTableOfContents';
-import { CVHeader } from './CVHeader';
+import { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { postChat, type ClientUI } from '../../../utils/chatApi';
 import type { Message } from '../../types';
 
-interface CVViewProps {
-  messages: Message[];
-  inputValue: string;
-  onInputChange: (value: string) => void;
-  onSend: (text: string) => void;
-  isLoading: boolean;
-  chips: string[];
-  onChipSelect: (chip: string) => void;
-}
-
-export function CVView({
-  messages,
-  inputValue,
-  onInputChange,
-  onSend,
-  isLoading,
-  chips,
-  onChipSelect,
-}: CVViewProps) {
+export function CVChatWidget() {
+  const [conversationId] = useState(() => uuidv4());
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [chips, setChips] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
+    if (!isChatOpen) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isChatOpen]);
+
+  const handleSend = async (rawText: string) => {
+    const text = rawText.trim();
+    if (!text || isLoading) return;
+
+    const userMessage: Message = { role: 'user', text };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInputValue('');
+    setIsLoading(true);
+    setChips([]);
+
+    try {
+      const clientUI: ClientUI = { view: 'chat' };
+
+      const response = await postChat({
+        conversationId,
+        client: {
+          origin: window.location.origin,
+          page: { path: '/cv' },
+          ui: clientUI,
+        },
+        messages: newMessages.map((m) => ({ role: m.role, text: m.text })),
+      });
+
+      setMessages((prev) => [...prev, { role: 'assistant', text: response.assistant.text }]);
+      if (response.chips?.length) setChips(response.chips);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: `Sorry — the chat service is unavailable right now. (${err instanceof Error ? err.message : 'unknown error'})`,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="v2-concept min-h-screen">
-      <CVHeader />
-      
-      {/* Main layout */}
-      <div className="max-w-6xl mx-auto px-6 pt-24 pb-32">
-        <div className="flex gap-16">
-          {/* Left: CV Content */}
-          <main className="flex-1 min-w-0">
-            <CVContent />
-          </main>
-          
-          {/* Right: Table of Contents - sticky */}
-          <aside className="hidden lg:block w-48 flex-shrink-0">
-            <div className="sticky top-24">
-              <CVTableOfContents />
-            </div>
-          </aside>
-        </div>
-      </div>
-
+    <>
       {/* Floating chat button */}
       {!isChatOpen && (
         <button
+          type="button"
           onClick={() => setIsChatOpen(true)}
           className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[var(--v2-accent)] rounded-full 
                      flex items-center justify-center shadow-lg shadow-black/30
                      hover:scale-105 transition-transform"
           aria-label="Open chat"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--v2-bg)]">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-[var(--v2-bg)]"
+          >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
         </button>
@@ -76,9 +84,13 @@ export function CVView({
 
       {/* Chat panel */}
       {isChatOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-96 h-[500px] max-h-[70vh] bg-[var(--v2-bg-elevated)] 
-                        border border-[var(--v2-border)] rounded-2xl shadow-2xl shadow-black/50
-                        flex flex-col overflow-hidden animate-scale-in">
+        <div
+          className="fixed bottom-6 right-6 z-50 w-96 h-[500px] max-h-[70vh] bg-[var(--v2-bg-elevated)] 
+                     border border-[var(--v2-border)] rounded-2xl shadow-2xl shadow-black/50
+                     flex flex-col overflow-hidden animate-scale-in"
+          role="dialog"
+          aria-label="Chat"
+        >
           {/* Chat header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--v2-border-subtle)]">
             <div className="flex items-center gap-2">
@@ -86,6 +98,7 @@ export function CVView({
               <span className="text-sm font-medium">Ask about my experience</span>
             </div>
             <button
+              type="button"
               onClick={() => setIsChatOpen(false)}
               className="p-1 text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text)] transition-colors"
               aria-label="Close chat"
@@ -105,10 +118,15 @@ export function CVView({
                     Hi! Ask me anything about my experience, skills, or past projects.
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {['What technologies do you work with?', 'Tell me about your Guardtime work', 'What kind of teams have you led?'].map((suggestion) => (
+                    {[
+                      'What technologies do you work with?',
+                      'Tell me about your Guardtime work',
+                      'What kind of teams have you led?',
+                    ].map((suggestion) => (
                       <button
                         key={suggestion}
-                        onClick={() => onSend(suggestion)}
+                        type="button"
+                        onClick={() => handleSend(suggestion)}
                         className="px-3 py-1.5 text-xs bg-[var(--v2-bg-card)] border border-[var(--v2-border-subtle)]
                                    text-[var(--v2-text-secondary)] rounded-full hover:border-[var(--v2-accent)] 
                                    hover:text-[var(--v2-accent)] transition-colors"
@@ -119,12 +137,9 @@ export function CVView({
                   </div>
                 </div>
               )}
-              
+
               {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm ${
                       msg.role === 'user'
@@ -142,8 +157,14 @@ export function CVView({
                   <div className="bg-[var(--v2-bg-card)] px-4 py-3 rounded-2xl">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-[var(--v2-text-tertiary)] rounded-full animate-pulse" />
-                      <span className="w-2 h-2 bg-[var(--v2-text-tertiary)] rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-[var(--v2-text-tertiary)] rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                      <span
+                        className="w-2 h-2 bg-[var(--v2-text-tertiary)] rounded-full animate-pulse"
+                        style={{ animationDelay: '150ms' }}
+                      />
+                      <span
+                        className="w-2 h-2 bg-[var(--v2-text-tertiary)] rounded-full animate-pulse"
+                        style={{ animationDelay: '300ms' }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -154,7 +175,8 @@ export function CVView({
                   {chips.map((chip) => (
                     <button
                       key={chip}
-                      onClick={() => onChipSelect(chip)}
+                      type="button"
+                      onClick={() => handleSend(chip)}
                       className="px-3 py-1.5 text-xs bg-[var(--v2-bg-card)] border border-[var(--v2-border-subtle)]
                                  text-[var(--v2-text-secondary)] rounded-full hover:border-[var(--v2-accent)] 
                                  hover:text-[var(--v2-accent)] transition-colors"
@@ -164,31 +186,30 @@ export function CVView({
                   ))}
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           </div>
 
           {/* Floating input area with gradient fade */}
           <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
-            {/* Gradient fade */}
             <div className="h-16 bg-gradient-to-t from-[var(--v2-bg-elevated)] to-transparent" />
-            
-            {/* Input container */}
+
             <div className="bg-[var(--v2-bg-elevated)] px-4 pb-4 pointer-events-auto">
               <div className="bg-[var(--v2-bg)] border border-[var(--v2-border-subtle)] rounded-full flex items-center px-2 py-1">
                 <input
                   type="text"
                   value={inputValue}
-                  onChange={(e) => onInputChange(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && onSend(inputValue)}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend(inputValue)}
                   placeholder="Ask a question..."
                   className="flex-1 bg-transparent px-4 py-2.5 text-sm placeholder:text-[var(--v2-text-tertiary)]
                              focus:outline-none"
                   disabled={isLoading}
                 />
                 <button
-                  onClick={() => onSend(inputValue)}
+                  type="button"
+                  onClick={() => handleSend(inputValue)}
                   disabled={isLoading || !inputValue.trim()}
                   className="px-5 py-2.5 bg-[var(--v2-accent)] text-[var(--v2-bg)] rounded-full text-sm font-medium
                              hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -200,6 +221,7 @@ export function CVView({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
+

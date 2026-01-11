@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Header } from '../shared/Header';
-import { ChatMessage } from '../chat/ChatMessage';
-import { LoadingIndicator } from '../chat/LoadingIndicator';
-import { ChatInput } from '../chat/ChatInput';
-import { StartOverButton } from '../chat/StartOverButton';
-import { ArtifactsPanel } from '../artifacts/ArtifactsPanel';
-import { ShareModal } from '../modals/ShareModal';
-import { Modal } from '../modals/Modal';
-import type { Message } from '../types';
-import type { Artifacts } from '../../utils/chatApi';
+import { Header } from '../../../shared/Header';
+import { ChatMessage } from '../../../chat/ChatMessage';
+import { LoadingIndicator } from '../../../chat/LoadingIndicator';
+import { ChatInput } from '../../../chat/ChatInput';
+import { StartOverButton } from '../../../chat/StartOverButton';
+import { ArtifactsPanel } from '../../../artifacts/ArtifactsPanel';
+import { ShareModal } from '../../../modals/ShareModal';
+import { Modal } from '../../../modals/Modal';
+import type { Message } from '../../../types';
+import type { Artifacts } from '../../../../utils/chatApi';
 
 interface SplitViewProps {
   conversationId: string;
