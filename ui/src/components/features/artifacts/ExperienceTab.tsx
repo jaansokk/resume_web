@@ -1,4 +1,4 @@
-import type { RelevantExperienceGroup, RelevantExperienceItem, Artifacts } from '../../utils/chatApi';
+import type { RelevantExperienceGroup, RelevantExperienceItem, Artifacts } from '../../../utils/chatApi';
 
 interface ExperienceTabProps {
   artifacts: Artifacts | null;

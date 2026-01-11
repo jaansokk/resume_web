@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { postShare } from '../../utils/shareApi';
-import type { Artifacts } from '../../utils/chatApi';
-import type { Message } from '../types';
+import { postShare } from '../../../utils/shareApi';
+import type { Artifacts } from '../../../utils/chatApi';
+import type { Message } from '../../domain/types';
 
 interface ShareModalProps {
   isOpen: boolean;

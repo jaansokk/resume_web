@@ -1,4 +1,4 @@
-import type { FitBriefSection, Artifacts } from '../../utils/chatApi';
+import type { FitBriefSection, Artifacts } from '../../../utils/chatApi';
 
 interface FitBriefTabProps {
   artifacts: Artifacts | null;

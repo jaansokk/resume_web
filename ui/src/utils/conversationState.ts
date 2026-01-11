@@ -1,4 +1,4 @@
-import type { Message, ViewMode } from '../components/types';
+import type { Message, ViewMode } from '../components/domain/types';
 import type { Artifacts } from './chatApi';
 
 const STORAGE_KEY = 'v2:conversationState';

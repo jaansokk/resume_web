@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Header } from '../../../shared/Header';
-import { BackgroundOverlay } from '../../../shared/BackgroundOverlay';
-import { QuickReplyGrid } from '../../../handshake/QuickReplyGrid';
-import { ChatInput } from '../../../chat/ChatInput';
+import { Header } from '../../../ui/Header';
+import { BackgroundOverlay } from '../../../ui/BackgroundOverlay';
+import { QuickReplyGrid } from '../../../features/handshake/QuickReplyGrid';
+import { ChatInput } from '../../../features/chat/ChatInput';
 
 interface HandshakeViewProps {
   inputValue: string;

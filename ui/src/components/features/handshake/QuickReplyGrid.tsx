@@ -1,4 +1,4 @@
-import { quickReplies } from '../types';
+import { quickReplies } from '../../domain/types';
 
 interface QuickReplyGridProps {
   onReplySelect: (label: string) => void;

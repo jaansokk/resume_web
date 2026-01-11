@@ -1,4 +1,4 @@
-import type { Artifacts } from '../../utils/chatApi';
+import type { Artifacts } from '../../../utils/chatApi';
 import { FitBriefTab } from './FitBriefTab';
 import { ExperienceTab } from './ExperienceTab';
 

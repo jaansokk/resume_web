@@ -1,4 +1,4 @@
-import type { Message } from '../types';
+import type { Message } from '../../domain/types';
 
 interface ChatMessageProps {
   message: Message;

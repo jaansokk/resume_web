@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Header } from '../../../shared/Header';
-import { ChatMessage } from '../../../chat/ChatMessage';
-import { LoadingIndicator } from '../../../chat/LoadingIndicator';
-import { ChatInput } from '../../../chat/ChatInput';
-import { StartOverButton } from '../../../chat/StartOverButton';
-import { ArtifactsPanel } from '../../../artifacts/ArtifactsPanel';
-import { ShareModal } from '../../../modals/ShareModal';
-import { Modal } from '../../../modals/Modal';
-import type { Message } from '../../../types';
+import { Header } from '../../../ui/Header';
+import { Modal } from '../../../ui/Modal';
+import { ChatMessage } from '../../../features/chat/ChatMessage';
+import { LoadingIndicator } from '../../../features/chat/LoadingIndicator';
+import { ChatInput } from '../../../features/chat/ChatInput';
+import { StartOverButton } from '../../../features/chat/StartOverButton';
+import { ArtifactsPanel } from '../../../features/artifacts/ArtifactsPanel';
+import { ShareModal } from '../../../features/share/ShareModal';
+import type { Message } from '../../../domain/types';
 import type { Artifacts } from '../../../../utils/chatApi';
 
 interface SplitViewProps {

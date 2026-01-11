@@ -1,51 +1,51 @@
 # Interactive Resume App Architecture
 
-This directory contains the interactive resume application, structured as maintainable, reusable React components.
+This directory contains the interactive resume site UI, organized to mirror the site IA (routes) while keeping shared features and UI primitives reusable.
 
 ## Structure
 
 ```
 components/
-├── App.tsx                      # Main app orchestrator (state management & routing)
-├── types.ts                     # Shared TypeScript types and constants
+├── routes/                      # Route-level entrypoints (mirror site IA)
+│   ├── resume/                  # Mounted at `/` (interactive resume)
+│   │   ├── ResumeApp.tsx        # Orchestrator (state management & routing)
+│   │   └── views/               # Route-specific top-level views
+│   │       ├── HandshakeView.tsx
+│   │       ├── ChatView.tsx
+│   │       └── SplitView.tsx
+│   ├── cv/                      # Mounted on `/cv`
+│   │   └── CVChatWidget.tsx     # Floating chat widget on the CV page
+│   ├── contact/                 # Mounted on `/contact`
+│   │   └── ContactView.tsx
+│   └── share/                   # Mounted on `/c/*` (shared snapshot)
+│       └── SharedConversationApp.tsx
 │
-├── shared/                      # Shared components used across views
-│   ├── Header.tsx              # Site header with navigation
-│   └── BackgroundOverlay.tsx   # Background image with overlays
+├── features/                    # Reusable cross-route features
+│   ├── chat/                    # Chat UI building blocks
+│   ├── artifacts/               # FitBrief/RelevantExperience panel + tabs
+│   ├── handshake/               # Quick reply UI for handshake
+│   └── share/                   # Share modal flow
 │
-├── views/                       # Top-level view components
-│   ├── HandshakeView.tsx       # Landing page with hero and quick replies
-│   ├── ChatView.tsx            # Single-column chat view
-│   └── SplitView.tsx           # Split view with artifacts and chat
+├── ui/                          # Reusable UI primitives / app chrome
+│   ├── Header.tsx
+│   ├── BackgroundOverlay.tsx
+│   └── Modal.tsx
 │
-├── chat/                        # Chat-related components
-│   ├── ChatMessage.tsx         # Individual message bubble
-│   ├── ChatInput.tsx           # Text input with send button
-│   ├── LoadingIndicator.tsx   # Three bouncing dots
-│   └── ChipList.tsx            # Follow-up suggestion chips
+├── astro/                       # Astro-only components used by Astro pages
+│   └── KeyProjectAccordion.astro
 │
-├── handshake/                   # Handshake-specific components
-│   └── QuickReplyGrid.tsx      # 2x2 grid of quick reply buttons
-│
-├── artifacts/                   # Artifact panel components
-│   ├── ArtifactsPanel.tsx      # Container with tabs and content
-│   ├── FitBriefTab.tsx         # Fit brief sections
-│   └── ExperienceTab.tsx       # Relevant experience items
-│
-└── modals/                      # Modal dialogs
-    └── ShareModal.tsx           # Two-step share modal
+└── domain/                      # Shared types/constants used across features/routes
+    └── types.ts
 ```
 
 ## Component Hierarchy
 
-### Main App (App.tsx)
-- **Responsibilities**: State management, API calls, view routing
-- **Props**: None (root component)
+### Main App (`routes/resume/ResumeApp.tsx`)
+- **Responsibilities**: State management, API calls, view routing for the interactive resume on `/`.
 - **State**: conversationId, messages, viewMode, artifacts, etc.
-- **Exports**: Default export as `App`
 
 ### View Components
-Each view is self-contained and receives all necessary props from the main app:
+Each route-level view is self-contained and receives all necessary props from the route app/orchestrator:
 
 #### HandshakeView
 - Hero text with animated subline
@@ -76,11 +76,13 @@ Each view is self-contained and receives all necessary props from the main app:
 ## Props Flow
 
 ```
-App (state management) 
+ResumeApp (state management)
   ↓
 [HandshakeView | ChatView | SplitView] (view logic & layout)
   ↓
-[ChatMessage, ChatInput, etc.] (presentational components)
+[features/*] (chat/artifacts/share/handshake)
+  ↓
+[ui/*] (Header/Modal/BackgroundOverlay) + small presentational components
 ```
 
 ## Component Guidelines
@@ -94,7 +96,7 @@ App (state management)
 - One component per file
 - Component name matches filename
 - Related components grouped in directories
-- Shared types in `types.ts`
+- Shared types in `domain/types.ts`
 
 ### Import Conventions
 - Relative imports within the components directory
@@ -103,13 +105,13 @@ App (state management)
 
 ## Usage
 
-The main app component is imported in `pages/index.astro`:
+The resume app is imported in `pages/index.astro`:
 
 ```tsx
-import App from '../components/App';
+import ResumeApp from '../components/routes/resume/ResumeApp';
 
 // In the page:
-<App client:load />
+<ResumeApp client:load />
 ```
 
 ## Functional Coverage

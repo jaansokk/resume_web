@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Header } from '../../shared/Header';
-import { ArtifactsPanel } from '../../artifacts/ArtifactsPanel';
-import { ChatMessage } from '../../chat/ChatMessage';
-import type { Message } from '../../types';
+import { Header } from '../../ui/Header';
+import { ArtifactsPanel } from '../../features/artifacts/ArtifactsPanel';
+import { ChatMessage } from '../../features/chat/ChatMessage';
+import type { Message } from '../../domain/types';
 import type { Artifacts } from '../../../utils/chatApi';
 import { getShare } from '../../../utils/shareApi';
 import { markHasSeenSplit } from '../../../utils/navState';

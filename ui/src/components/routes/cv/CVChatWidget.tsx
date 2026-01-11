@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { postChat, type ClientUI } from '../../../utils/chatApi';
-import type { Message } from '../../types';
+import type { Message } from '../../domain/types';
 
 export function CVChatWidget() {
   const [conversationId] = useState(() => uuidv4());
