@@ -26,7 +26,9 @@ One record per item: experience/project/background.
 
 Required fields (payload):
 - `type`: `"experience" | "project" | "background"`
-- `uiVisible`: boolean (false for background)
+- `subtype`: string | null (optional sub-classification within `type`, e.g. `role`, `freelance`)
+- `visibleIn`: string[] (any of `"cv" | "artifacts" | "rag"`)
+- `uiVisible`: boolean (derived; true iff `type != "background"` AND `visibleIn` includes `"artifacts"`)
 - `slug`: string (canonical identifier)
 - `title`: string
 - `tags`: string[]

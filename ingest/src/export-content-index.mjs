@@ -61,6 +61,16 @@ async function loadItemsFromCollection(type, collectionDir) {
     const raw = await fs.readFile(fullPath, "utf8");
     const { data } = parseFrontmatter(raw);
 
+    // New schema: explicit routing control
+    assert(Array.isArray(data.visibleIn) && data.visibleIn.length > 0, `[${type}/${slug}] missing required frontmatter: visibleIn[]`);
+    if (!data.visibleIn.includes("artifacts")) {
+      // content-index.json is the "UI-visible for artifacts" index (experience/projects only).
+      continue;
+    }
+
+    // New schema: `type` is the top-level bucket. Enforce consistency with directory.
+    assert(data.type === type, `[${type}/${slug}] frontmatter.type must be "${type}" (got "${data.type}")`);
+
     // Fail fast on required fields (MVP spec).
     assert(typeof data.title === "string" && data.title.trim(), `[${type}/${slug}] missing required frontmatter: title`);
 
@@ -75,6 +85,8 @@ async function loadItemsFromCollection(type, collectionDir) {
 
     const base = {
       type,
+      ...(typeof data.subtype === "string" && data.subtype.trim() ? { subtype: data.subtype.trim() } : {}),
+      visibleIn: data.visibleIn,
       slug,
       title: data.title,
       tags: data.tags,

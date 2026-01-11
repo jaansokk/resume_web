@@ -155,7 +155,18 @@ class OpenSearchClient:
         valid_slugs = []
         for slug in slugs:
             item = self.get_item(slug)
-            if item and item.get("uiVisible", True) and item.get("type") != "background":
+            if not item:
+                continue
+            if item.get("type") == "background":
+                continue
+            # New rule: use explicit visibility when present
+            visible_in = item.get("visibleIn")
+            if isinstance(visible_in, list):
+                if "artifacts" in visible_in:
+                    valid_slugs.append(slug)
+                continue
+            # Fallback for older indexed docs
+            if item.get("uiVisible", True):
                 valid_slugs.append(slug)
         return valid_slugs
 

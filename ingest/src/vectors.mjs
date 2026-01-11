@@ -82,6 +82,7 @@ function getTypeConfig(type) {
   if (type === "experience" || type === "project") {
     return {
       required: ["title", "company", "role", "period", "tags", "summary"],
+      // UI visibility is controlled by frontmatter.visibleIn (see buildItemDoc)
       uiVisible: true
     };
   }
@@ -104,6 +105,11 @@ function normalizeUpdatedAt(frontmatterUpdatedAt) {
 
 function buildItemDoc({ type, slug, data, sourcePath, sourceHash }) {
   const cfg = getTypeConfig(type);
+
+  // New schema: `type` is explicit in frontmatter; enforce consistency with directory.
+  assert(data.type === type, `[${type}/${slug}] frontmatter.type must be "${type}" (got "${data.type}")`);
+  assert(Array.isArray(data.visibleIn) && data.visibleIn.length > 0, `[${type}/${slug}] missing required frontmatter: visibleIn[]`);
+
   for (const k of cfg.required) {
     if (k === "tags") {
       assert(Array.isArray(data.tags), `[${type}/${slug}] missing required frontmatter: tags[]`);
@@ -112,9 +118,13 @@ function buildItemDoc({ type, slug, data, sourcePath, sourceHash }) {
     assert(typeof data[k] === "string" && data[k].trim(), `[${type}/${slug}] missing required frontmatter: ${k}`);
   }
 
+  const uiVisible = type !== "background" && data.visibleIn.includes("artifacts");
+
   const doc = {
     type,
-    uiVisible: cfg.uiVisible,
+    subtype: typeof data.subtype === "string" && data.subtype.trim() ? data.subtype.trim() : undefined,
+    visibleIn: data.visibleIn,
+    uiVisible,
     slug,
     title: data.title,
     tags: data.tags,
@@ -215,6 +225,9 @@ async function main() {
       sourceHash: item.sourceHash
     });
     itemDocs.push(itemDoc);
+
+    // Only embed/index chunks for items explicitly eligible for RAG.
+    if (!Array.isArray(itemDoc.visibleIn) || !itemDoc.visibleIn.includes("rag")) continue;
 
     const chunks = chunkMarkdownBody(item.body, { type: item.type });
     if (!chunks.length) continue;

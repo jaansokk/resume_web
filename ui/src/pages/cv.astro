@@ -4,7 +4,7 @@ import { parseRoleMarkdown } from '../utils/cvRoleParser';
 import KeyProjectAccordion from '../components/KeyProjectAccordion.astro';
 
 // Load roles from content collection
-const allRoles = await getCollection('experience');
+const allRoles = (await getCollection('experience')).filter((item) => Array.isArray(item.data.visibleIn) && item.data.visibleIn.includes('cv'));
 
 // Sort by recency (most recent first)
 const sortedRoles = allRoles.sort((a, b) => {
@@ -112,7 +112,7 @@ const education = [
               <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
                 Experience
               </h2>
-              <div class="space-y-0">
+              <div class="space-y-8">
                 {rolesWithParsed.map((role, idx) => (
                   <article 
                     id={role.id}

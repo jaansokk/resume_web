@@ -87,10 +87,14 @@ class RetrievalService:
 def is_ui_visible_item(payload: dict[str, Any] | None) -> bool:
     if not payload:
         return False
+    # New rule: UI surfacing for artifacts is driven by explicit frontmatter visibility.
+    # Ingestion copies `visibleIn` onto item payloads and derives `uiVisible` as a convenience.
     if payload.get("type") == "background":
         return False
-    if payload.get("uiVisible") is False:
-        return False
-    return True
+    visible_in = payload.get("visibleIn")
+    if isinstance(visible_in, list):
+        return "artifacts" in visible_in
+    # Fallback (shouldn't happen once all content is migrated):
+    return payload.get("uiVisible") is not False
 
 

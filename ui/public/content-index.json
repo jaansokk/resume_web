@@ -1,8 +1,14 @@
 {
-  "generatedAt": "2026-01-09T16:52:16.303Z",
+  "generatedAt": "2026-01-11T18:42:38.979Z",
   "items": [
     {
       "type": "experience",
+      "subtype": "role",
+      "visibleIn": [
+        "cv",
+        "artifacts",
+        "rag"
+      ],
       "slug": "4finance",
       "title": "Product Manager — Risk & Customer Journey",
       "tags": [
@@ -19,6 +25,12 @@
     },
     {
       "type": "experience",
+      "subtype": "role",
+      "visibleIn": [
+        "cv",
+        "artifacts",
+        "rag"
+      ],
       "slug": "guardtime-pm",
       "title": "Technical Project Manager / ScrumMaster",
       "tags": [
@@ -35,6 +47,12 @@
     },
     {
       "type": "experience",
+      "subtype": "role",
+      "visibleIn": [
+        "cv",
+        "artifacts",
+        "rag"
+      ],
       "slug": "guardtime-po",
       "title": "Product Owner",
       "tags": [
@@ -51,6 +69,12 @@
     },
     {
       "type": "experience",
+      "subtype": "role",
+      "visibleIn": [
+        "cv",
+        "artifacts",
+        "rag"
+      ],
       "slug": "playtech",
       "title": "Team Lead — Casino Branding",
       "tags": [
@@ -67,6 +91,12 @@
     },
     {
       "type": "experience",
+      "subtype": "role",
+      "visibleIn": [
+        "cv",
+        "artifacts",
+        "rag"
+      ],
       "slug": "positium",
       "title": "Technical Project Lead",
       "tags": [
@@ -76,7 +106,7 @@
         "Big Data",
         "Mobility"
       ],
-      "summary": "Leading the Estonian Mobility Modelling initiative — a 2-year nationwide prototype that transforms mobile network data into actionable mobility insights for urban planning and policy decisions.",
+      "summary": "Leading a nationwide mobility modelling prototype that turns mobile network data into actionable insights for planning and policy.",
       "company": "Positium",
       "role": "Technical Project Lead",
       "period": "2025 — Present"

@@ -30,8 +30,13 @@ The ingestion CLI supports an override:
 Each file contains frontmatter + body.
 
 ### Required frontmatter fields (MVP)
+All types:
+- `type`: `"experience" | "project" | "background"` (top-level bucket)
+- `visibleIn[]`: any of `"cv" | "artifacts" | "rag"` (explicit routing control)
+
 For `experience` and `projects`:
 - `title`, `company`, `role`, `period`, `tags[]`, `summary`
+- `subtype` (optional): e.g. `role`, `freelance`, `case-study`
 
 For `background`:
 - `title`, `tags[]`, `summary`
@@ -67,6 +72,7 @@ And copy to UI as one of:
 Rules:
 - Export ONLY `experience` and `project` items.
 - EXCLUDE `background` entirely from this artifact.
+- Also exclude any items where `visibleIn` does NOT include `"artifacts"`.
 
 Shape (suggested):
 {
