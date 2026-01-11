@@ -6,7 +6,7 @@
 export interface KeyProject {
   title: string;
   oneLiner?: string;
-  impact: string[];
+  impact?: string[];
   details?: string;
 }
 
@@ -145,14 +145,13 @@ function parseKeyProjects(content: string): KeyProject[] {
         projects.push({
           title: currentProject.title,
           oneLiner: currentProject.oneLiner,
-          impact: currentProject.impact || [],
+          impact: currentProject.impact,
           details: currentProject.details,
         });
       }
       // Start new project
       currentProject = {
         title: h3Match[1].trim(),
-        impact: [],
       };
       currentField = null;
       continue;
@@ -160,29 +159,40 @@ function parseKeyProjects(content: string): KeyProject[] {
 
     if (!currentProject) continue;
 
-    // Check for **One-liner:**
+    // Check for **One-liner:** (inline format)
     const oneLinerMatch = line.match(/^\*\*One-liner:\*\*\s*(.+)$/);
     if (oneLinerMatch) {
       currentProject.oneLiner = oneLinerMatch[1].trim();
       continue;
     }
 
-    // Check for **Impact:**
-    if (line.match(/^\*\*Impact:\*\*\s*$/)) {
+    // Check for any bold section heading: **SectionName:**
+    const sectionMatch = line.match(/^\*\*([^*]+):\*\*\s*$/);
+    if (sectionMatch) {
       saveCurrentField();
-      currentField = 'impact';
-      continue;
-    }
-
-    // Check for **Details:**
-    if (line.match(/^\*\*Details:\*\*\s*$/)) {
-      saveCurrentField();
-      currentField = 'details';
+      const sectionName = sectionMatch[1].trim().toLowerCase();
+      
+      // Map recognized sections to specific fields
+      if (sectionName === 'impact') {
+        currentField = 'impact';
+      } else if (sectionName === 'details') {
+        currentField = 'details';
+      } else {
+        // Treat any other bold heading as a details subsection
+        // Add the heading to details content
+        currentField = 'details';
+        currentFieldLines.push(`**${sectionMatch[1].trim()}:**`);
+      }
       continue;
     }
 
     // Collect field content
     if (currentField) {
+      currentFieldLines.push(line);
+    } else if (line.trim() !== '') {
+      // If no structured field is active, treat non-empty lines as loose details
+      // This handles legacy format where text follows directly after the title
+      currentField = 'details';
       currentFieldLines.push(line);
     }
   }
@@ -193,7 +203,7 @@ function parseKeyProjects(content: string): KeyProject[] {
     projects.push({
       title: currentProject.title,
       oneLiner: currentProject.oneLiner,
-      impact: currentProject.impact || [],
+      impact: currentProject.impact,
       details: currentProject.details,
     });
   }

@@ -79,7 +79,10 @@ const { projects, roleSlug } = Astro.props;
                 
                 {project.details && (
                   <div class="details-section">
-                    <p class="section-label">Details</p>
+                    {/* Only show "Details" label for structured content (when Impact is also present) */}
+                    {project.impact && project.impact.length > 0 && (
+                      <p class="section-label">Details</p>
+                    )}
                     <p class="details-text">{project.details}</p>
                   </div>
                 )}
