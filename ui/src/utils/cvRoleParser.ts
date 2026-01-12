@@ -5,9 +5,7 @@
 
 export interface KeyProject {
   title: string;
-  oneLiner?: string;
-  impact?: string[];
-  details?: string;
+  content: string; // Raw markdown content
 }
 
 export interface ParsedRole {
@@ -115,96 +113,45 @@ function extractBullets(content: string): string[] {
 
 /**
  * Parse Key Projects section into structured project objects
+ * Now just captures raw markdown content for each project
  */
 function parseKeyProjects(content: string): KeyProject[] {
   const projects: KeyProject[] = [];
   const lines = content.split('\n');
 
   let currentProject: Partial<KeyProject> | null = null;
-  let currentField: 'impact' | 'details' | null = null;
-  let currentFieldLines: string[] = [];
-
-  const saveCurrentField = () => {
-    if (currentProject && currentField && currentFieldLines.length > 0) {
-      if (currentField === 'impact') {
-        currentProject.impact = extractBullets(currentFieldLines.join('\n'));
-      } else if (currentField === 'details') {
-        currentProject.details = currentFieldLines.join('\n').trim();
-      }
-    }
-    currentFieldLines = [];
-  };
+  let currentContent: string[] = [];
 
   for (const line of lines) {
     // Check for ### project heading
     const h3Match = line.match(/^###\s+(.+)$/);
     if (h3Match) {
       // Save previous project
-      saveCurrentField();
       if (currentProject && currentProject.title) {
         projects.push({
           title: currentProject.title,
-          oneLiner: currentProject.oneLiner,
-          impact: currentProject.impact,
-          details: currentProject.details,
+          content: currentContent.join('\n').trim(),
         });
       }
       // Start new project
       currentProject = {
         title: h3Match[1].trim(),
       };
-      currentField = null;
+      currentContent = [];
       continue;
     }
 
-    if (!currentProject) continue;
-
-    // Check for **One-liner:** (inline format)
-    const oneLinerMatch = line.match(/^\*\*One-liner:\*\*\s*(.+)$/);
-    if (oneLinerMatch) {
-      currentProject.oneLiner = oneLinerMatch[1].trim();
-      continue;
-    }
-
-    // Check for any bold section heading: **SectionName:**
-    const sectionMatch = line.match(/^\*\*([^*]+):\*\*\s*$/);
-    if (sectionMatch) {
-      saveCurrentField();
-      const sectionName = sectionMatch[1].trim().toLowerCase();
-      
-      // Map recognized sections to specific fields
-      if (sectionName === 'impact') {
-        currentField = 'impact';
-      } else if (sectionName === 'details') {
-        currentField = 'details';
-      } else {
-        // Treat any other bold heading as a details subsection
-        // Add the heading to details content
-        currentField = 'details';
-        currentFieldLines.push(`**${sectionMatch[1].trim()}:**`);
-      }
-      continue;
-    }
-
-    // Collect field content
-    if (currentField) {
-      currentFieldLines.push(line);
-    } else if (line.trim() !== '') {
-      // If no structured field is active, treat non-empty lines as loose details
-      // This handles legacy format where text follows directly after the title
-      currentField = 'details';
-      currentFieldLines.push(line);
+    // Collect all content for current project
+    if (currentProject) {
+      currentContent.push(line);
     }
   }
 
   // Save last project
-  saveCurrentField();
   if (currentProject && currentProject.title) {
     projects.push({
       title: currentProject.title,
-      oneLiner: currentProject.oneLiner,
-      impact: currentProject.impact,
-      details: currentProject.details,
+      content: currentContent.join('\n').trim(),
     });
   }
 

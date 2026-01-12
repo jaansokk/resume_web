@@ -24,7 +24,22 @@ const experience = defineCollection({
   }),
 });
 
+const background = defineCollection({
+  type: 'content',
+  schema: z.object({
+    // System-level bucket (drives ingestion/RAG semantics)
+    type: z.literal('background'),
+    // Explicit routing control for where this item may appear
+    visibleIn: z.array(visibleInEnum).nonempty(),
+    title: z.string(),
+    tags: z.array(z.string()).optional(),
+    summary: z.string().optional(),
+    updatedAt: z.string().optional(),
+  }),
+});
+
 export const collections = {
   experience,
+  background,
 };
 

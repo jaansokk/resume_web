@@ -1,5 +1,5 @@
 ---
-import type { KeyProject } from '../utils/cvRoleParser';
+import type { KeyProject } from '../../utils/cvRoleParser';
 
 interface Props {
   projects: KeyProject[];
@@ -7,6 +7,88 @@ interface Props {
 }
 
 const { projects, roleSlug } = Astro.props;
+
+/**
+ * Simple markdown renderer that:
+ * - Treats **Heading:** lines as styled subheadings
+ * - Converts _italic_ to <em>
+ * - Converts **bold** to <strong>
+ * - Preserves bullet points
+ */
+function renderMarkdown(content: string): string {
+  if (!content) return '';
+  
+  const lines = content.split('\n');
+  const html: string[] = [];
+  let inList = false;
+  
+  for (let line of lines) {
+    const trimmed = line.trim();
+    
+    // Empty lines
+    if (!trimmed) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      continue;
+    }
+    
+    // Check for **Heading** or **Heading:** pattern (subheading)
+    const headingMatch = trimmed.match(/^\*\*([^*]+)\*\*\s*$/);
+    if (headingMatch) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      // Remove trailing colon if present
+      const heading = headingMatch[1].trim().replace(/:$/, '');
+      html.push(`<p class="section-label">${heading}</p>`);
+      continue;
+    }
+    
+    // Check for bullet points
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (bulletMatch) {
+      if (!inList) {
+        html.push('<ul class="bullet-list">');
+        inList = true;
+      }
+      const bulletContent = processInlineMarkdown(bulletMatch[1]);
+      html.push(`<li><span class="bullet">•</span><span>${bulletContent}</span></li>`);
+      continue;
+    }
+    
+    // Regular paragraph
+    if (inList) {
+      html.push('</ul>');
+      inList = false;
+    }
+    const processed = processInlineMarkdown(trimmed);
+    html.push(`<p>${processed}</p>`);
+  }
+  
+  // Close any open list
+  if (inList) {
+    html.push('</ul>');
+  }
+  
+  return html.join('');
+}
+
+/**
+ * Process inline markdown (italics, bold)
+ */
+function processInlineMarkdown(text: string): string {
+  // Convert _italic_ or *italic* to <em>
+  text = text.replace(/_(.*?)_/g, '<em>$1</em>');
+  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  
+  // Convert **bold** to <strong> (but not if it's part of **Heading:** which we already handled)
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  
+  return text;
+}
 ---
 
 {projects.length > 0 && (
@@ -57,34 +139,8 @@ const { projects, roleSlug } = Astro.props;
               hidden
             >
               <div class="panel-content">
-                {project.oneLiner && (
-                  <p class="one-liner">
-                    {project.oneLiner}
-                  </p>
-                )}
-                
-                {project.impact && project.impact.length > 0 && (
-                  <div class="impact-section">
-                    <p class="section-label">Impact</p>
-                    <ul class="bullet-list">
-                      {project.impact.map((bullet) => (
-                        <li>
-                          <span class="bullet">•</span>
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {project.details && (
-                  <div class="details-section">
-                    {/* Only show "Details" label for structured content (when Impact is also present) */}
-                    {project.impact && project.impact.length > 0 && (
-                      <p class="section-label">Details</p>
-                    )}
-                    <p class="details-text">{project.details}</p>
-                  </div>
+                {project.content && (
+                  <div class="project-content" set:html={renderMarkdown(project.content)} />
                 )}
               </div>
             </div>
@@ -213,58 +269,61 @@ const { projects, roleSlug } = Astro.props;
     padding: 0 0 0.75rem 1.25rem;
   }
 
-  .one-liner {
-    margin: 0 0 0.5rem 0;
+  .project-content {
     font-size: 0.875rem;
-    font-style: italic;
     color: var(--v2-text-secondary);
     line-height: 1.5;
   }
 
-  .impact-section,
-  .details-section {
-    margin-top: 0.5rem;
+  .project-content p {
+    margin: 0 0 0.5rem 0;
   }
 
-  .section-label {
+  .project-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .project-content em {
+    font-style: italic;
+  }
+
+  .project-content strong {
+    font-weight: 600;
+  }
+
+  .project-content :global(.section-label) {
     font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--v2-accent);
-    margin: 0 0 0.375rem 0;
+    margin: 0.75rem 0 0.375rem 0;
   }
 
-  .bullet-list {
+  .project-content :global(.section-label:first-child) {
+    margin-top: 0;
+  }
+
+  .project-content :global(.bullet-list) {
     list-style: none;
-    margin: 0;
+    margin: 0 0 0.5rem 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
   }
 
-  .bullet-list li {
+  .project-content :global(.bullet-list li) {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--v2-text-secondary);
-    line-height: 1.5;
   }
 
-  .bullet {
+  .project-content :global(.bullet) {
     color: var(--v2-accent);
     font-size: 0.5rem;
     margin-top: 0.5rem;
     flex-shrink: 0;
-  }
-
-  .details-text {
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--v2-text-secondary);
-    line-height: 1.5;
   }
 </style>
 

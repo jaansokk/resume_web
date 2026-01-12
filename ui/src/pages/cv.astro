@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { parseRoleMarkdown } from '../utils/cvRoleParser';
+import { parseSkillsEducationMarkdown } from '../utils/cvSkillsParser';
 import KeyProjectAccordion from '../components/astro/KeyProjectAccordion.astro';
 import { Header } from '../components/ui/Header';
 import { CVChatWidget } from '../components/routes/cv/CVChatWidget';
@@ -29,25 +30,10 @@ const rolesWithParsed = sortedRoles.map((role) => ({
   parsed: parseRoleMarkdown(role.body),
 }));
 
-// Skills and education data (preserved from cvData.ts)
-const skills = {
-  product: ['Product Discovery', 'Roadmap Planning', 'User Research', 'A/B Testing', 'OKRs', 'Product Analytics'],
-  technical: ['Python', 'TypeScript', 'React', 'Node.js', 'SQL', 'AWS', 'Blockchain'],
-  process: ['Scrum', 'Kanban', 'SAFe', 'Event Storming', 'Story Mapping', 'Design Sprints'],
-};
-
-const education = [
-  {
-    degree: 'MSc Information Technology',
-    school: 'Tallinn University of Technology',
-    year: '2014',
-  },
-  {
-    degree: 'Certified ScrumMaster (CSM)',
-    school: 'Scrum Alliance',
-    year: '2020',
-  },
-];
+// Skills + education from background content
+const backgroundDocs = await getCollection('background');
+const skillsDoc = backgroundDocs.find((d) => d.slug === 'skills-education');
+const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body) : null;
 ---
 
 <!doctype html>
@@ -76,7 +62,7 @@ const education = [
                 Jaan <span class="v2-serif text-[var(--v2-accent)]">Sokk</span>
               </h1>
               <p class="text-xl text-[var(--v2-text-secondary)] mb-6">
-                Product Manager & Technical Lead
+                Product Manager | Technical Lead | Agile & Web3 Enthusiast | Critical Thinker
               </p>
               <p class="text-[var(--v2-text-secondary)] max-w-2xl leading-relaxed">
                 A hands-on product leader who can balance strategic vision with tactical execution, 
@@ -176,32 +162,24 @@ const education = [
               <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
                 Skills
               </h2>
-              <div class="grid md:grid-cols-3 gap-8">
-                <div>
-                  <h3 class="text-sm font-medium text-[var(--v2-text)] mb-3">Product</h3>
-                  <ul class="space-y-1.5">
-                    {skills.product.map((skill) => (
-                      <li class="text-sm text-[var(--v2-text-secondary)]">{skill}</li>
-                    ))}
-                  </ul>
+              {skillsEducation && skillsEducation.skills.columns.length > 0 ? (
+                <div class="grid md:grid-cols-3 gap-8">
+                  {skillsEducation.skills.columns.map((col) => (
+                    <div>
+                      <h3 class="text-sm font-medium text-[var(--v2-text)] mb-3">{col.title}</h3>
+                      <ul class="space-y-1.5">
+                        {col.items.map((skill) => (
+                          <li class="text-sm text-[var(--v2-text-secondary)]">{skill}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <h3 class="text-sm font-medium text-[var(--v2-text)] mb-3">Technical</h3>
-                  <ul class="space-y-1.5">
-                    {skills.technical.map((skill) => (
-                      <li class="text-sm text-[var(--v2-text-secondary)]">{skill}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 class="text-sm font-medium text-[var(--v2-text)] mb-3">Process</h3>
-                  <ul class="space-y-1.5">
-                    {skills.process.map((skill) => (
-                      <li class="text-sm text-[var(--v2-text-secondary)]">{skill}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              ) : (
+                <p class="text-sm text-[var(--v2-text-tertiary)]">
+                  Skills content not found.
+                </p>
+              )}
             </section>
 
             <!-- Education -->
@@ -209,17 +187,47 @@ const education = [
               <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
                 Education & Certifications
               </h2>
-              <div class="space-y-4">
-                {education.map((edu) => (
-                  <div class="flex items-start justify-between gap-4">
+              {skillsEducation ? (
+                <div class="space-y-8">
+                  {skillsEducation.certifications.length > 0 && (
                     <div>
-                      <p class="font-medium text-[var(--v2-text)]">{edu.degree}</p>
-                      <p class="text-sm text-[var(--v2-text-secondary)]">{edu.school}</p>
+                      <h3 class="text-sm font-medium text-[var(--v2-text)] mb-4">Training & Certifications</h3>
+                      <div class="space-y-4">
+                        {skillsEducation.certifications.map((item) => (
+                          <div class="flex items-start justify-between gap-4">
+                            <div>
+                              <p class="text-[var(--v2-text-secondary)]">{item.title}</p>
+                              {item.org && <p class="text-sm text-[var(--v2-text-secondary)]">{item.org}</p>}
+                            </div>
+                            {item.year && <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{item.year}</span>}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{edu.year}</span>
-                  </div>
-                ))}
-              </div>
+                  )}
+
+                  {skillsEducation.education.length > 0 && (
+                    <div>
+                      <h3 class="text-sm font-medium text-[var(--v2-text)] mb-4">Education</h3>
+                      <div class="space-y-4">
+                        {skillsEducation.education.map((item) => (
+                          <div class="flex items-start justify-between gap-4">
+                            <div>
+                              <p class="text-[var(--v2-text-secondary)]">{item.title}</p>
+                              {item.org && <p class="text-sm text-[var(--v2-text-secondary)]">{item.org}</p>}
+                            </div>
+                            {item.year && <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{item.year}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p class="text-sm text-[var(--v2-text-tertiary)]">
+                  Education content not found.
+                </p>
+              )}
             </section>
           </main>
           

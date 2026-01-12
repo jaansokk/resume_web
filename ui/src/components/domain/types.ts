@@ -12,9 +12,9 @@ export interface QuickReply {
 }
 
 export const quickReplies: readonly QuickReply[] = [
-  { id: 'product', label: 'Hiring for Product / PO', icon: '◈' },
-  { id: 'engineer', label: 'Product Engineer / AI', icon: '⬡' },
-  { id: 'browsing', label: 'Just browsing', icon: '○' },
-  { id: 'advising', label: 'Advisor / Consultant', icon: '◇' },
+  { id: 'product', label: 'We are Hiring for Product Manager / PO', icon: '◇' },
+  { id: 'engineer', label: 'Looking for an AI-first Product Engineer', icon: '◇' },
+  { id: 'browsing', label: 'Just browsing', icon: '◇' },
+  { id: 'advising', label: 'I am looking for an Advisor / Consultant', icon: '◇' },
 ] as const;
 
