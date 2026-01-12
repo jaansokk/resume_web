@@ -149,10 +149,11 @@ Return ONLY valid JSON, no markdown formatting."""
 
 **Rules:**
 - Use retrieved text as the source of truth for experience/project claims
-- Background content may influence tone/preferences but should not invent facts
+- Background type content may influence tone/preferences, or illustrate experience, but should not invent facts
 - If insufficient info, ask 1-2 short clarifying questions
 - Keep responses short, scannable, and PM-oriented
-- Never mention "background" content explicitly in your response
+- Never mention "background" type content explicitly in your response
+- Never assume metrics or achievements, only use exact references from experience type content.
 
 **Response format (JSON):**
 {{
@@ -200,6 +201,7 @@ Return ONLY valid JSON, no markdown formatting."""
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background")
+- Never assume metrics or achievements, only use exact references from experience type content.
 - Each experience item must have 2-4 grounded bullets with outcomes/metrics when possible
 - If producing artifacts, keep assistant.text brief (e.g., "Two quick checks so I don't hallucinate the fit: what's the team size, and is this greenfield or existing product?")
 

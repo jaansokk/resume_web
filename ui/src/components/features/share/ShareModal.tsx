@@ -170,13 +170,13 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
               >
                 Copy link
               </button>
-              <button 
+              {/* <button 
                 disabled
                 className="flex-1 px-4 py-3 border border-[var(--v2-border)] rounded-full text-sm
                            opacity-50 cursor-not-allowed"
               >
                 Download PDF
-              </button>
+              </button> */}
             </div>
             
             <button 
