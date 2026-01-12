@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-12T09:52:18.767Z",
+  "generatedAt": "2026-01-12T10:52:53.352Z",
   "items": [
     {
       "type": "experience",
@@ -16,7 +16,8 @@
         "Fintech",
         "Agile Coach",
         "GDPR",
-        "Solution Architecture"
+        "Solution Architecture",
+        "User Journey Mapping"
       ],
       "summary": "Managed roadmap and delivery for risk and customer journey domains, while leading agile transformation and GDPR compliance.",
       "company": "4Finance Group",
@@ -57,6 +58,8 @@
       "title": "Technical Project Manager / ScrumMaster",
       "tags": [
         "Project Management",
+        "Wireframing",
+        "System design & analysis",
         "Agile",
         "ScrumMaster",
         "KSI Blockchain",
