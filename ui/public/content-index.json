@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-11T18:42:38.979Z",
+  "generatedAt": "2026-01-12T09:52:18.767Z",
   "items": [
     {
       "type": "experience",
@@ -10,18 +10,40 @@
         "rag"
       ],
       "slug": "4finance",
-      "title": "Product Manager — Risk & Customer Journey",
+      "title": "Product Manager (Risk & Customer Journey)",
       "tags": [
+        "Product Management",
         "Fintech",
-        "Risk",
         "Agile Coach",
         "GDPR",
-        "Consumer Lending"
+        "Solution Architecture"
       ],
-      "summary": "Owned product development for risk assessment and customer journey optimization in consumer lending, launching products across European markets.",
+      "summary": "Managed roadmap and delivery for risk and customer journey domains, while leading agile transformation and GDPR compliance.",
       "company": "4Finance Group",
-      "role": "Product Manager — Risk & Customer Journey",
+      "role": "Product Manager (Risk & Customer Journey)",
       "period": "2017 — 2019"
+    },
+    {
+      "type": "experience",
+      "subtype": "freelance",
+      "visibleIn": [
+        "cv",
+        "artifacts",
+        "rag"
+      ],
+      "slug": "freelance",
+      "title": "Web Designer / Photographer / Algo trader",
+      "tags": [
+        "Web Design",
+        "Photography",
+        "Algo Trading",
+        "Tutoring",
+        "Crypto"
+      ],
+      "summary": "Long-term freelance experience spanning technical web design, professional photography, and algorithmic trading.",
+      "company": "Freelance",
+      "role": "Freelance Web Designer / Photographer / Algo trader",
+      "period": "2005 — Present"
     },
     {
       "type": "experience",
@@ -34,13 +56,13 @@
       "slug": "guardtime-pm",
       "title": "Technical Project Manager / ScrumMaster",
       "tags": [
-        "Mobile",
-        "KSI Blockchain",
+        "Project Management",
         "Agile",
         "ScrumMaster",
-        "Enterprise"
+        "KSI Blockchain",
+        "Public Sector"
       ],
-      "summary": "Managed complex technical projects at scale, from construction asset management in Saudi Arabia to pandemic response infrastructure across the EU.",
+      "summary": "Managed large-scale digital transformation in construction and spearheaded pioneering blockchain-based health infrastructure.",
       "company": "Guardtime",
       "role": "Technical Project Manager / ScrumMaster",
       "period": "2019 — 2024"
@@ -56,13 +78,13 @@
       "slug": "guardtime-po",
       "title": "Product Owner",
       "tags": [
-        "Blockchain",
+        "Product Management",
         "Web3",
-        "Product Strategy",
-        "DeFi",
-        "Enterprise"
+        "Blockchain",
+        "Green Energy",
+        "Fintech"
       ],
-      "summary": "Led product strategy for enterprise blockchain solutions, focusing on green energy certification and digital payments infrastructure.",
+      "summary": "Product development, roadmap & delivery management.",
       "company": "Guardtime",
       "role": "Product Owner",
       "period": "2024 — 2025"
@@ -76,17 +98,17 @@
         "rag"
       ],
       "slug": "playtech",
-      "title": "Team Lead — Casino Branding",
+      "title": "Team Lead (Casino Branding)",
       "tags": [
-        "Gaming",
-        "Team Lead",
-        "Scrum",
-        "Front-end",
-        "B2B"
+        "Leadership",
+        "Agile Transformation",
+        "B2B",
+        "Branding",
+        "Project Management"
       ],
-      "summary": "Led a front-end development team delivering branding and customization solutions for the world's largest gaming operators.",
+      "summary": "Managed engineering teams and led a department-wide agile transformation for a major B2B gaming provider.",
       "company": "Playtech",
-      "role": "Team Lead — Casino Branding",
+      "role": "Team Lead (Casino Branding)",
       "period": "2012 — 2017"
     },
     {
