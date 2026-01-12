@@ -78,8 +78,13 @@ On the instance:
 ```bash
 sudo apt-get update -y
 sudo apt-get install -y git
-git clone <your-repo-url>
-cd resume_web
+# IMPORTANT: the UI build (Astro) reads markdown content from a sibling repo.
+# Clone BOTH repos into the same parent directory with these names:
+cd ~
+git clone <your-resume_web-repo-url> resume_web
+git clone <your-resume_web_content-repo-url> resume_web_content
+
+cd ~/resume_web
 
 chmod +x infra-vps/scripts/bootstrap-ubuntu-docker.sh
 ./infra-vps/scripts/bootstrap-ubuntu-docker.sh

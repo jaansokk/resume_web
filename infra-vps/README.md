@@ -34,7 +34,9 @@ If you tell me your desired domain (e.g. `jaan.example.com`) and whether you use
 
 1. Create a Lightsail instance (Ubuntu).
 2. SSH into the instance and install Docker + Compose (see `scripts/bootstrap-ubuntu-docker.sh`).
-3. Get the code onto the instance (recommended: `git clone` the repo).
+3. Get the code onto the instance:
+   - clone **this repo** (`resume_web`)
+   - clone the **content repo** (`resume_web_content`) *next to it* (same parent folder)
 4. Create `infra-vps/.env` with secrets (copy from `.env.example`).
 5. Start the stack:
 

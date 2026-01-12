@@ -3,8 +3,13 @@ name: resume-web
 services:
   caddy:
     build:
-      context: ..
-      dockerfile: infra-vps/caddy/Dockerfile
+      # Build context includes BOTH repos (resume_web + resume_web_content).
+      # Expected layout on the VM:
+      #   <parent>/
+      #     resume_web/
+      #     resume_web_content/
+      context: ../..
+      dockerfile: resume_web/infra-vps/caddy/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"
