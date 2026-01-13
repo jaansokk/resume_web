@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { postChat, type Artifacts, type ClientUI } from '../../../utils/chatApi';
+import { postChatStream, type Artifacts, type ClientUI } from '../../../utils/chatApi';
 import type { Message } from '../../domain/types';
 import { HandshakeView } from './views/HandshakeView';
 import { ChatView } from './views/ChatView';
@@ -18,6 +18,7 @@ export default function ConceptAApp() {
   const [messages, setMessages] = useState<Message[]>(() => savedState?.messages ?? []);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<MainViewMode>(() => savedState?.viewMode ?? 'handshake');
   const [chips, setChips] = useState<string[]>(() => savedState?.chips ?? []);
   const [artifacts, setArtifacts] = useState<Artifacts | null>(() => savedState?.artifacts ?? null);
@@ -52,6 +53,7 @@ export default function ConceptAApp() {
     setInputValue('');
     setIsLoading(true);
     setChips([]);
+    setStreamingText(''); // Start with empty streaming text
 
     // Transition from handshake to chat immediately on first message
     if (viewMode === 'handshake') {
@@ -64,49 +66,69 @@ export default function ConceptAApp() {
         ...(viewMode === 'split' && { split: { activeTab } }),
       };
 
-      const response = await postChat({
-        conversationId,
-        client: {
-          origin: window.location.origin,
-          page: { path: window.location.pathname },
-          ui: clientUI,
+      await postChatStream(
+        {
+          conversationId,
+          client: {
+            origin: window.location.origin,
+            page: { path: window.location.pathname },
+            ui: clientUI,
+          },
+          messages: newMessages.map(m => ({ role: m.role, text: m.text })),
         },
-        messages: newMessages.map(m => ({ role: m.role, text: m.text })),
-      });
+        // onTextDelta
+        (delta: string) => {
+          setStreamingText(prev => (prev ?? '') + delta);
+        },
+        // onDone
+        (response) => {
+          // Add complete assistant message
+          const assistantMessage: Message = {
+            role: 'assistant',
+            text: response.assistant.text,
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+          setStreamingText(null); // Clear streaming text
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        text: response.assistant.text,
-      };
+          // Update UI based on server directive
+          if (response.ui.view === 'split') {
+            markHasSeenSplit();
+            setViewMode('split');
+            if (response.ui.split?.activeTab) {
+              setActiveTab(response.ui.split.activeTab);
+            }
+          }
 
-      setMessages(prev => [...prev, assistantMessage]);
+          // Update chips if provided
+          if (response.chips && response.chips.length > 0) {
+            setChips(response.chips);
+          }
 
-      // Update UI based on server directive
-      if (response.ui.view === 'split') {
-        markHasSeenSplit();
-        setViewMode('split');
-        if (response.ui.split?.activeTab) {
-          setActiveTab(response.ui.split.activeTab);
+          // Update artifacts if provided
+          if (response.artifacts) {
+            setArtifacts(response.artifacts);
+          }
+
+          setIsLoading(false);
+        },
+        // onError
+        (error) => {
+          const errorMessage: Message = {
+            role: 'assistant',
+            text: `Sorry — the chat service is unavailable right now. (${error.message})`,
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setStreamingText(null);
+          setIsLoading(false);
         }
-      }
-
-      // Update chips if provided
-      if (response.chips && response.chips.length > 0) {
-        setChips(response.chips);
-      }
-
-      // Update artifacts if provided
-      if (response.artifacts) {
-        setArtifacts(response.artifacts);
-      }
-
+      );
     } catch (err) {
       const errorMessage: Message = {
         role: 'assistant',
         text: `Sorry — the chat service is unavailable right now. (${err instanceof Error ? err.message : 'unknown error'})`,
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      setStreamingText(null);
       setIsLoading(false);
     }
   };
@@ -157,6 +179,7 @@ export default function ConceptAApp() {
           onInputChange={setInputValue}
           onSend={handleSend}
           isLoading={isLoading}
+          streamingText={streamingText}
           chips={chips}
           onChipSelect={handleChipSelect}
         />
@@ -171,6 +194,7 @@ export default function ConceptAApp() {
           onInputChange={setInputValue}
           onSend={handleSend}
           isLoading={isLoading}
+          streamingText={streamingText}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           artifacts={artifacts}

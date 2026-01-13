@@ -115,3 +115,89 @@ export async function postChat(payload: ChatApiRequest): Promise<ChatApiResponse
   const raw = await res.json();
   return raw as ChatApiResponse;
 }
+
+export async function postChatStream(
+  payload: ChatApiRequest,
+  onTextDelta: (delta: string) => void,
+  onDone: (response: ChatApiResponse) => void,
+  onError: (error: Error) => void,
+): Promise<void> {
+  /**
+   * Streaming version of postChat using Server-Sent Events (SSE).
+   * 
+   * Events:
+   * - event: text, data: {"delta": "..."} - Text chunks as they arrive
+   * - event: done, data: {ChatApiResponse} - Complete response with artifacts
+   * - event: error, data: {"error": "..."} - Error occurred
+   */
+  const url = getChatApiUrl().replace('/chat', '/chat/stream');
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Chat API error (${res.status}): ${text || res.statusText}`);
+    }
+
+    if (!res.body) {
+      throw new Error('Response body is null');
+    }
+
+    // Parse SSE stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      
+      // Process complete SSE messages (terminated by double newline)
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+      for (const message of lines) {
+        if (!message.trim()) continue;
+
+        // Parse SSE format: "event: type\ndata: json"
+        const eventMatch = message.match(/^event:\s*(.+)$/m);
+        const dataMatch = message.match(/^data:\s*(.+)$/m);
+
+        if (!eventMatch || !dataMatch) continue;
+
+        const eventType = eventMatch[1].trim();
+        const dataStr = dataMatch[1].trim();
+
+        try {
+          const data = JSON.parse(dataStr);
+
+          if (eventType === 'text') {
+            const delta = data.delta;
+            if (typeof delta === 'string') {
+              onTextDelta(delta);
+            }
+          } else if (eventType === 'done') {
+            onDone(data as ChatApiResponse);
+          } else if (eventType === 'error') {
+            onError(new Error(data.error || 'Unknown error'));
+            return;
+          }
+        } catch (parseError) {
+          console.error('Failed to parse SSE data:', parseError, dataStr);
+        }
+      }
+    }
+  } catch (error) {
+    onError(error instanceof Error ? error : new Error(String(error)));
+  }
+}

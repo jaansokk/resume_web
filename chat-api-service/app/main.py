@@ -6,10 +6,11 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.requests import Request
 from starlette.concurrency import run_in_threadpool
 import httpx
+import json
 
 from .models import (
     ChatRequest,
@@ -140,7 +141,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     @app.post("/chat", response_model=ChatResponse)
-    def chat(req: ChatRequest, request: Request) -> ChatResponse:
+    async def chat(req: ChatRequest, request: Request) -> ChatResponse:
         # SECURITY: Rate limit check BEFORE expensive embeddings/LLM calls
         if rate_limiter:
             client_ip = get_client_ip(request)
@@ -161,7 +162,7 @@ def create_app() -> FastAPI:
         # OpenAI is always needed for embeddings
         # Anthropic or OpenAI needed for chat/router based on MODEL_PROVIDER
         try:
-            return pipeline.handle(req)
+            return await pipeline.handle(req)
         except httpx.HTTPStatusError as e:
             # Most common production misconfig: Qdrant is up, but collections aren't created yet.
             if e.response is not None and e.response.status_code == 404:
@@ -174,6 +175,67 @@ def create_app() -> FastAPI:
                     ),
                 ) from e
             raise
+
+    @app.post("/chat/stream")
+    async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
+        """
+        Streaming version of /chat endpoint.
+        Returns Server-Sent Events (SSE) with text deltas and final response.
+        """
+        # SECURITY: Rate limit check BEFORE expensive embeddings/LLM calls
+        if rate_limiter:
+            client_ip = get_client_ip(request)
+            allowed, reason = rate_limiter.check_limit(
+                ip=client_ip,
+                route="/chat",
+                conversation_id=req.conversationId,
+            )
+            if not allowed:
+                retry_after = rate_limiter.get_retry_after(reason)
+                log.warning("Rate limit exceeded: ip=%s reason=%s", client_ip, reason)
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Rate limit exceeded ({reason}). Try again later.",
+                    headers={"Retry-After": str(retry_after)},
+                )
+
+        async def event_generator():
+            """Generate SSE events."""
+            try:
+                async for event in pipeline.handle_stream(req):
+                    event_type = event.get("event", "unknown")
+                    data = event.get("data")
+                    
+                    # Format as SSE
+                    sse_event = f"event: {event_type}\n"
+                    sse_event += f"data: {json.dumps(data)}\n\n"
+                    
+                    yield sse_event
+                    
+            except httpx.HTTPStatusError as e:
+                # Handle Qdrant collection not found
+                if e.response is not None and e.response.status_code == 404:
+                    error_data = {
+                        "error": "Qdrant collection not found. Run ingestion to create/populate collections."
+                    }
+                    yield f"event: error\ndata: {json.dumps(error_data)}\n\n"
+                else:
+                    error_data = {"error": "Internal server error"}
+                    yield f"event: error\ndata: {json.dumps(error_data)}\n\n"
+            except Exception as e:
+                log.exception("Error in streaming chat")
+                error_data = {"error": str(e) if os.environ.get("DEBUG_ERRORS") == "1" else "Internal server error"}
+                yield f"event: error\ndata: {json.dumps(error_data)}\n\n"
+
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # Disable nginx buffering
+            },
+        )
 
     @app.post("/contact", response_model=ContactResponse)
     async def contact(req: ContactRequest, request: Request) -> ContactResponse:

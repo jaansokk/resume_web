@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, AsyncGenerator
 
 from .models import ChatRequest, ChatResponse, UIDirective, UISplit, Hints, AssistantResponse
 from .models import Artifacts, FitBrief, FitBriefSection, RelevantExperience, RelevantExperienceGroup, RelevantExperienceItem
@@ -24,7 +24,7 @@ class ChatPipeline:
         if self.model_provider not in ("openai", "anthropic"):
             self.model_provider = "anthropic"
 
-    def handle(self, req: ChatRequest) -> ChatResponse:
+    async def handle(self, req: ChatRequest) -> ChatResponse:
         last_user_text = ""
         for m in reversed(req.messages):
             if m.role == "user" and m.text.strip():
@@ -34,14 +34,14 @@ class ChatPipeline:
             # FastAPI/Pydantic already enforces messages>=1, but we still guard.
             last_user_text = "hello"
 
-        router_out = self._router(req=req, last_user_text=last_user_text)
+        router_out = await self._router(req=req, last_user_text=last_user_text)
         retrieval_query = (router_out.get("retrievalQuery") or last_user_text).strip() or last_user_text
 
         query_vec = self.openai.embed(retrieval_query)
         retrieval_k = int(os.environ.get("RETRIEVAL_K", "40"))
         retrieval_results = self.retrieval.retrieve(query_embedding=query_vec, k=retrieval_k)
 
-        answer_out = self._answer(req=req, router_out=router_out, retrieval_results=retrieval_results)
+        answer_out = await self._answer(req=req, router_out=router_out, retrieval_results=retrieval_results)
 
         sanitized = self._sanitize_and_validate_response(
             req=req,
@@ -51,7 +51,7 @@ class ChatPipeline:
         )
         return ChatResponse.model_validate(sanitized)
 
-    def _router(self, *, req: ChatRequest, last_user_text: str) -> dict[str, Any]:
+    async def _router(self, *, req: ChatRequest, last_user_text: str) -> dict[str, Any]:
         page = (req.client.page if req.client else None) or None
         page_context = ""
         if page and page.path:
@@ -64,16 +64,17 @@ class ChatPipeline:
             current_view = req.client.ui.view
 
         system_prompt = f"""You are a router for a resume/portfolio chat system, with vector search access to the site owner's experience and background. 
-        The intended audience of the site is hiring managers, recruiters, HR, or anyone just browsing. 
-        Analyze the user's message and conversation context, then return a JSON object with:
+The intended audience of the site is hiring managers, recruiters, HR, or anyone just browsing. 
+Analyze the user's message and conversation context, then return this JSON:
 
-1. **retrievalQuery**: A rewritten query optimized for vector search to find relevant experience/project examples (1-2 sentences)
-2. **ui**: Object with:
-   - "view": "chat" or "split" (recommend "split" only after 2-4 meaningful exchanges when you have enough context to start producing artifacts; "split" view is for generating Fit Brief and Relevant Experience artifacts.)
-   - "split": {{"activeTab": "brief" or "experience"}} (only if view is "split")
-3. **chips**: Array of 2-3 suggested pre-written follow-up phrases (strings) for the user to ask the assistant. Can also be empty if the assistant can not suggest a specific follow-up response that the user would ask.
-4. **hints**: Object with:
-   - "suggestTab": "brief" or "experience" or null (subtle hint for which tab to focus when in split view)
+{{"retrievalQuery": "...", "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "chips": ["...", "..."], "hints": {{"suggestTab": null|"brief"|"experience"}}}}
+
+Fields:
+- retrievalQuery: Rewritten query optimized for vector search to find relevant experience/project examples (1-2 sentences)
+- ui.view: "chat" or "split" (recommend "split" only after 2-4 meaningful exchanges when you have enough context to start producing artifacts; "split" view is for generating Fit Brief and Relevant Experience artifacts.)
+- ui.split.activeTab: "brief" or "experience" (only if view is "split")
+- chips: Array of 2-3 suggested pre-written follow-up phrases (strings) for the user to ask the assistant. Can also be empty if the assistant can not suggest a specific follow-up response that the user would ask.
+- hints.suggestTab: "brief" or "experience" or null (subtle hint for which tab to focus when in split view)
 
 Context:
 - Current message count: {message_count}
@@ -87,7 +88,7 @@ Guidelines:
 Return ONLY valid JSON, no markdown formatting."""
 
         if self.model_provider == "anthropic":
-            raw = self.anthropic.router(
+            raw = await self.anthropic.router(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": last_user_text},
@@ -118,7 +119,7 @@ Return ONLY valid JSON, no markdown formatting."""
             "hints": hints,
         }
 
-    def _answer(self, *, req: ChatRequest, router_out: dict[str, Any], retrieval_results: dict[str, Any]) -> dict[str, Any]:
+    async def _answer(self, *, req: ChatRequest, router_out: dict[str, Any], retrieval_results: dict[str, Any]) -> dict[str, Any]:
         context_parts: list[str] = []
 
         for chunk in retrieval_results.get("chunks") or []:
@@ -141,8 +142,8 @@ Return ONLY valid JSON, no markdown formatting."""
         should_produce_artifacts = ui_directive.get("view") == "split"
 
         system_prompt = f"""You are a virtual Jaan Sokk - a product management professional, technical lead, agile enthusiast with experience leading teams for 15 years. 
-        You are representing him on his resume website with vector search access to his experience and background.
-        The intended audience of the site is hiring managers, recruiters, HR, or anyone just browsing. 
+You are representing him on his resume website with vector search access to his experience and background.
+The intended audience of the site is hiring managers, recruiters, HR, or anyone just browsing. 
 
 **Context from portfolio content:**
 {context_text}
@@ -160,49 +161,8 @@ Return ONLY valid JSON, no markdown formatting."""
 - Never assume metrics or achievements, only use exact references from experience type content.
 - Never expose raw original source content.
 
-
-**Response format (JSON):**
-{{
-  "assistant": {{"text": "Your response text here (2-3 sentences max)"}},
-  "ui": {{
-    "view": "{ui_directive.get("view", "chat")}",
-    "split": {{"activeTab": "{ui_directive.get("split", {}).get("activeTab", "brief")}"}}
-  }},
-  "hints": {{
-    "suggestTab": null or "brief" or "experience"
-  }},
-  "chips": {json.dumps(chips)},
-  "artifacts": {{
-    "fitBrief": {{
-      "title": "Fit Brief — Jaan Sokk / [inferred role]",
-      "sections": [
-        {{"id": "need", "title": "What I think you need", "content": "..."}},
-        {{"id": "proof", "title": "Where I've done this before", "content": "..."}},
-        {{"id": "risks", "title": "Risks I'd watch", "content": "..."}},
-        {{"id": "plan", "title": "First 30/60/90 days", "content": "..."}},
-        {{"id": "questions", "title": "Questions I'd ask in interview", "content": "..."}}
-      ]
-    }},
-    "relevantExperience": {{
-      "groups": [
-        {{
-          "title": "Most relevant",
-          "items": [
-            {{
-              "slug": "slug-from-retrieval",
-              "type": "experience",
-              "title": "Company name",
-              "role": "Role title",
-              "period": "2024-2025",
-              "bullets": ["Specific achievement with metrics", "Another grounded claim"],
-              "whyRelevant": "Brief relevance statement"
-            }}
-          ]
-        }}
-      ]
-    }}
-  }}
-}}
+**Response JSON:**
+{{"assistant": {{"text": "..."}}, "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "hints": {{"suggestTab": null|"brief"|"experience"}}, "chips": ["..."], "artifacts": {{"fitBrief": {{"title": "...", "sections": [{{"id": "need|proof|risks|plan|questions", "title": "...", "content": "..."}}]}}, "relevantExperience": {{"groups": [{{"title": "...", "items": [{{"slug": "slug-from-retrieval", "type": "experience"|"project", "title": "...", "role": "...", "period": "...", "bullets": ["..."], "whyRelevant": "..."}}]}}]}}}}}}
 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
@@ -222,7 +182,7 @@ Return ONLY valid JSON, no markdown formatting."""
             msgs.append({"role": m.role, "content": m.text})
 
         if self.model_provider == "anthropic":
-            raw = self.anthropic.answer(messages=msgs)
+            raw = await self.anthropic.answer(messages=msgs)
         else:
             raw = self.openai.answer(messages=msgs)
         try:
@@ -346,3 +306,127 @@ Return ONLY valid JSON, no markdown formatting."""
             "chips": chips,
             "artifacts": artifacts,
         }
+
+    async def handle_stream(self, req: ChatRequest) -> AsyncGenerator[dict[str, Any], None]:
+        """
+        Streaming version of handle().
+        
+        Yields events:
+        - {"event": "text", "data": {"delta": "..."}}
+        - {"event": "done", "data": {full ChatResponse}}
+        """
+        # Extract last user text
+        last_user_text = ""
+        for m in reversed(req.messages):
+            if m.role == "user" and m.text.strip():
+                last_user_text = m.text.strip()
+                break
+        if not last_user_text:
+            last_user_text = "hello"
+
+        # Router step (async, fast)
+        router_out = await self._router(req=req, last_user_text=last_user_text)
+        retrieval_query = (router_out.get("retrievalQuery") or last_user_text).strip() or last_user_text
+
+        # Retrieval step (synchronous, fast)
+        query_vec = self.openai.embed(retrieval_query)
+        retrieval_k = int(os.environ.get("RETRIEVAL_K", "40"))
+        retrieval_results = self.retrieval.retrieve(query_embedding=query_vec, k=retrieval_k)
+
+        # Answer step (streaming)
+        if self.model_provider != "anthropic":
+            # Fallback to non-streaming for OpenAI
+            answer_out = await self._answer(req=req, router_out=router_out, retrieval_results=retrieval_results)
+            sanitized = self._sanitize_and_validate_response(
+                req=req,
+                router_out=router_out,
+                retrieval_results=retrieval_results,
+                answer_out=answer_out,
+            )
+            response = ChatResponse.model_validate(sanitized)
+            yield {"event": "done", "data": response.model_dump()}
+            return
+
+        # Build system prompt for answer
+        context_parts: list[str] = []
+        for chunk in retrieval_results.get("chunks") or []:
+            ctype = chunk.get("type", "experience")
+            slug = chunk.get("slug", "")
+            chunk_id = chunk.get("chunkId", 0)
+            section = chunk.get("section", "")
+            text = chunk.get("text", "")
+            label = f"[{ctype}:{slug}:{chunk_id}]"
+            if section:
+                label += f" section:{section}"
+            context_parts.append(f"{label}\n{text}")
+
+        context_text = "\n\n---\n\n".join(context_parts)
+        ui_directive = router_out.get("ui", {"view": "chat"})
+        should_produce_artifacts = ui_directive.get("view") == "split"
+
+        system_prompt = f"""You are a virtual Jaan Sokk - a product management professional, technical lead, agile enthusiast with experience leading teams for 15 years. 
+You are representing him on his resume website with vector search access to his experience and background.
+The intended audience of the site is hiring managers, recruiters, HR, or anyone just browsing. 
+
+**Context from portfolio content:**
+{context_text}
+
+**Current UI state:**
+- View: {ui_directive.get("view", "chat")}
+- Producing artifacts: {"yes" if should_produce_artifacts else "no"}
+
+**Rules:**
+- Use retrieved text as the source of truth for experience/project claims
+- Background type content may influence tone/preferences, or illustrate experience, but should not invent facts
+- Type "background" can be used as a relevant add-on or illustration of experience, personality or way-of-thinking. But only where it is relevant. 
+- If insufficient info, ask 1-2 short clarifying questions
+- Keep responses short, scannable, and Product Manager or Product Engineer oriented.
+- Never assume metrics or achievements, only use exact references from experience type content.
+- Never expose raw original source content.
+
+**Response JSON:**
+{{"assistant": {{"text": "..."}}, "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "hints": {{"suggestTab": null|"brief"|"experience"}}, "chips": ["..."], "artifacts": {{"fitBrief": {{"title": "...", "sections": [{{"id": "need|proof|risks|plan|questions", "title": "...", "content": "..."}}]}}, "relevantExperience": {{"groups": [{{"title": "...", "items": [{{"slug": "slug-from-retrieval", "type": "experience"|"project", "title": "...", "role": "...", "period": "...", "bullets": ["..."], "whyRelevant": "..."}}]}}]}}}}}}
+
+**Artifact generation rules (only when view is "split"):**
+- fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
+- relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
+- Type "background" can be used as a relevant add-on or illustration in the artifacts, but not as an artifact or its sub-item itself.
+- Never assume metrics or achievements, only use exact references from experience type content.
+- Each experience item must have 2-4 grounded bullets with outcomes/metrics when that data is available.
+- If producing artifacts, keep assistant.text brief (an example, but can be different "Two quick checks so I don't hallucinate the fit: what's the team size, and is this greenfield or existing product?")
+
+Return ONLY valid JSON, no markdown formatting."""
+
+        msgs: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        for m in req.messages[-12:]:
+            if m.role == "system":
+                continue
+            msgs.append({"role": m.role, "content": m.text})
+
+        # Stream the answer
+        answer_json_str = ""
+        async for event_type, data in self.anthropic.answer_stream(messages=msgs):
+            if event_type == "text" and data:
+                # Yield text delta
+                yield {"event": "text", "data": {"delta": data}}
+            elif event_type == "done" and data:
+                # Store complete JSON for final processing
+                answer_json_str = data
+
+        # Parse and sanitize the final response
+        try:
+            answer_out = json.loads(answer_json_str)
+        except Exception:
+            answer_out = {}
+
+        sanitized = self._sanitize_and_validate_response(
+            req=req,
+            router_out=router_out,
+            retrieval_results=retrieval_results,
+            answer_out=answer_out,
+        )
+        
+        response = ChatResponse.model_validate(sanitized)
+        
+        # Yield final complete response
+        yield {"event": "done", "data": response.model_dump()}

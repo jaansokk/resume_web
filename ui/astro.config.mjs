@@ -9,6 +9,12 @@ export default defineConfig({
   vite: {
     server: {
       proxy: {
+        // Same-origin dev proxy (streaming): UI calls /api/chat/stream, proxy forwards to FastAPI /chat/stream.
+        '/api/chat/stream': {
+          target: process.env.CHAT_API_PROXY_TARGET || 'http://127.0.0.1:8000',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api\/chat\/stream$/, '/chat/stream'),
+        },
         // Same-origin dev proxy (recommended): UI calls /api/chat, proxy forwards to FastAPI /chat.
         '/api/chat': {
           target: process.env.CHAT_API_PROXY_TARGET || 'http://127.0.0.1:8000',

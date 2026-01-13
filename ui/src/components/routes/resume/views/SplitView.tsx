@@ -17,6 +17,7 @@ interface SplitViewProps {
   onInputChange: (value: string) => void;
   onSend: (text: string) => void;
   isLoading: boolean;
+  streamingText: string | null;
   activeTab: 'brief' | 'experience';
   onTabChange: (tab: 'brief' | 'experience') => void;
   artifacts: Artifacts | null;
@@ -33,6 +34,7 @@ export function SplitView({
   onInputChange, 
   onSend, 
   isLoading,
+  streamingText,
   activeTab,
   onTabChange,
   artifacts,
@@ -85,7 +87,19 @@ export function SplitView({
               {messages.map((msg, idx) => (
                 <ChatMessage key={idx} message={msg} index={idx} isInSplitView />
               ))}
-              {isLoading && <LoadingIndicator isInSplitView />}
+              
+              {/* Show streaming message if active */}
+              {streamingText !== null && (
+                <ChatMessage 
+                  message={{ role: 'assistant', text: streamingText }}
+                  index={messages.length}
+                  isInSplitView
+                  isStreaming
+                />
+              )}
+              
+              {/* Show loading dots only before streaming starts */}
+              {isLoading && streamingText === null && <LoadingIndicator isInSplitView />}
             </div>
           </div>
           

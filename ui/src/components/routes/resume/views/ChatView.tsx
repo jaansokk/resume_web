@@ -13,6 +13,7 @@ interface ChatViewProps {
   onInputChange: (value: string) => void;
   onSend: (text: string) => void;
   isLoading: boolean;
+  streamingText: string | null;
   chips: string[];
   onChipSelect: (chip: string) => void;
 }
@@ -23,6 +24,7 @@ export function ChatView({
   onInputChange, 
   onSend, 
   isLoading,
+  streamingText,
   chips,
   onChipSelect,
 }: ChatViewProps) {
@@ -69,7 +71,17 @@ export function ChatView({
               <ChatMessage key={idx} message={msg} index={idx} />
             ))}
             
-            {isLoading && <LoadingIndicator />}
+            {/* Show streaming message if active */}
+            {streamingText !== null && (
+              <ChatMessage 
+                message={{ role: 'assistant', text: streamingText }}
+                index={messages.length}
+                isStreaming
+              />
+            )}
+            
+            {/* Show loading dots only before streaming starts */}
+            {isLoading && streamingText === null && <LoadingIndicator />}
           </div>
           
           {/* Follow-up chips */}
