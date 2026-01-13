@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getResumeNavLabel, subscribeNavStateChanged, type ResumeNavLabel } from '../../utils/navState';
 import { trackExternalLinkClicked } from '../../utils/posthogTracking';
+import { DownloadPdfButton } from '../routes/cv/DownloadPdfButton';
 
 type ActivePage = 'resume' | 'cv' | 'contact';
 
@@ -16,10 +17,9 @@ interface HeaderProps {
   transparent?: boolean;
   activePage?: ActivePage;
   isContactActive?: boolean; // Legacy prop for compatibility
-  rightActions?: ReactNode;
 }
 
-export function Header({ transparent, activePage, isContactActive, rightActions }: HeaderProps) {
+export function Header({ transparent, activePage, isContactActive }: HeaderProps) {
   const [resumeLabel, setResumeLabel] = useState<ResumeNavLabel>(() => getResumeNavLabel());
 
   useEffect(() => {
@@ -48,7 +48,9 @@ export function Header({ transparent, activePage, isContactActive, rightActions 
         </div>
 
         <nav className="flex items-center gap-6">
-          {rightActions}
+          {/* CV-specific: Download PDF button */}
+          {currentPage === 'cv' && <DownloadPdfButton />}
+          
           {/* Conditional first link: Chat or Fit Brief & Experience */}
           <a
             href="/"

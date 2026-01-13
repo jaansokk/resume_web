@@ -212,6 +212,22 @@ export function trackCVChatInitiated() {
 }
 
 /**
+ * Track CV contact provided (email/LinkedIn)
+ */
+export function trackCVContactProvided(params: {
+  hasLinkedIn: boolean;
+  hasEmail: boolean;
+}) {
+  const posthog = getPostHog();
+  if (!posthog) return;
+  
+  posthog.capture('cv_contact_provided', {
+    has_linkedin: params.hasLinkedIn,
+    has_email: params.hasEmail,
+  });
+}
+
+/**
  * Track CV PDF download
  */
 export function trackCVPdfDownload() {

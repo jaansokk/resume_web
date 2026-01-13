@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
@@ -25,9 +26,25 @@ export function Modal({
   primaryButton,
   secondaryButton,
 }: ModalProps) {
-  if (!isOpen) return null;
+  const portalRef = useRef<HTMLDivElement | null>(null);
 
-  return (
+  useEffect(() => {
+    if (typeof document !== 'undefined' && !portalRef.current) {
+      portalRef.current = document.createElement('div');
+      document.body.appendChild(portalRef.current);
+    }
+
+    return () => {
+      if (portalRef.current) {
+        document.body.removeChild(portalRef.current);
+        portalRef.current = null;
+      }
+    };
+  }, []);
+
+  if (!isOpen || !portalRef.current) return null;
+
+  return createPortal(
     <div 
       className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in" 
       style={{ animationFillMode: 'forwards' }}
@@ -70,7 +87,8 @@ export function Modal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    portalRef.current
   );
 }
 
