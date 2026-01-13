@@ -3,6 +3,12 @@
 FROM node:20-alpine AS ui_build
 WORKDIR /app
 
+# Accept build-time environment variables for PostHog
+ARG PUBLIC_POSTHOG_KEY
+ARG PUBLIC_POSTHOG_HOST
+ENV PUBLIC_POSTHOG_KEY=${PUBLIC_POSTHOG_KEY}
+ENV PUBLIC_POSTHOG_HOST=${PUBLIC_POSTHOG_HOST}
+
 # UI build (Astro) lives in resume_web/ui, but content markdown lives
 # in the separate repo resume_web_content/ui/src/content.
 #

@@ -10,6 +10,9 @@ services:
       #     resume_web_content/
       context: ../..
       dockerfile: resume_web/infra-vps/caddy/Dockerfile
+      args:
+        PUBLIC_POSTHOG_KEY: ${PUBLIC_POSTHOG_KEY}
+        PUBLIC_POSTHOG_HOST: ${PUBLIC_POSTHOG_HOST}
     restart: unless-stopped
     ports:
       - "80:80"
