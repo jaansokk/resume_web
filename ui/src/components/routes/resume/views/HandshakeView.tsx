@@ -40,7 +40,7 @@ export function HandshakeView({
         <div className="max-w-2xl mx-auto text-center">
           <div className="animate-fade-up opacity-0 mb-6" style={{ animationFillMode: 'forwards' }}>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.15] tracking-[-0.02em]">
-              Hey — I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.<br />
+              Hey {'\u2014'} I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.<br />
               <span className="text-[var(--v2-text-secondary)]">What kind of product</span><br />
               <span className="text-[var(--v2-text-secondary)]">are you building?</span>
             </h1>

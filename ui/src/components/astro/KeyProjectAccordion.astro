@@ -329,7 +329,7 @@ function processInlineMarkdown(text: string): string {
 
 <script>
   // Accordion toggle functionality
-  document.addEventListener('DOMContentLoaded', () => {
+  function initializeAccordions() {
     // Helper to update toggle button state
     function updateToggleButton(btn: Element, roleSlug: string) {
       const accordions = document.querySelectorAll(`.project-accordion[data-role="${roleSlug}"]`);
@@ -348,7 +348,14 @@ function processInlineMarkdown(text: string): string {
     // Individual accordion toggles
     const triggers = document.querySelectorAll('.accordion-trigger');
     triggers.forEach((trigger) => {
-      trigger.addEventListener('click', () => {
+      // Remove existing listener if any (to avoid duplicates)
+      const oldListener = (trigger as any)._accordionListener;
+      if (oldListener) {
+        trigger.removeEventListener('click', oldListener);
+      }
+      
+      // Create new listener
+      const listener = () => {
         const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
         const panelId = trigger.getAttribute('aria-controls');
         const panel = document.getElementById(panelId!);
@@ -367,13 +374,24 @@ function processInlineMarkdown(text: string): string {
             }
           }
         }
-      });
+      };
+      
+      // Store listener reference and add it
+      (trigger as any)._accordionListener = listener;
+      trigger.addEventListener('click', listener);
     });
 
     // Toggle all buttons
     const toggleAllBtns = document.querySelectorAll('.toggle-all-btn');
     toggleAllBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
+      // Remove existing listener if any (to avoid duplicates)
+      const oldListener = (btn as any)._toggleAllListener;
+      if (oldListener) {
+        btn.removeEventListener('click', oldListener);
+      }
+      
+      // Create new listener
+      const listener = () => {
         const roleSlug = btn.getAttribute('data-role');
         if (!roleSlug) return;
         
@@ -397,7 +415,15 @@ function processInlineMarkdown(text: string): string {
         if (label) {
           label.textContent = isCurrentlyExpanded ? 'Expand all' : 'Collapse all';
         }
-      });
+      };
+      
+      // Store listener reference and add it
+      (btn as any)._toggleAllListener = listener;
+      btn.addEventListener('click', listener);
     });
-  });
+  }
+
+  // Initialize on both DOMContentLoaded (first load) and astro:page-load (client-side navigation)
+  document.addEventListener('DOMContentLoaded', initializeAccordions);
+  document.addEventListener('astro:page-load', initializeAccordions);
 </script>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ModalProps {
@@ -27,22 +27,28 @@ export function Modal({
   secondaryButton,
 }: ModalProps) {
   const portalRef = useRef<HTMLDivElement | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (typeof document !== 'undefined' && !portalRef.current) {
+    // Only run on client side
+    setIsMounted(true);
+    
+    if (!portalRef.current) {
       portalRef.current = document.createElement('div');
+      portalRef.current.setAttribute('data-modal-portal', 'true');
       document.body.appendChild(portalRef.current);
     }
 
     return () => {
-      if (portalRef.current) {
+      // Safe cleanup - only remove if it's actually a child of body
+      if (portalRef.current && portalRef.current.parentNode === document.body) {
         document.body.removeChild(portalRef.current);
-        portalRef.current = null;
       }
+      portalRef.current = null;
     };
   }, []);
 
-  if (!isOpen || !portalRef.current) return null;
+  if (!isMounted || !isOpen || !portalRef.current) return null;
 
   return createPortal(
     <div 
