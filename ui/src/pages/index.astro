@@ -95,4 +95,55 @@ import ResumeApp from '../components/routes/resume/ResumeApp';
   .animate-pulse-subtle {
     animation: v2-pulse-subtle 2s ease-in-out infinite;
   }
+  
+  /* Streaming gradient animation for tab headings */
+  @keyframes v2-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .streaming-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(164, 198, 190, 0.3) 50%,
+      transparent 100%
+    );
+    animation: v2-shimmer 1.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  
+  .streaming-text {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Artifact content fade-in animation */
+  @keyframes v2-artifact-fade-in {
+    from { 
+      opacity: 0; 
+      transform: translateY(8px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+  
+  .artifact-item-enter {
+    animation: v2-artifact-fade-in 0.4s ease-out forwards;
+  }
+  
+  /* Staggered animation delays for artifact items */
+  .artifact-item-enter:nth-child(1) { animation-delay: 0ms; }
+  .artifact-item-enter:nth-child(2) { animation-delay: 50ms; }
+  .artifact-item-enter:nth-child(3) { animation-delay: 100ms; }
+  .artifact-item-enter:nth-child(4) { animation-delay: 150ms; }
+  .artifact-item-enter:nth-child(5) { animation-delay: 200ms; }
+  .artifact-item-enter:nth-child(6) { animation-delay: 250ms; }
 </style>

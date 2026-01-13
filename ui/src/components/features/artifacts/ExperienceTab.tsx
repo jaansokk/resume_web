@@ -13,18 +13,27 @@ export function ExperienceTab({ artifacts }: ExperienceTabProps) {
     );
   }
 
+  // Create a stable key based on content to trigger animation when content changes
+  const contentKey = artifacts.relevantExperience.groups
+    .flatMap(g => g.items.map(i => i.slug))
+    .join('-');
+  
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4" key={contentKey}>
       {artifacts.relevantExperience.groups.map((group: RelevantExperienceGroup, groupIdx: number) => (
-        <div key={groupIdx}>
+        <div key={groupIdx} className="artifact-item-enter" style={{ animationDelay: `${groupIdx * 100}ms` }}>
           {group.title && (
-            <h3 className="text-xs uppercase tracking-wider text-[var(--v2-accent)] mb-3">{group.title}</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[var(--v2-accent)] mb-3">
+              {group.title}
+            </h3>
           )}
           {group.items.map((item: RelevantExperienceItem, itemIdx: number) => (
             <div 
               key={`${groupIdx}-${itemIdx}`}
               className="border border-[var(--v2-border-subtle)] rounded-xl p-5 bg-[var(--v2-bg-elevated)]
-                         hover:border-[var(--v2-accent)]/30 transition-colors cursor-pointer mb-4"
+                         hover:border-[var(--v2-accent)]/30 transition-colors cursor-pointer mb-4
+                         artifact-item-enter"
+              style={{ animationDelay: `${groupIdx * 100 + (itemIdx + 1) * 50}ms` }}
             >
               <div className="flex justify-between items-start mb-3">
                 <h4 className="font-medium text-[var(--v2-text)]">{item.title}</h4>

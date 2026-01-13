@@ -7,13 +7,15 @@ interface ArtifactsPanelProps {
   onTabChange: (tab: 'brief' | 'experience') => void;
   artifacts: Artifacts | null;
   onShareClick: () => void;
+  isStreaming?: boolean;
 }
 
 export function ArtifactsPanel({ 
   activeTab, 
   onTabChange, 
   artifacts, 
-  onShareClick 
+  onShareClick,
+  isStreaming = false,
 }: ArtifactsPanelProps) {
   return (
     <div className="flex-1 lg:w-1/2 border-r border-[var(--v2-border-subtle)] flex flex-col overflow-hidden">
@@ -24,23 +26,25 @@ export function ArtifactsPanel({
           <div className="flex gap-4">
             <button
               onClick={() => onTabChange('brief')}
-              className={`text-sm font-medium pb-1 border-b-2 transition-colors ${
+              className={`relative text-sm font-medium pb-1 border-b-2 transition-colors overflow-hidden ${
                 activeTab === 'brief' 
                   ? 'border-[var(--v2-accent)] text-[var(--v2-text)]' 
                   : 'border-transparent text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
               }`}
             >
-              Fit Brief
+              <span className={isStreaming ? 'streaming-text' : ''}>Fit Brief</span>
+              {isStreaming && <span className="streaming-gradient" />}
             </button>
             <button
               onClick={() => onTabChange('experience')}
-              className={`text-sm font-medium pb-1 border-b-2 transition-colors ${
+              className={`relative text-sm font-medium pb-1 border-b-2 transition-colors overflow-hidden ${
                 activeTab === 'experience' 
                   ? 'border-[var(--v2-accent)] text-[var(--v2-text)]' 
                   : 'border-transparent text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
               }`}
             >
-              Relevant Experience
+              <span className={isStreaming ? 'streaming-text' : ''}>Relevant Experience</span>
+              {isStreaming && <span className="streaming-gradient" />}
             </button>
           </div>
           

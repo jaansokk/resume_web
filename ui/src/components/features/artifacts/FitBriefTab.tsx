@@ -13,12 +13,16 @@ export function FitBriefTab({ artifacts }: FitBriefTabProps) {
     );
   }
 
+  // Create a stable key based on content to trigger animation when content changes
+  const contentKey = artifacts.fitBrief.sections.map(s => s.id).join('-');
+  
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" key={contentKey}>
       {artifacts.fitBrief.sections.map((section: FitBriefSection, idx: number) => (
         <div 
           key={section.id}
-          className="transition-all duration-500 opacity-100 translate-y-0"
+          className="artifact-item-enter"
+          style={{ animationDelay: `${idx * 50}ms` }}
         >
           <div className="border border-[var(--v2-border-subtle)] rounded-xl p-5 bg-[var(--v2-bg-elevated)]">
             <h3 className="text-xs uppercase tracking-wider text-[var(--v2-accent)] mb-3">

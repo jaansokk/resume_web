@@ -69,6 +69,7 @@ export function SplitView({
           onTabChange={onTabChange}
           artifacts={artifacts}
           onShareClick={onModalOpen}
+          isStreaming={isLoading}
         />
         
         {/* Right: Chat */}
