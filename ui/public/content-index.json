@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-12T10:52:53.352Z",
+  "generatedAt": "2026-01-13T09:59:41.198Z",
   "items": [
     {
       "type": "experience",
@@ -135,6 +135,54 @@
       "company": "Positium",
       "role": "Technical Project Lead",
       "period": "2025 — Present"
+    },
+    {
+      "type": "project",
+      "subtype": "freelance",
+      "visibleIn": [
+        "artifacts",
+        "rag"
+      ],
+      "slug": "looke-teacher-training",
+      "title": "LÕOKE Teacher Training Platform — Web Design & Marketing",
+      "tags": [
+        "WordPress",
+        "Web Design",
+        "Brand Identity",
+        "Photography",
+        "Video",
+        "Non-profit",
+        "Education Tech"
+      ],
+      "summary": "End-to-end web presence for an Estonian teacher training non-profit — from WordPress site design to landing pages, marketing concepts, photography, and video production.",
+      "company": "MTÜ LÕOKE",
+      "role": "Web Designer / Creative Director",
+      "period": "2023 — Present"
+    },
+    {
+      "type": "project",
+      "subtype": "freelance",
+      "visibleIn": [
+        "artifacts",
+        "rag"
+      ],
+      "slug": "rag-resume-website",
+      "title": "RAG Resume Website (Fit Brief + Relevant Experience)",
+      "tags": [
+        "RAG",
+        "LLM UX",
+        "Astro",
+        "React",
+        "FastAPI",
+        "Qdrant",
+        "OpenAI",
+        "Anthropic",
+        "AWS"
+      ],
+      "summary": "A resume website that turns a short conversation into two grounded artifacts — a Fit Brief and evidence-backed Relevant Experience — powered by a small RAG stack and a server-directed UI.",
+      "company": "Freelance",
+      "role": "Designer / Builder (AI/RAG + Product)",
+      "period": "2025 — 2026"
     }
   ]
 }
