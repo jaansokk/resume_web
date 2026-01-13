@@ -20,9 +20,14 @@ interface HeaderProps {
 }
 
 export function Header({ transparent, activePage, isContactActive }: HeaderProps) {
-  const [resumeLabel, setResumeLabel] = useState<ResumeNavLabel>(() => getResumeNavLabel());
+  // Always start with 'Chat' to match SSR, then update after mount to avoid hydration mismatch
+  const [resumeLabel, setResumeLabel] = useState<ResumeNavLabel>('Chat');
 
   useEffect(() => {
+    // Set the actual value after mount (client-side only)
+    setResumeLabel(getResumeNavLabel());
+    
+    // Subscribe to changes
     return subscribeNavStateChanged(() => setResumeLabel(getResumeNavLabel()));
   }, []);
 

@@ -20,20 +20,40 @@ type TransitionState = 'idle' | 'chat-to-split';
 const TRANSITION_DURATION = 600; // ms
 
 export default function ConceptAApp() {
-  // Always auto-restore from localStorage on mount
-  const savedState = typeof window !== 'undefined' ? loadConversationState() : null;
-
-  const [conversationId] = useState(() => savedState?.conversationId ?? uuidv4());
-  const [messages, setMessages] = useState<Message[]>(() => savedState?.messages ?? []);
+  // Initialize with defaults to match SSR, then restore from localStorage after mount
+  const [conversationId] = useState(() => {
+    if (typeof window === 'undefined') return uuidv4();
+    const savedState = loadConversationState();
+    return savedState?.conversationId ?? uuidv4();
+  });
+  
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<MainViewMode>(() => savedState?.viewMode ?? 'handshake');
-  const [chips, setChips] = useState<string[]>(() => savedState?.chips ?? []);
-  const [artifacts, setArtifacts] = useState<Artifacts | null>(() => savedState?.artifacts ?? null);
-  const [activeTab, setActiveTab] = useState<'brief' | 'experience'>(() => savedState?.activeTab ?? 'brief');
+  const [viewMode, setViewMode] = useState<MainViewMode>('handshake'); // Always start with handshake for SSR
+  const [chips, setChips] = useState<string[]>([]);
+  const [artifacts, setArtifacts] = useState<Artifacts | null>(null);
+  const [activeTab, setActiveTab] = useState<'brief' | 'experience'>('brief');
   const [showModal, setShowModal] = useState(false);
   const [transitionState, setTransitionState] = useState<TransitionState>('idle');
+
+  // Restore state from localStorage after mount (client-side only)
+  useEffect(() => {
+    const savedState = loadConversationState();
+    if (savedState) {
+      if (savedState.messages) setMessages(savedState.messages);
+      if (savedState.viewMode) setViewMode(savedState.viewMode);
+      if (savedState.chips) setChips(savedState.chips);
+      if (savedState.artifacts) setArtifacts(savedState.artifacts);
+      if (savedState.activeTab) setActiveTab(savedState.activeTab);
+      
+      // Update nav label if restoring split view
+      if (savedState.viewMode === 'split') {
+        markHasSeenSplit();
+      }
+    }
+  }, []);
 
   // Handle transition from chat to split with animation
   const transitionToSplit = useCallback((newActiveTab?: 'brief' | 'experience', messageCount?: number) => {
@@ -55,13 +75,6 @@ export default function ConceptAApp() {
       setTransitionState('idle');
     }, TRANSITION_DURATION);
   }, [messages.length]);
-
-  // If restoring split view, ensure nav label is updated on mount
-  useEffect(() => {
-    if (savedState?.viewMode === 'split') {
-      markHasSeenSplit();
-    }
-  }, []);
 
   // Auto-save conversation state to localStorage whenever it changes
   useEffect(() => {
