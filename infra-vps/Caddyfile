@@ -22,7 +22,7 @@
     # Restricts external resources to same-origin + specific CDNs
     # Allow Google Fonts for typography
     # Allow PostHog analytics (script loading + API calls)
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://eu.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://eu.i.posthog.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://eu.i.posthog.com https://eu-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://eu.i.posthog.com https://eu-assets.i.posthog.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     
     # Prevent MIME type sniffing
     X-Content-Type-Options "nosniff"
