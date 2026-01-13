@@ -18,9 +18,10 @@
     
     # CSP: Content Security Policy (strict but compatible with React/Astro)
     # Allows inline scripts/styles (required for React hydration)
+    # Allows data: URIs for scripts (required for Astro View Transitions)
     # Restricts external resources to same-origin + specific CDNs
     # Allow Google Fonts for typography
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     
     # Prevent MIME type sniffing
     X-Content-Type-Options "nosniff"
