@@ -16,6 +16,7 @@ interface ChatViewProps {
   streamingText: string | null;
   chips: string[];
   onChipSelect: (chip: string) => void;
+  isExiting?: boolean;
 }
 
 export function ChatView({ 
@@ -27,6 +28,7 @@ export function ChatView({
   streamingText,
   chips,
   onChipSelect,
+  isExiting = false,
 }: ChatViewProps) {
   const [contentOverflows, setContentOverflows] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -55,14 +57,14 @@ export function ChatView({
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
       <Header transparent />
-      <BackgroundOverlay />
+      <BackgroundOverlay isFadingToBlack={isExiting} />
 
       {/* Main content area */}
       <div 
         ref={chatContainerRef}
         className={`relative z-10 flex-1 flex flex-col px-6 pt-20 pb-24 transition-all duration-500 ${
           !contentOverflows ? 'justify-center' : 'justify-start pt-24'
-        }`}
+        } ${isExiting ? 'chat-view-exit' : ''}`}
       >
         {/* Chat messages */}
         <div className={`w-full max-w-2xl mx-auto ${!contentOverflows ? '' : 'mt-4'}`}>
@@ -92,7 +94,9 @@ export function ChatView({
       </div>
       
       {/* Fixed input at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--v2-bg)] via-[var(--v2-bg)] to-transparent pt-8 pb-6 px-6 z-20">
+      <div className={`fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--v2-bg)] via-[var(--v2-bg)] to-transparent pt-8 pb-6 px-6 z-20 transition-all duration-500 ${
+        isExiting ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+      }`}>
         <div className="max-w-2xl mx-auto">
           <ChatInput
             value={inputValue}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { postChatStream, type Artifacts, type ClientUI } from '../../../utils/chatApi';
 import type { Message } from '../../domain/types';
@@ -9,6 +9,9 @@ import { markHasSeenSplit, clearHasSeenSplit } from '../../../utils/navState';
 import { loadConversationState, saveConversationState, clearConversationState } from '../../../utils/conversationState';
 
 type MainViewMode = 'handshake' | 'chat' | 'split';
+type TransitionState = 'idle' | 'chat-to-split';
+
+const TRANSITION_DURATION = 600; // ms
 
 export default function ConceptAApp() {
   // Always auto-restore from localStorage on mount
@@ -24,6 +27,22 @@ export default function ConceptAApp() {
   const [artifacts, setArtifacts] = useState<Artifacts | null>(() => savedState?.artifacts ?? null);
   const [activeTab, setActiveTab] = useState<'brief' | 'experience'>(() => savedState?.activeTab ?? 'brief');
   const [showModal, setShowModal] = useState(false);
+  const [transitionState, setTransitionState] = useState<TransitionState>('idle');
+
+  // Handle transition from chat to split with animation
+  const transitionToSplit = useCallback((newActiveTab?: 'brief' | 'experience') => {
+    setTransitionState('chat-to-split');
+    
+    // After exit animation completes, switch to split view
+    setTimeout(() => {
+      markHasSeenSplit();
+      setViewMode('split');
+      if (newActiveTab) {
+        setActiveTab(newActiveTab);
+      }
+      setTransitionState('idle');
+    }, TRANSITION_DURATION);
+  }, []);
 
   // If restoring split view, ensure nav label is updated on mount
   useEffect(() => {
@@ -91,12 +110,12 @@ export default function ConceptAApp() {
           setStreamingText(null); // Clear streaming text
 
           // Update UI based on server directive
-          if (response.ui.view === 'split') {
-            markHasSeenSplit();
-            setViewMode('split');
-            if (response.ui.split?.activeTab) {
-              setActiveTab(response.ui.split.activeTab);
-            }
+          if (response.ui.view === 'split' && viewMode !== 'split') {
+            // Trigger animated transition from chat to split
+            transitionToSplit(response.ui.split?.activeTab);
+          } else if (response.ui.view === 'split' && response.ui.split?.activeTab) {
+            // Already in split, just update tab
+            setActiveTab(response.ui.split.activeTab);
           }
 
           // Update chips if provided
@@ -182,6 +201,7 @@ export default function ConceptAApp() {
           streamingText={streamingText}
           chips={chips}
           onChipSelect={handleChipSelect}
+          isExiting={transitionState === 'chat-to-split'}
         />
       );
 

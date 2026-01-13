@@ -8,6 +8,7 @@ interface ArtifactsPanelProps {
   artifacts: Artifacts | null;
   onShareClick: () => void;
   isStreaming?: boolean;
+  className?: string;
 }
 
 export function ArtifactsPanel({ 
@@ -16,9 +17,10 @@ export function ArtifactsPanel({
   artifacts, 
   onShareClick,
   isStreaming = false,
+  className = '',
 }: ArtifactsPanelProps) {
   return (
-    <div className="flex-1 lg:w-1/2 border-r border-[var(--v2-border-subtle)] flex flex-col overflow-hidden">
+    <div className={`flex-1 lg:w-1/2 border-r border-[var(--v2-border-subtle)] flex flex-col overflow-hidden ${className}`}>
       {/* Fixed header: Tabs + Share */}
       <div className="flex-shrink-0 bg-[var(--v2-bg)] border-b border-[var(--v2-border-subtle)]">
         {/* Tabs + Share button row */}

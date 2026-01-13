@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { ViewTransitions } from 'astro:transitions';
 import { parseRoleMarkdown } from '../utils/cvRoleParser';
 import { parseSkillsEducationMarkdown } from '../utils/cvSkillsParser';
 import KeyProjectAccordion from '../components/astro/KeyProjectAccordion.astro';
@@ -46,13 +47,24 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <title>CV — Jaan Sokk</title>
+    <ViewTransitions />
   </head>
   <body>
-    <div class="v2-concept min-h-screen">
+    <div class="v2-concept min-h-screen relative">
+      <!-- Background overlay (same as other pages) -->
+      <div class="fixed inset-0 z-0">
+        <div 
+          class="absolute inset-0 bg-cover bg-center opacity-40"
+          style="background-image: url('/20221211-SBW_0367.jpg');"
+        ></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/70 to-[#0a0a0a]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(164,198,190,0.03)_0%,transparent_70%)]"></div>
+      </div>
+      
       <Header activePage="cv" client:load />
 
       <!-- Main Content -->
-      <div class="max-w-6xl mx-auto px-6 pt-24 pb-32">
+      <div class="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-32">
         <div class="flex gap-16">
           <!-- Left: CV Content -->
           <main class="flex-1 min-w-0">

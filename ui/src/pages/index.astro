@@ -1,5 +1,6 @@
 ---
 import ResumeApp from '../components/routes/resume/ResumeApp';
+import { ViewTransitions } from 'astro:transitions';
 ---
 
 <!doctype html>
@@ -12,6 +13,7 @@ import ResumeApp from '../components/routes/resume/ResumeApp';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <title>Jaan Sokk — Product Owner & Technical Lead</title>
+    <ViewTransitions />
   </head>
   <body>
     <ResumeApp client:load />
@@ -146,4 +148,53 @@ import ResumeApp from '../components/routes/resume/ResumeApp';
   .artifact-item-enter:nth-child(4) { animation-delay: 150ms; }
   .artifact-item-enter:nth-child(5) { animation-delay: 200ms; }
   .artifact-item-enter:nth-child(6) { animation-delay: 250ms; }
+  
+  /* Chat to Split transition animations */
+  @keyframes v2-chat-exit {
+    from { 
+      opacity: 1; 
+      transform: translateX(0); 
+    }
+    to { 
+      opacity: 0; 
+      transform: translateX(50px); 
+    }
+  }
+  
+  .chat-view-exit {
+    animation: v2-chat-exit 0.5s ease-in-out forwards;
+  }
+  
+  /* Split view enter animations */
+  @keyframes v2-split-artifact-enter {
+    from { 
+      opacity: 0; 
+      transform: translateX(-40px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateX(0); 
+    }
+  }
+  
+  @keyframes v2-split-chat-enter {
+    from { 
+      opacity: 0; 
+    }
+    to { 
+      opacity: 1; 
+    }
+  }
+  
+  .split-artifact-enter {
+    animation: v2-split-artifact-enter 0.5s ease-out forwards;
+    animation-delay: 100ms;
+    opacity: 0;
+  }
+  
+  .split-chat-enter {
+    animation: v2-split-chat-enter 0.4s ease-out forwards;
+    animation-delay: 150ms;
+    opacity: 0;
+  }
 </style>

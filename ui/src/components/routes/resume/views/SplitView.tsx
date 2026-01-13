@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../../ui/Header';
 import { Modal } from '../../../ui/Modal';
 import { ChatMessage } from '../../../features/chat/ChatMessage';
@@ -44,6 +44,13 @@ export function SplitView({
   onStartOver,
 }: SplitViewProps) {
   const [showStartOverModal, setShowStartOverModal] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
+  
+  // Mark as entered after mount animation completes
+  useEffect(() => {
+    const timer = setTimeout(() => setHasEntered(true), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleStartOverClick = () => {
     setShowStartOverModal(true);
@@ -70,10 +77,11 @@ export function SplitView({
           artifacts={artifacts}
           onShareClick={onModalOpen}
           isStreaming={isLoading}
+          className={!hasEntered ? 'split-artifact-enter' : ''}
         />
         
         {/* Right: Chat */}
-        <div className="flex-1 lg:w-1/2 flex flex-col bg-[var(--v2-bg-elevated)] overflow-hidden">
+        <div className={`flex-1 lg:w-1/2 flex flex-col bg-[var(--v2-bg-elevated)] overflow-hidden ${!hasEntered ? 'split-chat-enter' : ''}`}>
           {/* Chat heading with Start Over button */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-[var(--v2-border-subtle)] flex items-center justify-between">
             <h2 className="text-lg font-medium text-[var(--v2-text)]">

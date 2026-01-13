@@ -1,4 +1,5 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
 import SharedConversationApp from '../../components/routes/share/SharedConversationApp';
 ---
 
@@ -12,6 +13,7 @@ import SharedConversationApp from '../../components/routes/share/SharedConversat
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <title>Shared — Jaan Sokk</title>
+    <ViewTransitions />
   </head>
   <body>
     <SharedConversationApp client:load />
