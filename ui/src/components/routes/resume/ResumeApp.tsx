@@ -7,6 +7,12 @@ import { ChatView } from './views/ChatView';
 import { SplitView } from './views/SplitView';
 import { markHasSeenSplit, clearHasSeenSplit } from '../../../utils/navState';
 import { loadConversationState, saveConversationState, clearConversationState } from '../../../utils/conversationState';
+import { 
+  trackChatMessage, 
+  trackSplitViewOpened, 
+  trackStartOverClicked,
+  trackConversationAbandoned 
+} from '../../../utils/posthogTracking';
 
 type MainViewMode = 'handshake' | 'chat' | 'split';
 type TransitionState = 'idle' | 'chat-to-split';
@@ -30,8 +36,14 @@ export default function ConceptAApp() {
   const [transitionState, setTransitionState] = useState<TransitionState>('idle');
 
   // Handle transition from chat to split with animation
-  const transitionToSplit = useCallback((newActiveTab?: 'brief' | 'experience') => {
+  const transitionToSplit = useCallback((newActiveTab?: 'brief' | 'experience', messageCount?: number) => {
     setTransitionState('chat-to-split');
+    
+    // Track split view opened
+    trackSplitViewOpened({
+      messageCount: messageCount || messages.length,
+      initialTab: newActiveTab || 'brief',
+    });
     
     // After exit animation completes, switch to split view
     setTimeout(() => {
@@ -42,7 +54,7 @@ export default function ConceptAApp() {
       }
       setTransitionState('idle');
     }, TRANSITION_DURATION);
-  }, []);
+  }, [messages.length]);
 
   // If restoring split view, ensure nav label is updated on mount
   useEffect(() => {
@@ -63,16 +75,41 @@ export default function ConceptAApp() {
     });
   }, [conversationId, viewMode, messages, chips, artifacts, activeTab]);
 
-  const handleSend = async (text: string) => {
+  // Track conversation abandoned if user leaves before reaching split view
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if ((viewMode === 'handshake' || viewMode === 'chat') && messages.length > 0) {
+        trackConversationAbandoned({
+          messageCount: messages.length,
+          viewMode: viewMode === 'handshake' ? 'handshake' : 'chat',
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [viewMode, messages.length]);
+
+  const handleSend = async (text: string, isChipClick = false, chipLabel?: string) => {
     if (!text.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', text: text.trim() };
     const newMessages = [...messages, userMessage];
+    const messageNumber = newMessages.filter(m => m.role === 'user').length;
+    
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
     setChips([]);
     setStreamingText(''); // Start with empty streaming text
+
+    // Track chat message
+    trackChatMessage({
+      messageNumber,
+      viewMode: viewMode === 'handshake' ? 'handshake' : viewMode,
+      isChipClick,
+      chipLabel,
+    });
 
     // Transition from handshake to chat immediately on first message
     if (viewMode === 'handshake') {
@@ -112,7 +149,7 @@ export default function ConceptAApp() {
           // Update UI based on server directive
           if (response.ui.view === 'split' && viewMode !== 'split') {
             // Trigger animated transition from chat to split
-            transitionToSplit(response.ui.split?.activeTab);
+            transitionToSplit(response.ui.split?.activeTab, newMessages.length + 1);
           } else if (response.ui.view === 'split' && response.ui.split?.activeTab) {
             // Already in split, just update tab
             setActiveTab(response.ui.split.activeTab);
@@ -153,7 +190,7 @@ export default function ConceptAApp() {
   };
 
   const handleChipSelect = (chip: string) => {
-    handleSend(chip);
+    handleSend(chip, true, chip);
   };
 
   const handleModalOpen = () => {
@@ -165,6 +202,12 @@ export default function ConceptAApp() {
   };
 
   const handleStartOver = () => {
+    // Track start over
+    trackStartOverClicked({
+      messageCount: messages.length,
+      viewMode: viewMode as 'chat' | 'split',
+    });
+
     // Clear all conversation state
     clearConversationState();
     clearHasSeenSplit();

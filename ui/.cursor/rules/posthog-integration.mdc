@@ -1,0 +1,73 @@
+# PostHog Astro Rules
+
+## PostHog Integration
+
+PostHog is integrated into this Astro project with production-only tracking. The configuration includes:
+
+- PostHog initialization in `src/components/posthog.astro` (disabled for localhost)
+- Layout setup in `src/layouts/PostHogLayout.astro`
+- Environment variables for API key and host
+- Centralized tracking utilities in `src/utils/posthogTracking.ts`
+
+## Key Guidelines
+
+### Component Structure
+- PostHog component uses `is:inline` directive with `define:vars` for env variable injection
+- Layout wraps PostHog component in the `<head>` section
+- Pages use PostHogLayout to ensure PostHog loads on all pages
+- **PostHog is automatically disabled in local development** (localhost, 127.0.0.1, 192.168.x.x)
+
+### Environment Variables
+**Required in production deployment:**
+- `PUBLIC_POSTHOG_KEY` - Your PostHog project API key
+- `PUBLIC_POSTHOG_HOST` - Your PostHog instance URL (default: https://eu.i.posthog.com)
+
+**Location:**
+- Production: Set in `infra-vps/.env` (from `.env.example` template)
+- Development: Optional in `ui/.env` (tracking disabled anyway)
+
+### Best Practices
+- Use centralized tracking functions from `src/utils/posthogTracking.ts`
+- Call `posthog.capture()` via wrapper functions for type safety
+- Never track PII (personally identifiable information)
+- Use snake_case for event names and properties
+- Include `message_count` for conversation depth tracking
+
+### File Structure
+```
+src/
+├── components/
+│   └── posthog.astro              # PostHog initialization (prod-only)
+├── layouts/
+│   └── PostHogLayout.astro        # Layout with PostHog
+├── utils/
+│   └── posthogTracking.ts         # Centralized tracking utilities
+└── pages/
+    └── *.astro                    # Your pages using PostHogLayout
+```
+
+### Local Development
+PostHog automatically creates a no-op stub in local dev:
+```javascript
+// In localhost:
+window.posthog.capture() // Does nothing (safe)
+```
+Console message: `[PostHog] Disabled in local development`
+
+### Common Tracking Patterns
+```typescript
+// Import tracking utilities
+import { trackChatMessage, trackSplitViewOpened } from '@/utils/posthogTracking';
+
+// Track events with properties
+trackChatMessage({
+  messageNumber: 3,
+  viewMode: 'chat',
+  isChipClick: false,
+});
+
+trackSplitViewOpened({
+  messageCount: 5,
+  initialTab: 'brief',
+});
+```

@@ -1,4 +1,5 @@
 ---
+import PostHogLayout from '../layouts/PostHogLayout.astro';
 import { getCollection } from 'astro:content';
 import { ViewTransitions } from 'astro:transitions';
 import { parseRoleMarkdown } from '../utils/cvRoleParser';
@@ -37,409 +38,444 @@ const skillsDoc = backgroundDocs.find((d) => d.slug === 'skills-education');
 const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body) : null;
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-    <title>CV — Jaan Sokk</title>
-    <ViewTransitions />
-  </head>
-  <body>
-    <div class="v2-concept min-h-screen relative">
-      <!-- Background overlay (same as other pages) -->
-      <div class="fixed inset-0 z-0">
-        <div 
-          class="absolute inset-0 bg-cover bg-center opacity-40"
-          style="background-image: url('/20221211-SBW_0367.jpg');"
-        ></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/70 to-[#0a0a0a]"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(164,198,190,0.03)_0%,transparent_70%)]"></div>
-      </div>
-      
-      <Header activePage="cv" client:load />
+<PostHogLayout>
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+      <title>CV — Jaan Sokk</title>
+      <ViewTransitions />
+    </head>
+    <body>
+      <div class="v2-concept min-h-screen relative">
+        <!-- Background overlay (same as other pages) -->
+        <div class="fixed inset-0 z-0">
+          <div 
+            class="absolute inset-0 bg-cover bg-center opacity-40"
+            style="background-image: url('/20221211-SBW_0367.jpg');"
+          ></div>
+          <div class="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/70 to-[#0a0a0a]"></div>
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(164,198,190,0.03)_0%,transparent_70%)]"></div>
+        </div>
+        
+        <Header activePage="cv" client:load />
 
-      <!-- Main Content -->
-      <div class="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-32">
-        <div class="flex gap-16">
-          <!-- Left: CV Content -->
-          <main class="flex-1 min-w-0">
-            <!-- Header / About -->
-            <section class="mb-16">
-              <h1 class="text-4xl md:text-5xl font-medium mb-2">
-                Jaan <span class="v2-serif text-[var(--v2-accent)]">Sokk</span>
-              </h1>
-              <p class="text-xl text-[var(--v2-text-secondary)] mb-6">
-                Product Manager | Technical Lead | Agile & Web3 Enthusiast | Critical Thinker
-              </p>
-              <p class="text-[var(--v2-text-secondary)] max-w-2xl leading-relaxed">
-                A hands-on product leader who can balance strategic vision with tactical execution, 
-                work closely with engineering teams, and drive results through data and user feedback 
-                rather than just process. 10+ years across fintech, blockchain, gaming, and mobility.
-              </p>
-            </section>
-
-            <!-- Experience -->
-            <section id="experience" class="mb-16">
-              <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
-                Experience
-              </h2>
-              <div class="space-y-8">
-                {rolesWithParsed.map((role, idx) => (
-                  <article 
-                    id={role.id}
-                    class="group scroll-mt-24"
+        <!-- Main Content -->
+        <div class="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-32">
+          <div class="flex gap-16">
+            <!-- Left: CV Content -->
+            <main class="flex-1 min-w-0">
+              <!-- Header / About -->
+              <section class="mb-16">
+                <div class="flex items-start justify-between gap-4 mb-6">
+                  <div class="flex-1">
+                    <h1 class="text-4xl md:text-5xl font-medium mb-2">
+                      Jaan <span class="v2-serif text-[var(--v2-accent)]">Sokk</span>
+                    </h1>
+                    <p class="text-xl text-[var(--v2-text-secondary)]">
+                      Product Manager | Technical Lead | Agile & Web3 Enthusiast | Critical Thinker
+                    </p>
+                  </div>
+                  <a
+                    href="/jaan-sokk-cv.pdf"
+                    download
+                    id="cv-pdf-download"
+                    class="flex-shrink-0 px-4 py-2 border border-[var(--v2-border)] rounded-full
+                           text-xs text-[var(--v2-text-secondary)]
+                           hover:text-[var(--v2-text)] hover:border-[var(--v2-accent)]/50
+                           transition-all duration-200 flex items-center gap-2"
                   >
-                    <div class="relative pl-6 pb-12 border-l border-[var(--v2-border-subtle)] last:pb-0">
-                      <!-- Timeline dot -->
-                      <div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-[var(--v2-accent)] opacity-60 group-hover:opacity-100 transition-opacity" />
-                      
-                      <!-- Header -->
-                      <div class="mb-4">
-                        <div class="flex items-start justify-between gap-4 flex-wrap">
-                          <div>
-                            <h3 class="text-lg font-medium text-[var(--v2-text)]">
-                              {role.data.title}
-                            </h3>
-                            <p class="text-[var(--v2-accent)] font-medium">
-                              {role.data.company}
-                            </p>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download PDF
+                  </a>
+                </div>
+                <p class="text-[var(--v2-text-secondary)] max-w-2xl leading-relaxed">
+                  A hands-on product leader who can balance strategic vision with tactical execution, 
+                  work closely with engineering teams, and drive results through data and user feedback 
+                  rather than just process. 10+ years across fintech, blockchain, gaming, and mobility.
+                </p>
+              </section>
+
+              <!-- Experience -->
+              <section id="experience" class="mb-16">
+                <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
+                  Experience
+                </h2>
+                <div class="space-y-8">
+                  {rolesWithParsed.map((role, idx) => (
+                    <article 
+                      id={role.id}
+                      class="group scroll-mt-24"
+                    >
+                      <div class="relative pl-6 pb-12 border-l border-[var(--v2-border-subtle)] last:pb-0">
+                        <!-- Timeline dot -->
+                        <div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-[var(--v2-accent)] opacity-60 group-hover:opacity-100 transition-opacity" />
+                        
+                        <!-- Header -->
+                        <div class="mb-4">
+                          <div class="flex items-start justify-between gap-4 flex-wrap">
+                            <div>
+                              <h3 class="text-lg font-medium text-[var(--v2-text)]">
+                                {role.data.title}
+                              </h3>
+                              <p class="text-[var(--v2-accent)] font-medium">
+                                {role.data.company}
+                              </p>
+                            </div>
+                            <span class="text-sm text-[var(--v2-text-tertiary)] font-mono whitespace-nowrap">
+                              {role.data.period}
+                            </span>
                           </div>
-                          <span class="text-sm text-[var(--v2-text-tertiary)] font-mono whitespace-nowrap">
-                            {role.data.period}
-                          </span>
+                          
+                          <!-- Tags -->
+                          <div class="flex flex-wrap gap-2 mt-3">
+                            {role.data.tags.map((tag) => (
+                              <span 
+                                class="px-2 py-0.5 text-xs bg-[var(--v2-accent-dim)] text-[var(--v2-accent)] rounded"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                         
-                        <!-- Tags -->
-                        <div class="flex flex-wrap gap-2 mt-3">
-                          {role.data.tags.map((tag) => (
-                            <span 
-                              class="px-2 py-0.5 text-xs bg-[var(--v2-accent-dim)] text-[var(--v2-accent)] rounded"
-                            >
-                              {tag}
-                            </span>
+                        <!-- Summary -->
+                        <p class="text-[var(--v2-text-secondary)] mb-4 leading-relaxed">
+                          {role.data.summary}
+                        </p>
+                        
+                        <!-- Impact -->
+                        {role.parsed.impact.length > 0 && (
+                          <div class="mb-4">
+                            <h4 class="text-xs font-semibold text-[var(--v2-accent)] mb-2">Impact:</h4>
+                            <ul class="space-y-2">
+                              {role.parsed.impact.map((bullet) => (
+                                <li class="flex items-start gap-3 text-sm text-[var(--v2-text-secondary)]">
+                                  <span class="text-[var(--v2-accent)] mt-1.5 text-[8px]">●</span>
+                                  <span>{bullet}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        <!-- Context -->
+                        {role.parsed.context.length > 0 && (
+                          <div class="mb-4">
+                            <h4 class="text-xs font-semibold text-[var(--v2-accent)] mb-2">Context:</h4>
+                            <ul class="space-y-1">
+                              {role.parsed.context.map((bullet) => (
+                                <li class="flex items-start gap-3 text-sm text-[var(--v2-text-secondary)]">
+                                  <span class="text-[var(--v2-accent)] mt-1.5 text-[8px]">●</span>
+                                  <span>{bullet}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        <!-- Key Projects (Accordion) -->
+                        <KeyProjectAccordion projects={role.parsed.keyProjects} roleSlug={role.id} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <!-- Skills -->
+              <section id="skills" class="mb-16">
+                <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
+                  Skills
+                </h2>
+                {skillsEducation && skillsEducation.skills.columns.length > 0 ? (
+                  <div class="grid md:grid-cols-3 gap-8">
+                    {skillsEducation.skills.columns.map((col) => (
+                      <div>
+                        <h3 class="text-sm font-medium text-[var(--v2-text)] mb-3">{col.title}</h3>
+                        <ul class="space-y-1.5">
+                          {col.items.map((skill) => (
+                            <li class="text-sm text-[var(--v2-text-secondary)]">{skill}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p class="text-sm text-[var(--v2-text-tertiary)]">
+                    Skills content not found.
+                  </p>
+                )}
+              </section>
+
+              <!-- Education -->
+              <section id="education" class="mb-16">
+                <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
+                  Education & Certifications
+                </h2>
+                {skillsEducation ? (
+                  <div class="space-y-8">
+                    {skillsEducation.certifications.length > 0 && (
+                      <div>
+                        <h3 class="text-sm font-medium text-[var(--v2-text)] mb-4">Training & Certifications</h3>
+                        <div class="space-y-4">
+                          {skillsEducation.certifications.map((item) => (
+                            <div class="flex items-start justify-between gap-4">
+                              <div>
+                                <p class="text-[var(--v2-text-secondary)]">{item.title}</p>
+                                {item.org && <p class="text-sm text-[var(--v2-text-secondary)]">{item.org}</p>}
+                              </div>
+                              {item.year && <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{item.year}</span>}
+                            </div>
                           ))}
                         </div>
                       </div>
-                      
-                      <!-- Summary -->
-                      <p class="text-[var(--v2-text-secondary)] mb-4 leading-relaxed">
-                        {role.data.summary}
-                      </p>
-                      
-                      <!-- Impact -->
-                      {role.parsed.impact.length > 0 && (
-                        <div class="mb-4">
-                          <h4 class="text-xs font-semibold text-[var(--v2-accent)] mb-2">Impact:</h4>
-                          <ul class="space-y-2">
-                            {role.parsed.impact.map((bullet) => (
-                              <li class="flex items-start gap-3 text-sm text-[var(--v2-text-secondary)]">
-                                <span class="text-[var(--v2-accent)] mt-1.5 text-[8px]">●</span>
-                                <span>{bullet}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      <!-- Context -->
-                      {role.parsed.context.length > 0 && (
-                        <div class="mb-4">
-                          <h4 class="text-xs font-semibold text-[var(--v2-accent)] mb-2">Context:</h4>
-                          <ul class="space-y-1">
-                            {role.parsed.context.map((bullet) => (
-                              <li class="flex items-start gap-3 text-sm text-[var(--v2-text-secondary)]">
-                                <span class="text-[var(--v2-accent)] mt-1.5 text-[8px]">●</span>
-                                <span>{bullet}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      <!-- Key Projects (Accordion) -->
-                      <KeyProjectAccordion projects={role.parsed.keyProjects} roleSlug={role.id} />
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
+                    )}
 
-            <!-- Skills -->
-            <section id="skills" class="mb-16">
-              <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
-                Skills
-              </h2>
-              {skillsEducation && skillsEducation.skills.columns.length > 0 ? (
-                <div class="grid md:grid-cols-3 gap-8">
-                  {skillsEducation.skills.columns.map((col) => (
-                    <div>
-                      <h3 class="text-sm font-medium text-[var(--v2-text)] mb-3">{col.title}</h3>
-                      <ul class="space-y-1.5">
-                        {col.items.map((skill) => (
-                          <li class="text-sm text-[var(--v2-text-secondary)]">{skill}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p class="text-sm text-[var(--v2-text-tertiary)]">
-                  Skills content not found.
-                </p>
-              )}
-            </section>
-
-            <!-- Education -->
-            <section id="education" class="mb-16">
-              <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
-                Education & Certifications
-              </h2>
-              {skillsEducation ? (
-                <div class="space-y-8">
-                  {skillsEducation.certifications.length > 0 && (
-                    <div>
-                      <h3 class="text-sm font-medium text-[var(--v2-text)] mb-4">Training & Certifications</h3>
-                      <div class="space-y-4">
-                        {skillsEducation.certifications.map((item) => (
-                          <div class="flex items-start justify-between gap-4">
-                            <div>
-                              <p class="text-[var(--v2-text-secondary)]">{item.title}</p>
-                              {item.org && <p class="text-sm text-[var(--v2-text-secondary)]">{item.org}</p>}
+                    {skillsEducation.education.length > 0 && (
+                      <div>
+                        <h3 class="text-sm font-medium text-[var(--v2-text)] mb-4">Education</h3>
+                        <div class="space-y-4">
+                          {skillsEducation.education.map((item) => (
+                            <div class="flex items-start justify-between gap-4">
+                              <div>
+                                <p class="text-[var(--v2-text-secondary)]">{item.title}</p>
+                                {item.org && <p class="text-sm text-[var(--v2-text-secondary)]">{item.org}</p>}
+                              </div>
+                              {item.year && <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{item.year}</span>}
                             </div>
-                            {item.year && <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{item.year}</span>}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {skillsEducation.education.length > 0 && (
-                    <div>
-                      <h3 class="text-sm font-medium text-[var(--v2-text)] mb-4">Education</h3>
-                      <div class="space-y-4">
-                        {skillsEducation.education.map((item) => (
-                          <div class="flex items-start justify-between gap-4">
-                            <div>
-                              <p class="text-[var(--v2-text-secondary)]">{item.title}</p>
-                              {item.org && <p class="text-sm text-[var(--v2-text-secondary)]">{item.org}</p>}
-                            </div>
-                            {item.year && <span class="text-sm text-[var(--v2-text-tertiary)] font-mono">{item.year}</span>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p class="text-sm text-[var(--v2-text-tertiary)]">
-                  Education content not found.
-                </p>
-              )}
-            </section>
-          </main>
-          
-          <!-- Right: Table of Contents - sticky -->
-          <aside class="hidden lg:block w-48 flex-shrink-0">
-            <div class="sticky top-24">
-              <nav>
-                <h3 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-4 font-medium">
-                  On this page
-                </h3>
-                <ul class="space-y-1">
-                  {rolesWithParsed.map((role) => (
-                    <li>
-                      <a
-                        href={`#${role.id}`}
-                        class="group flex items-center gap-3 py-1.5 text-sm text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
-                      >
-                        <span class="w-1 h-1 rounded-full bg-[var(--v2-text-tertiary)] group-hover:bg-[var(--v2-accent)] transition-colors" />
-                        <span class="truncate">{role.data.company}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-                
-                <div class="mt-8 pt-6 border-t border-[var(--v2-border-subtle)]">
+                    )}
+                  </div>
+                ) : (
+                  <p class="text-sm text-[var(--v2-text-tertiary)]">
+                    Education content not found.
+                  </p>
+                )}
+              </section>
+            </main>
+            
+            <!-- Right: Table of Contents - sticky -->
+            <aside class="hidden lg:block w-48 flex-shrink-0">
+              <div class="sticky top-24">
+                <nav>
+                  <h3 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-4 font-medium">
+                    On this page
+                  </h3>
                   <ul class="space-y-1">
-                    <li>
-                      <a
-                        href="#skills"
-                        class="text-sm text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors"
-                      >
-                        Skills
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#education"
-                        class="text-sm text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors"
-                      >
-                        Education
-                      </a>
-                    </li>
+                    {rolesWithParsed.map((role) => (
+                      <li>
+                        <a
+                          href={`#${role.id}`}
+                          class="group flex items-center gap-3 py-1.5 text-sm text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
+                        >
+                          <span class="w-1 h-1 rounded-full bg-[var(--v2-text-tertiary)] group-hover:bg-[var(--v2-accent)] transition-colors" />
+                          <span class="truncate">{role.data.company}</span>
+                        </a>
+                      </li>
+                    ))}
                   </ul>
-                </div>
-              </nav>
-            </div>
-          </aside>
+                  
+                  <div class="mt-8 pt-6 border-t border-[var(--v2-border-subtle)]">
+                    <ul class="space-y-1">
+                      <li>
+                        <a
+                          href="#skills"
+                          class="text-sm text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors"
+                        >
+                          Skills
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="#education"
+                          class="text-sm text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors"
+                        >
+                          Education
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </nav>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
-    </div>
-    <CVChatWidget client:load />
-  </body>
-</html>
+      <CVChatWidget client:load />
+    </body>
+  </html>
 
-<style is:global>
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-  
-  :root {
-    --v2-bg: #0a0a0a;
-    --v2-bg-elevated: #141414;
-    --v2-bg-card: #1a1a1a;
-    --v2-text: #e6e6e6;
-    --v2-text-secondary: #9f9f9f;
-    --v2-text-tertiary: #616161;
-    --v2-accent: #a4c6be;
-    --v2-accent-dim: rgba(164, 198, 190, 0.15);
-    --v2-border: #2a2a2a;
-    --v2-border-subtle: #1e1e1e;
-  }
-  
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    background: var(--v2-bg);
-    color: var(--v2-text);
-    line-height: 1.6;
-  }
-  
-  .v2-concept {
-    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--v2-bg);
-    color: var(--v2-text);
-    min-height: 100vh;
-  }
-  
-  .v2-serif {
-    font-family: 'Newsreader', Georgia, serif;
-    font-style: italic;
-  }
+  <style is:global>
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    
+    :root {
+      --v2-bg: #0a0a0a;
+      --v2-bg-elevated: #141414;
+      --v2-bg-card: #1a1a1a;
+      --v2-text: #e6e6e6;
+      --v2-text-secondary: #9f9f9f;
+      --v2-text-tertiary: #616161;
+      --v2-accent: #a4c6be;
+      --v2-accent-dim: rgba(164, 198, 190, 0.15);
+      --v2-border: #2a2a2a;
+      --v2-border-subtle: #1e1e1e;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--v2-bg);
+      color: var(--v2-text);
+      line-height: 1.6;
+    }
+    
+    .v2-concept {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--v2-bg);
+      color: var(--v2-text);
+      min-height: 100vh;
+    }
+    
+    .v2-serif {
+      font-family: 'Newsreader', Georgia, serif;
+      font-style: italic;
+    }
 
-  /* Smooth scroll for anchor links */
-  html {
-    scroll-behavior: smooth;
-  }
-</style>
+    /* Smooth scroll for anchor links */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
 
-<style is:global>
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-  
-  :root {
-    --v2-bg: #0a0a0a;
-    --v2-bg-elevated: #141414;
-    --v2-bg-card: #1a1a1a;
-    --v2-text: #e6e6e6;
-    --v2-text-secondary: #9f9f9f;
-    --v2-text-tertiary: #616161;
-    --v2-accent: #a4c6be;
-    --v2-accent-dim: rgba(164, 198, 190, 0.15);
-    --v2-border: #2a2a2a;
-    --v2-border-subtle: #1e1e1e;
-  }
-  
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    background: var(--v2-bg);
-    color: var(--v2-text);
-    line-height: 1.6;
-  }
-  
-  .v2-concept {
-    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--v2-bg);
-    color: var(--v2-text);
-    min-height: 100vh;
-  }
-  
-  .v2-serif {
-    font-family: 'Newsreader', Georgia, serif;
-    font-style: italic;
-  }
-  
-  @keyframes v2-fade-up {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes v2-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  @keyframes v2-scale-in {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  
-  @keyframes v2-pulse-subtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  
-  @keyframes v2-slide-up {
-    from { opacity: 0; transform: translateY(100%); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes v2-slide-in-right {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-  }
-  
-  .animate-fade-up {
-    animation: v2-fade-up 0.6s ease-out forwards;
-  }
-  
-  .animate-fade-in {
-    animation: v2-fade-in 0.5s ease-out forwards;
-  }
-  
-  .animate-scale-in {
-    animation: v2-scale-in 0.4s ease-out forwards;
-  }
-  
-  .animate-pulse-subtle {
-    animation: v2-pulse-subtle 2s ease-in-out infinite;
-  }
-  
-  .animate-slide-up {
-    animation: v2-slide-up 0.3s ease-out forwards;
-  }
-  
-  .animate-slide-in-right {
-    animation: v2-slide-in-right 0.3s ease-out forwards;
-  }
+  <style is:global>
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    
+    :root {
+      --v2-bg: #0a0a0a;
+      --v2-bg-elevated: #141414;
+      --v2-bg-card: #1a1a1a;
+      --v2-text: #e6e6e6;
+      --v2-text-secondary: #9f9f9f;
+      --v2-text-tertiary: #616161;
+      --v2-accent: #a4c6be;
+      --v2-accent-dim: rgba(164, 198, 190, 0.15);
+      --v2-border: #2a2a2a;
+      --v2-border-subtle: #1e1e1e;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--v2-bg);
+      color: var(--v2-text);
+      line-height: 1.6;
+    }
+    
+    .v2-concept {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--v2-bg);
+      color: var(--v2-text);
+      min-height: 100vh;
+    }
+    
+    .v2-serif {
+      font-family: 'Newsreader', Georgia, serif;
+      font-style: italic;
+    }
+    
+    @keyframes v2-fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes v2-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes v2-scale-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    @keyframes v2-pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @keyframes v2-slide-up {
+      from { opacity: 0; transform: translateY(100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes v2-slide-in-right {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    
+    .animate-fade-up {
+      animation: v2-fade-up 0.6s ease-out forwards;
+    }
+    
+    .animate-fade-in {
+      animation: v2-fade-in 0.5s ease-out forwards;
+    }
+    
+    .animate-scale-in {
+      animation: v2-scale-in 0.4s ease-out forwards;
+    }
+    
+    .animate-pulse-subtle {
+      animation: v2-pulse-subtle 2s ease-in-out infinite;
+    }
+    
+    .animate-slide-up {
+      animation: v2-slide-up 0.3s ease-out forwards;
+    }
+    
+    .animate-slide-in-right {
+      animation: v2-slide-in-right 0.3s ease-out forwards;
+    }
 
-  /* Smooth scroll for anchor links */
-  html {
-    scroll-behavior: smooth;
-  }
-</style>
+    /* Smooth scroll for anchor links */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
 
+  <script>
+    // Track CV PDF download
+    document.addEventListener('DOMContentLoaded', () => {
+      const pdfDownloadLink = document.getElementById('cv-pdf-download');
+      if (pdfDownloadLink) {
+        pdfDownloadLink.addEventListener('click', () => {
+          if (typeof window !== 'undefined' && (window as any).posthog) {
+            (window as any).posthog.capture('cv_pdf_downloaded');
+          }
+        });
+      }
+    });
+  </script>
+</PostHogLayout>

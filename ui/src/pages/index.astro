@@ -1,199 +1,201 @@
 ---
+import PostHogLayout from '../layouts/PostHogLayout.astro';
 import ResumeApp from '../components/routes/resume/ResumeApp';
 import { ViewTransitions } from 'astro:transitions';
 ---
+<PostHogLayout>
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+      <title>Jaan Sokk — Product Owner & Technical Lead</title>
+      <ViewTransitions />
+    </head>
+    <body>
+      <ResumeApp client:load />
+    </body>
+  </html>
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-    <title>Jaan Sokk — Product Owner & Technical Lead</title>
-    <ViewTransitions />
-  </head>
-  <body>
-    <ResumeApp client:load />
-  </body>
-</html>
-
-<style is:global>
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-  
-  :root {
-    --v2-bg: #0a0a0a;
-    --v2-bg-elevated: #141414;
-    --v2-bg-card: #1a1a1a;
-    --v2-text: #e6e6e6;
-    --v2-text-secondary: #9f9f9f;
-    --v2-text-tertiary: #616161;
-    --v2-accent: #a4c6be;
-    --v2-accent-dim: rgba(164, 198, 190, 0.15);
-    --v2-border: #2a2a2a;
-    --v2-border-subtle: #1e1e1e;
-  }
-  
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    background: var(--v2-bg);
-    color: var(--v2-text);
-    line-height: 1.6;
-  }
-  
-  .v2-concept {
-    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--v2-bg);
-    color: var(--v2-text);
-    min-height: 100vh;
-  }
-  
-  .v2-serif {
-    font-family: 'Newsreader', Georgia, serif;
-    font-style: italic;
-  }
-  
-  @keyframes v2-fade-up {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes v2-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  @keyframes v2-scale-in {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  
-  @keyframes v2-pulse-subtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  
-  .animate-fade-up {
-    animation: v2-fade-up 0.6s ease-out forwards;
-  }
-  
-  .animate-fade-in {
-    animation: v2-fade-in 0.5s ease-out forwards;
-  }
-  
-  .animate-scale-in {
-    animation: v2-scale-in 0.4s ease-out forwards;
-  }
-  
-  .animate-pulse-subtle {
-    animation: v2-pulse-subtle 2s ease-in-out infinite;
-  }
-  
-  /* Streaming gradient animation for tab headings */
-  @keyframes v2-shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-  
-  .streaming-gradient {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(164, 198, 190, 0.3) 50%,
-      transparent 100%
-    );
-    animation: v2-shimmer 1.5s ease-in-out infinite;
-    pointer-events: none;
-  }
-  
-  .streaming-text {
-    position: relative;
-    z-index: 1;
-  }
-  
-  /* Artifact content fade-in animation */
-  @keyframes v2-artifact-fade-in {
-    from { 
-      opacity: 0; 
-      transform: translateY(8px); 
+  <style is:global>
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    
+    :root {
+      --v2-bg: #0a0a0a;
+      --v2-bg-elevated: #141414;
+      --v2-bg-card: #1a1a1a;
+      --v2-text: #e6e6e6;
+      --v2-text-secondary: #9f9f9f;
+      --v2-text-tertiary: #616161;
+      --v2-accent: #a4c6be;
+      --v2-accent-dim: rgba(164, 198, 190, 0.15);
+      --v2-border: #2a2a2a;
+      --v2-border-subtle: #1e1e1e;
     }
-    to { 
-      opacity: 1; 
-      transform: translateY(0); 
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-  }
-  
-  .artifact-item-enter {
-    animation: v2-artifact-fade-in 0.4s ease-out forwards;
-  }
-  
-  /* Staggered animation delays for artifact items */
-  .artifact-item-enter:nth-child(1) { animation-delay: 0ms; }
-  .artifact-item-enter:nth-child(2) { animation-delay: 50ms; }
-  .artifact-item-enter:nth-child(3) { animation-delay: 100ms; }
-  .artifact-item-enter:nth-child(4) { animation-delay: 150ms; }
-  .artifact-item-enter:nth-child(5) { animation-delay: 200ms; }
-  .artifact-item-enter:nth-child(6) { animation-delay: 250ms; }
-  
-  /* Chat to Split transition animations */
-  @keyframes v2-chat-exit {
-    from { 
-      opacity: 1; 
-      transform: translateX(0); 
+    
+    body {
+      background: var(--v2-bg);
+      color: var(--v2-text);
+      line-height: 1.6;
     }
-    to { 
-      opacity: 0; 
-      transform: translateX(50px); 
+    
+    .v2-concept {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--v2-bg);
+      color: var(--v2-text);
+      min-height: 100vh;
     }
-  }
-  
-  .chat-view-exit {
-    animation: v2-chat-exit 0.5s ease-in-out forwards;
-  }
-  
-  /* Split view enter animations */
-  @keyframes v2-split-artifact-enter {
-    from { 
-      opacity: 0; 
-      transform: translateX(-40px); 
+    
+    .v2-serif {
+      font-family: 'Newsreader', Georgia, serif;
+      font-style: italic;
     }
-    to { 
-      opacity: 1; 
-      transform: translateX(0); 
+    
+    @keyframes v2-fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-  }
-  
-  @keyframes v2-split-chat-enter {
-    from { 
-      opacity: 0; 
+    
+    @keyframes v2-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
-    to { 
-      opacity: 1; 
+    
+    @keyframes v2-scale-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
-  }
-  
-  .split-artifact-enter {
-    animation: v2-split-artifact-enter 0.5s ease-out forwards;
-    animation-delay: 100ms;
-    opacity: 0;
-  }
-  
-  .split-chat-enter {
-    animation: v2-split-chat-enter 0.4s ease-out forwards;
-    animation-delay: 150ms;
-    opacity: 0;
-  }
-</style>
+    
+    @keyframes v2-pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .animate-fade-up {
+      animation: v2-fade-up 0.6s ease-out forwards;
+    }
+    
+    .animate-fade-in {
+      animation: v2-fade-in 0.5s ease-out forwards;
+    }
+    
+    .animate-scale-in {
+      animation: v2-scale-in 0.4s ease-out forwards;
+    }
+    
+    .animate-pulse-subtle {
+      animation: v2-pulse-subtle 2s ease-in-out infinite;
+    }
+    
+    /* Streaming gradient animation for tab headings */
+    @keyframes v2-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .streaming-gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(164, 198, 190, 0.3) 50%,
+        transparent 100%
+      );
+      animation: v2-shimmer 1.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    .streaming-text {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Artifact content fade-in animation */
+    @keyframes v2-artifact-fade-in {
+      from { 
+        opacity: 0; 
+        transform: translateY(8px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+    
+    .artifact-item-enter {
+      animation: v2-artifact-fade-in 0.4s ease-out forwards;
+    }
+    
+    /* Staggered animation delays for artifact items */
+    .artifact-item-enter:nth-child(1) { animation-delay: 0ms; }
+    .artifact-item-enter:nth-child(2) { animation-delay: 50ms; }
+    .artifact-item-enter:nth-child(3) { animation-delay: 100ms; }
+    .artifact-item-enter:nth-child(4) { animation-delay: 150ms; }
+    .artifact-item-enter:nth-child(5) { animation-delay: 200ms; }
+    .artifact-item-enter:nth-child(6) { animation-delay: 250ms; }
+    
+    /* Chat to Split transition animations */
+    @keyframes v2-chat-exit {
+      from { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+      to { 
+        opacity: 0; 
+        transform: translateX(50px); 
+      }
+    }
+    
+    .chat-view-exit {
+      animation: v2-chat-exit 0.5s ease-in-out forwards;
+    }
+    
+    /* Split view enter animations */
+    @keyframes v2-split-artifact-enter {
+      from { 
+        opacity: 0; 
+        transform: translateX(-40px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+    }
+    
+    @keyframes v2-split-chat-enter {
+      from { 
+        opacity: 0; 
+      }
+      to { 
+        opacity: 1; 
+      }
+    }
+    
+    .split-artifact-enter {
+      animation: v2-split-artifact-enter 0.5s ease-out forwards;
+      animation-delay: 100ms;
+      opacity: 0;
+    }
+    
+    .split-chat-enter {
+      animation: v2-split-chat-enter 0.4s ease-out forwards;
+      animation-delay: 150ms;
+      opacity: 0;
+    }
+  </style>
+</PostHogLayout>

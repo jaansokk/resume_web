@@ -7,6 +7,7 @@ import type { Artifacts } from '../../../utils/chatApi';
 import { getShare } from '../../../utils/shareApi';
 import { markHasSeenSplit } from '../../../utils/navState';
 import { saveConversationState } from '../../../utils/conversationState';
+import { trackSharedConversationViewed } from '../../../utils/posthogTracking';
 
 function extractShareIdFromPath(pathname: string): string | null {
   // Expect /c/<shareId>
@@ -60,6 +61,12 @@ export default function SharedConversationApp() {
         setActiveTab(tab);
         if ((snap.artifacts as any)?.fitBrief?.title) setTitle((snap.artifacts as any).fitBrief.title);
 
+        // Track shared conversation viewed
+        trackSharedConversationViewed({
+          shareId,
+          messageCount: msgs.length,
+        });
+
         // Important UX behavior:
         // - Mark that the user has "seen split" so the header label becomes "Fit Brief & Experience"
         // - Seed localStorage conversation state so navigating to /cv and back to "/" doesn't drop the user to Handshake.
@@ -101,6 +108,7 @@ export default function SharedConversationApp() {
           onTabChange={setActiveTab}
           artifacts={artifacts}
           onShareClick={() => {}}
+          messageCount={messages.length}
         />
 
         <div className="flex-1 lg:w-1/2 flex flex-col bg-[var(--v2-bg-elevated)] overflow-hidden">

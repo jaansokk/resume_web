@@ -1,4 +1,5 @@
 import { quickReplies } from '../../domain/types';
+import { trackQuickReplyClick } from '../../../utils/posthogTracking';
 
 interface QuickReplyGridProps {
   onReplySelect: (label: string) => void;
@@ -6,6 +7,11 @@ interface QuickReplyGridProps {
 }
 
 export function QuickReplyGrid({ onReplySelect, showButtons }: QuickReplyGridProps) {
+  const handleReplyClick = (label: string) => {
+    trackQuickReplyClick(label);
+    onReplySelect(label);
+  };
+
   return (
     <div 
       className={`grid grid-cols-2 gap-3 w-full max-w-2xl mx-auto mb-6 transition-all duration-700 ${
@@ -15,7 +21,7 @@ export function QuickReplyGrid({ onReplySelect, showButtons }: QuickReplyGridPro
       {quickReplies.map((reply, idx) => (
         <button
           key={reply.id}
-          onClick={() => onReplySelect(reply.label)}
+          onClick={() => handleReplyClick(reply.label)}
           className="group flex items-center gap-2 px-4 py-3
                      bg-[var(--v2-bg-elevated)] border border-[var(--v2-border-subtle)] 
                      rounded-full

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getResumeNavLabel, subscribeNavStateChanged, type ResumeNavLabel } from '../../utils/navState';
+import { trackExternalLinkClicked } from '../../utils/posthogTracking';
 
 type ActivePage = 'resume' | 'cv' | 'contact';
 
@@ -75,6 +76,7 @@ export function Header({ transparent, activePage, isContactActive, rightActions 
             href="https://linkedin.com/in/jaansokk"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackExternalLinkClicked({ linkUrl: 'https://linkedin.com/in/jaansokk', linkLabel: 'LinkedIn' })}
             className="text-xs text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)] transition-colors uppercase tracking-wider"
           >
             LinkedIn

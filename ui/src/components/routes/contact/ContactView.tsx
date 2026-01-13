@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { Header } from '../../ui/Header';
 import { BackgroundOverlay } from '../../ui/BackgroundOverlay';
 import { postContact } from '../../../utils/contactApi';
+import { trackContactFormSent } from '../../../utils/posthogTracking';
 
 interface ContactViewProps {
   onClose?: () => void;
@@ -68,6 +69,15 @@ export function ContactView({ onClose }: ContactViewProps) {
         pagePath: window.location.pathname,
         website: '',
       });
+      
+      // Track contact form sent
+      const hasLinkedIn = contact.toLowerCase().includes('linkedin.com');
+      const hasEmail = isValidEmail(contact);
+      trackContactFormSent({
+        hasEmail,
+        hasLinkedIn,
+      });
+
       setIsSubmitted(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to send message.');

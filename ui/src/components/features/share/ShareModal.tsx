@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { postShare } from '../../../utils/shareApi';
 import type { Artifacts } from '../../../utils/chatApi';
 import type { Message } from '../../domain/types';
+import {
+  trackShareModalOpened,
+  trackShareContactProvided,
+  trackShareLinkCopied,
+  trackShareSuccess,
+} from '../../../utils/posthogTracking';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -36,8 +42,15 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
 
   useEffect(() => {
     // Reset any previous submission errors when reopening.
-    if (isOpen) setError(null);
-  }, [isOpen]);
+    if (isOpen) {
+      setError(null);
+      // Track share modal opened
+      trackShareModalOpened({
+        activeTab,
+        messageCount: messages.length,
+      });
+    }
+  }, [isOpen, activeTab, messages.length]);
 
   const canShare = Boolean(artifacts?.fitBrief && artifacts?.relevantExperience);
 
@@ -48,6 +61,15 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
       setError('Share is only available once both Fit Brief and Relevant Experience are generated.');
       return;
     }
+
+    // Track contact provided
+    const hasLinkedIn = createdByContact.toLowerCase().includes('linkedin.com');
+    const hasEmail = createdByContact.includes('@') && !hasLinkedIn;
+    trackShareContactProvided({
+      hasLinkedIn,
+      hasEmail,
+    });
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -64,6 +86,14 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
           },
         },
       });
+      
+      // Track share success
+      const shareId = res.path.split('/').pop() || '';
+      trackShareSuccess({
+        shareId,
+        messageCount: messages.length,
+      });
+
       setSharePath(res.path);
       setStep(2);
     } catch (e) {
@@ -75,6 +105,11 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
 
   const handleCopyLink = async () => {
     if (!shareUrl) return;
+    
+    // Track link copied
+    const shareId = sharePath?.split('/').pop() || '';
+    trackShareLinkCopied({ shareId });
+
     try {
       await navigator.clipboard.writeText(shareUrl);
     } catch {

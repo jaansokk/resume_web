@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { postChat, type ClientUI } from '../../../utils/chatApi';
 import type { Message } from '../../domain/types';
+import { trackCVChatInitiated, trackChatMessage } from '../../../utils/posthogTracking';
 
 export function CVChatWidget() {
   const [conversationId] = useState(() => uuidv4());
@@ -17,16 +18,26 @@ export function CVChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, isChatOpen]);
 
-  const handleSend = async (rawText: string) => {
+  const handleSend = async (rawText: string, isChipClick = false) => {
     const text = rawText.trim();
     if (!text || isLoading) return;
 
     const userMessage: Message = { role: 'user', text };
     const newMessages = [...messages, userMessage];
+    const messageNumber = newMessages.filter(m => m.role === 'user').length;
+    
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
     setChips([]);
+
+    // Track chat message
+    trackChatMessage({
+      messageNumber,
+      viewMode: 'cv',
+      isChipClick,
+      chipLabel: isChipClick ? text : undefined,
+    });
 
     try {
       const clientUI: ClientUI = { view: 'chat' };
@@ -62,7 +73,10 @@ export function CVChatWidget() {
       {!isChatOpen && (
         <button
           type="button"
-          onClick={() => setIsChatOpen(true)}
+          onClick={() => {
+            trackCVChatInitiated();
+            setIsChatOpen(true);
+          }}
           className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[var(--v2-accent)] rounded-full 
                      flex items-center justify-center shadow-lg shadow-black/30
                      hover:scale-105 transition-transform"
@@ -126,7 +140,7 @@ export function CVChatWidget() {
                       <button
                         key={suggestion}
                         type="button"
-                        onClick={() => handleSend(suggestion)}
+                        onClick={() => handleSend(suggestion, true)}
                         className="px-3 py-1.5 text-xs bg-[var(--v2-bg-card)] border border-[var(--v2-border-subtle)]
                                    text-[var(--v2-text-secondary)] rounded-full hover:border-[var(--v2-accent)] 
                                    hover:text-[var(--v2-accent)] transition-colors"
@@ -176,7 +190,7 @@ export function CVChatWidget() {
                     <button
                       key={chip}
                       type="button"
-                      onClick={() => handleSend(chip)}
+                      onClick={() => handleSend(chip, true)}
                       className="px-3 py-1.5 text-xs bg-[var(--v2-bg-card)] border border-[var(--v2-border-subtle)]
                                  text-[var(--v2-text-secondary)] rounded-full hover:border-[var(--v2-accent)] 
                                  hover:text-[var(--v2-accent)] transition-colors"

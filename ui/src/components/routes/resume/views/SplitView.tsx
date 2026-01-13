@@ -77,6 +77,7 @@ export function SplitView({
           artifacts={artifacts}
           onShareClick={onModalOpen}
           isStreaming={isLoading}
+          messageCount={messages.length}
           className={!hasEntered ? 'split-artifact-enter' : ''}
         />
         

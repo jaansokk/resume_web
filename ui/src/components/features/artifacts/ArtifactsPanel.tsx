@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import type { Artifacts } from '../../../utils/chatApi';
 import { FitBriefTab } from './FitBriefTab';
 import { ExperienceTab } from './ExperienceTab';
+import { trackTabSwitch } from '../../../utils/posthogTracking';
 
 interface ArtifactsPanelProps {
   activeTab: 'brief' | 'experience';
@@ -9,6 +11,7 @@ interface ArtifactsPanelProps {
   onShareClick: () => void;
   isStreaming?: boolean;
   className?: string;
+  messageCount?: number;
 }
 
 export function ArtifactsPanel({ 
@@ -18,7 +21,22 @@ export function ArtifactsPanel({
   onShareClick,
   isStreaming = false,
   className = '',
+  messageCount = 0,
 }: ArtifactsPanelProps) {
+  const previousTabRef = useRef<'brief' | 'experience'>(activeTab);
+
+  const handleTabChange = (newTab: 'brief' | 'experience') => {
+    if (newTab !== activeTab) {
+      trackTabSwitch({
+        fromTab: previousTabRef.current,
+        toTab: newTab,
+        messageCount,
+      });
+      previousTabRef.current = newTab;
+      onTabChange(newTab);
+    }
+  };
+
   return (
     <div className={`flex-1 lg:w-1/2 border-r border-[var(--v2-border-subtle)] flex flex-col overflow-hidden ${className}`}>
       {/* Fixed header: Tabs + Share */}
@@ -27,7 +45,7 @@ export function ArtifactsPanel({
         <div className="px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex gap-4">
             <button
-              onClick={() => onTabChange('brief')}
+              onClick={() => handleTabChange('brief')}
               className={`relative text-sm font-medium pb-1 border-b-2 transition-colors overflow-hidden ${
                 activeTab === 'brief' 
                   ? 'border-[var(--v2-accent)] text-[var(--v2-text)]' 
@@ -38,7 +56,7 @@ export function ArtifactsPanel({
               {isStreaming && <span className="streaming-gradient" />}
             </button>
             <button
-              onClick={() => onTabChange('experience')}
+              onClick={() => handleTabChange('experience')}
               className={`relative text-sm font-medium pb-1 border-b-2 transition-colors overflow-hidden ${
                 activeTab === 'experience' 
                   ? 'border-[var(--v2-accent)] text-[var(--v2-text)]' 
