@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getResumeNavLabel, subscribeNavStateChanged, type ResumeNavLabel } from '../../utils/navState';
 import { trackExternalLinkClicked } from '../../utils/posthogTracking';
-import { DownloadPdfButton } from '../routes/cv/DownloadPdfButton';
 
 type ActivePage = 'resume' | 'cv' | 'contact';
 
@@ -53,9 +52,6 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
         </div>
 
         <nav className="flex items-center gap-6">
-          {/* CV-specific: Download PDF button */}
-          {currentPage === 'cv' && <DownloadPdfButton />}
-          
           {/* Conditional first link: Chat or Fit Brief & Experience */}
           <a
             href="/"

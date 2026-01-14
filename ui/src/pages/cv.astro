@@ -7,6 +7,7 @@ import { parseSkillsEducationMarkdown } from '../utils/cvSkillsParser';
 import KeyProjectAccordion from '../components/astro/KeyProjectAccordion.astro';
 import { Header } from '../components/ui/Header';
 import { CVChatWidget } from '../components/routes/cv/CVChatWidget';
+import { DownloadPdfButton } from '../components/routes/cv/DownloadPdfButton';
 
 // Load roles from content collection
 const allRoles = (await getCollection('experience')).filter((item) => Array.isArray(item.data.visibleIn) && item.data.visibleIn.includes('cv'));
@@ -88,9 +89,12 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
 
               <!-- Experience -->
               <section id="experience" class="mb-16">
-                <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] mb-8 font-medium">
-                  Experience
-                </h2>
+                <div class="flex items-center gap-3 mb-8">
+                  <h2 class="text-xs uppercase tracking-wider text-[var(--v2-text-tertiary)] font-medium">
+                    Experience
+                  </h2>
+                  <DownloadPdfButton client:load />
+                </div>
                 <div class="space-y-8">
                   {rolesWithParsed.map((role, idx) => (
                     <article 
