@@ -37,13 +37,18 @@ export function HandshakeView({
       {/* Main content area */}
       <div className="relative z-10 flex-1 flex flex-col px-6 pt-20 pb-24 justify-center">
         {/* Hero section */}
-        <div className="max-w-2xl mx-auto text-center">
+        <div className="max-w-3xl mx-auto text-center">
           <div className="animate-fade-up opacity-0 mb-6" style={{ animationFillMode: 'forwards' }}>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.15] tracking-[-0.02em]">
-              Hey {'\u2014'} I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.<br />
-              <span className="text-[var(--v2-text-secondary)]">What kind of product</span><br />
-              <span className="text-[var(--v2-text-secondary)]">are you building?</span>
+              Hey {'\u2014'} I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.
             </h1>
+            <p className="text-xs md:text-[0.7rem] uppercase tracking-[0.1em] text-[var(--v2-accent)] mt-3 mb-6">
+              Product Leader / PM <span className="opacity-50">&nbsp;|&nbsp;</span> Web3 Nerd <span className="opacity-50">&nbsp;|&nbsp;</span> Critical Thinker <span className="opacity-50">&nbsp;|&nbsp;</span> Leading Teams for 15y
+            </p>
+            <p className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.15] tracking-[-0.02em]">
+              What kind of product<br />
+              are you building?
+            </p>
           </div>
           
           {/* Subline */}

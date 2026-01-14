@@ -14,17 +14,21 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
   ) : null;
 
   if (isInSplitView) {
-    // Simplified layout for split view
+    // Split view: left/right alignment indicates speaker (no name label)
     return (
-      <div>
-        {message.role === 'assistant' && (
-          <div className="text-xs text-[var(--v2-text-tertiary)] mb-2 uppercase tracking-wider">Jaan</div>
-        )}
-        <p className={`text-sm leading-relaxed ${
-          message.role === 'assistant' ? 'text-[var(--v2-text-secondary)]' : 'text-[var(--v2-text)]'
-        }`}>
-          {message.text}{cursor}
-        </p>
+      <div className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+        <div
+          className={`max-w-[85%] ${
+            message.role === 'user'
+              ? 'bg-[var(--v2-accent-dim)] text-[var(--v2-text)] rounded-3xl rounded-br-lg px-5 py-3'
+              : 'text-left'
+          }`}
+        >
+          <p className={`text-sm leading-relaxed ${message.role === 'assistant' ? 'text-[var(--v2-text-secondary)]' : ''}`}>
+            {message.text}
+            {cursor}
+          </p>
+        </div>
       </div>
     );
   }
@@ -40,9 +44,6 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
           ? 'bg-[var(--v2-accent-dim)] text-[var(--v2-text)] rounded-3xl rounded-br-lg px-5 py-3'
           : 'text-left'
       }`}>
-        {message.role === 'assistant' && (
-          <div className="text-xs text-[var(--v2-text-tertiary)] mb-2 uppercase tracking-wider">Jaan</div>
-        )}
         <p className={`text-base leading-relaxed ${message.role === 'assistant' ? 'text-[var(--v2-text-secondary)]' : ''}`}>
           {message.text}{cursor}
         </p>

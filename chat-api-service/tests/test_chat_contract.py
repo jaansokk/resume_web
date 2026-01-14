@@ -11,6 +11,9 @@ from fastapi.testclient import TestClient
 def _env() -> None:
     # OpenAI client requires a key at import time in app.main; tests mock all calls anyway.
     os.environ.setdefault("OPENAI_API_KEY", "test-key")
+    # Anthropic is the default provider in this service; tests mock all calls anyway.
+    os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
+    os.environ.setdefault("MODEL_PROVIDER", "anthropic")
     os.environ.setdefault("QDRANT_URL", "http://127.0.0.1:6333")
 
 
@@ -35,6 +38,7 @@ def test_chat_rejects_invalid_request() -> None:
 def test_chat_v2_contract_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that the v2 contract is returned correctly."""
     from app.main import app
+    from app.anthropic_client import AnthropicClient
     from app.openai_client import OpenAIClient
     from app.qdrant_client import QdrantClient
 
@@ -42,17 +46,23 @@ def test_chat_v2_contract_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(OpenAIClient, "embed", lambda self, text: [0.0] * 1536)
     
     # Mock router to return v2-style directives
+    async def _router(self: AnthropicClient, *, messages: list[dict[str, str]]) -> str:
+        return '{"retrievalQuery":"test query","ui":{"view":"chat"},"chips":["B2B SaaS","Consumer fintech"],"hints":{"suggestTab":null}}'
+
     monkeypatch.setattr(
-        OpenAIClient,
+        AnthropicClient,
         "router",
-        lambda self, messages: '{"retrievalQuery":"test query","ui":{"view":"chat"},"chips":["B2B SaaS","Consumer fintech"],"hints":{"suggestTab":null}}',
+        _router,
     )
     
     # Mock answer to return v2 response with artifacts
+    async def _answer(self: AnthropicClient, *, messages: list[dict[str, str]]) -> str:
+        return """{"assistant":{"text":"Great question! What domain are you working in?"},"ui":{"view":"chat"},"chips":["B2B SaaS","AI/ML platform"],"hints":{"suggestTab":null},"artifacts":{}}"""
+
     monkeypatch.setattr(
-        OpenAIClient,
+        AnthropicClient,
         "answer",
-        lambda self, messages: """{"assistant":{"text":"Great question! What domain are you working in?"},"ui":{"view":"chat"},"chips":["B2B SaaS","AI/ML platform"],"hints":{"suggestTab":null},"artifacts":{}}""",
+        _answer,
     )
 
     # Mock Qdrant search: include one experience chunk and one background chunk
@@ -115,23 +125,30 @@ def test_chat_v2_contract_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_chat_v2_split_view_with_artifacts(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that split view returns artifacts correctly."""
     from app.main import app
+    from app.anthropic_client import AnthropicClient
     from app.openai_client import OpenAIClient
     from app.qdrant_client import QdrantClient
 
     monkeypatch.setattr(OpenAIClient, "embed", lambda self, text: [0.0] * 1536)
     
     # Router recommends split view
+    async def _router(self: AnthropicClient, *, messages: list[dict[str, str]]) -> str:
+        return '{"retrievalQuery":"product manager experience","ui":{"view":"split","split":{"activeTab":"brief"}},"chips":[],"hints":{"suggestTab":"brief"}}'
+
     monkeypatch.setattr(
-        OpenAIClient,
+        AnthropicClient,
         "router",
-        lambda self, messages: '{"retrievalQuery":"product manager experience","ui":{"view":"split","split":{"activeTab":"brief"}},"chips":[],"hints":{"suggestTab":"brief"}}',
+        _router,
     )
     
     # Answer with artifacts
+    async def _answer(self: AnthropicClient, *, messages: list[dict[str, str]]) -> str:
+        return """{"assistant":{"text":"Let me check a couple things..."},"ui":{"view":"split","split":{"activeTab":"brief"}},"chips":[],"hints":{"suggestTab":"brief"},"artifacts":{"fitBrief":{"title":"Fit Brief — Jaan Sokk / Product Manager","sections":[{"id":"need","title":"What I think you need","content":"A product leader who can balance strategy and execution."}]},"relevantExperience":{"groups":[{"title":"Most relevant","items":[{"slug":"guardtime-po","type":"experience","title":"GuardTime","role":"Product Owner","period":"2024-2025","bullets":["Led product strategy","Owned roadmap"],"whyRelevant":"Relevant blockchain experience"}]}]}}}"""
+
     monkeypatch.setattr(
-        OpenAIClient,
+        AnthropicClient,
         "answer",
-        lambda self, messages: """{"assistant":{"text":"Let me check a couple things..."},"ui":{"view":"split","split":{"activeTab":"brief"}},"chips":[],"hints":{"suggestTab":"brief"},"artifacts":{"fitBrief":{"title":"Fit Brief — Jaan Sokk / Product Manager","sections":[{"id":"need","title":"What I think you need","content":"A product leader who can balance strategy and execution."}]},"relevantExperience":{"groups":[{"title":"Most relevant","items":[{"slug":"guardtime-po","type":"experience","title":"GuardTime","role":"Product Owner","period":"2024-2025","bullets":["Led product strategy","Owned roadmap"],"whyRelevant":"Relevant blockchain experience"}]}]}}}""",
+        _answer,
     )
 
     def _search_chunks(self: QdrantClient, *, vector: list[float], limit: int) -> list[dict[str, Any]]:
@@ -192,22 +209,29 @@ def test_chat_v2_split_view_with_artifacts(monkeypatch: pytest.MonkeyPatch) -> N
 def test_background_never_in_ui_visible_experience(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that background items are never exposed as UI-visible relevant experience."""
     from app.main import app
+    from app.anthropic_client import AnthropicClient
     from app.openai_client import OpenAIClient
     from app.qdrant_client import QdrantClient
 
     monkeypatch.setattr(OpenAIClient, "embed", lambda self, text: [0.0] * 1536)
     
+    async def _router(self: AnthropicClient, *, messages: list[dict[str, str]]) -> str:
+        return '{"retrievalQuery":"test","ui":{"view":"split","split":{"activeTab":"experience"}},"chips":[],"hints":{}}'
+
     monkeypatch.setattr(
-        OpenAIClient,
+        AnthropicClient,
         "router",
-        lambda self, messages: '{"retrievalQuery":"test","ui":{"view":"split","split":{"activeTab":"experience"}},"chips":[],"hints":{}}',
+        _router,
     )
     
     # Try to return background item in artifacts (should be filtered out)
+    async def _answer(self: AnthropicClient, *, messages: list[dict[str, str]]) -> str:
+        return """{"assistant":{"text":"Here's what I found"},"ui":{"view":"split","split":{"activeTab":"experience"}},"artifacts":{"relevantExperience":{"groups":[{"title":"Relevant","items":[{"slug":"principles","type":"experience","title":"My Principles","bullets":["Value 1"]},{"slug":"guardtime-po","type":"experience","title":"GuardTime","bullets":["Real work"]}]}]}}}"""
+
     monkeypatch.setattr(
-        OpenAIClient,
+        AnthropicClient,
         "answer",
-        lambda self, messages: """{"assistant":{"text":"Here's what I found"},"ui":{"view":"split","split":{"activeTab":"experience"}},"artifacts":{"relevantExperience":{"groups":[{"title":"Relevant","items":[{"slug":"principles","type":"experience","title":"My Principles","bullets":["Value 1"]},{"slug":"guardtime-po","type":"experience","title":"GuardTime","bullets":["Real work"]}]}]}}}""",
+        _answer,
     )
 
     def _search_chunks(self: QdrantClient, *, vector: list[float], limit: int) -> list[dict[str, Any]]:
