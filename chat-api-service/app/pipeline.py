@@ -63,6 +63,21 @@ class ChatPipeline:
         if req.client and req.client.ui:
             current_view = req.client.ui.view
 
+        # Provide the router enough context to decide whether "split" is appropriate.
+        # The router is intentionally lightweight, so we only include a small recent transcript.
+        recent_lines: list[str] = []
+        for m in req.messages[-8:]:
+            if m.role == "system":
+                continue
+            text = (m.text or "").strip()
+            if not text:
+                continue
+            text = " ".join(text.split())
+            if len(text) > 220:
+                text = text[:220] + "…"
+            recent_lines.append(f"- {m.role}: {text}")
+        recent_context = "\n".join(recent_lines) if recent_lines else "(none)"
+
         system_prompt = f"""You are a router for a resume/portfolio chat system, with vector search access to the site owner's experience and background. 
 The intended audience of the site is hiring managers, recruiters, HR, or anyone just browsing. 
 Analyze the user's message and conversation context, then return this JSON:
@@ -71,18 +86,23 @@ Analyze the user's message and conversation context, then return this JSON:
 
 Fields:
 - retrievalQuery: Rewritten query optimized for vector search to find relevant experience/project examples (1-2 sentences)
-- ui.view: "chat" or "split" (recommend "split" only after 2-4 meaningful exchanges when you have enough context to start producing artifacts; "split" view is for generating Fit Brief and Relevant Experience artifacts.)
+- ui.view: "chat" or "split"
+  - Recommend "split" when the user is asking for evidence/experience ("have you done X?", "project leadership", "regulated delivery", etc.) OR when there have been ~2+ user turns and you can start producing meaningful artifacts.
+  - If the client is already in "split", keep it in "split" (do not downgrade).
 - ui.split.activeTab: "brief" or "experience" (only if view is "split")
 - hints.suggestTab: "brief" or "experience" or null (subtle hint for which tab to focus when in split view)
 
 Context:
 - Current message count: {message_count}
 - Current view: {current_view}{page_context}
+- Recent transcript (most recent last):
+{recent_context}
 
 Guidelines:
 - First message: stay in "chat" view, provide chips to help clarify intent/domain
-- After 2-4 messages with meaningful context: transition to "split" view
+- After ~2-4 messages with meaningful context: transition to "split" view (can be earlier for explicit experience/proof requests)
 - In split view: continue providing relevant chips and optionally suggest which tab is most relevant
+- If user intent is "just browsing" but they select a topic area (e.g. "Project leadership", "Regulated delivery"), prefer "split" with activeTab="experience" so the workspace can show Relevant Experience.
 
 Return ONLY valid JSON, no markdown formatting."""
 
@@ -137,8 +157,12 @@ Return ONLY valid JSON, no markdown formatting."""
         ui_directive = router_out.get("ui", {"view": "chat"})
         hints = router_out.get("hints", {})
 
-        # Determine if we need to produce artifacts
-        should_produce_artifacts = ui_directive.get("view") == "split"
+        # Determine if we need to produce artifacts.
+        # Once the client is in split view, never stop producing artifacts (even if the router misfires).
+        client_view = "chat"
+        if req.client and req.client.ui:
+            client_view = req.client.ui.view
+        should_produce_artifacts = client_view == "split" or ui_directive.get("view") == "split"
 
         system_prompt = f"""You are an AI agent representing Jaan Sokk's resume and portfolio. 
 You have vector search access to Jaan's experience and background content.
@@ -148,7 +172,8 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 {context_text}
 
 **Current UI state:**
-- View: {ui_directive.get("view", "chat")}
+- Client view: {client_view}
+- Server recommended view: {ui_directive.get("view", "chat")}
 - Producing artifacts: {"yes" if should_produce_artifacts else "no"}
 
 **Rules:**
@@ -219,11 +244,20 @@ Return ONLY valid JSON, no markdown formatting."""
         ui_view = ui_raw.get("view") if isinstance(ui_raw, dict) else "chat"
         if ui_view not in ("chat", "split"):
             ui_view = "chat"
+
+        # Never downgrade: if the client is already in split view, keep server response in split.
+        if req.client and req.client.ui and req.client.ui.view == "split":
+            ui_view = "split"
         
         ui_directive: dict[str, Any] = {"view": ui_view}
         if ui_view == "split":
             split_raw = ui_raw.get("split") if isinstance(ui_raw, dict) else {}
             active_tab = split_raw.get("activeTab") if isinstance(split_raw, dict) else "brief"
+            # If router/answer omitted split.activeTab, fall back to the client's current active tab.
+            if (not active_tab or active_tab not in ("brief", "experience")) and req.client and req.client.ui:
+                client_split = req.client.ui.split if isinstance(req.client.ui.split, dict) else None
+                if isinstance(client_split, dict):
+                    active_tab = client_split.get("activeTab") or active_tab
             if active_tab not in ("brief", "experience"):
                 active_tab = "brief"
             ui_directive["split"] = {"activeTab": active_tab}
@@ -338,6 +372,28 @@ Return ONLY valid JSON, no markdown formatting."""
         # Router step (async, fast)
         router_out = await self._router(req=req, last_user_text=last_user_text)
         retrieval_query = (router_out.get("retrievalQuery") or last_user_text).strip() or last_user_text
+
+        # Emit early UI directive so the client can transition immediately (before the full answer completes).
+        # This improves the "reveal" feel: the workspace can appear while text is still streaming.
+        ui_raw = router_out.get("ui") if isinstance(router_out.get("ui"), dict) else {"view": "chat"}
+        ui_view = ui_raw.get("view") if isinstance(ui_raw, dict) else "chat"
+        if ui_view not in ("chat", "split"):
+            ui_view = "chat"
+        if req.client and req.client.ui and req.client.ui.view == "split":
+            ui_view = "split"
+        ui_payload: dict[str, Any] = {"view": ui_view}
+        if ui_view == "split":
+            split_raw = ui_raw.get("split") if isinstance(ui_raw, dict) else {}
+            active_tab = split_raw.get("activeTab") if isinstance(split_raw, dict) else "brief"
+            if active_tab not in ("brief", "experience"):
+                active_tab = "brief"
+            ui_payload["split"] = {"activeTab": active_tab}
+
+        hints_raw = router_out.get("hints") if isinstance(router_out.get("hints"), dict) else {}
+        suggest_tab = hints_raw.get("suggestTab")
+        if suggest_tab not in ("brief", "experience", None):
+            suggest_tab = None
+        yield {"event": "ui", "data": {"ui": ui_payload, "hints": {"suggestTab": suggest_tab}}}
 
         # Retrieval step (synchronous, fast)
         query_vec = self.openai.embed(retrieval_query)

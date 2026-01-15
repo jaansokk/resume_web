@@ -119,6 +119,7 @@ export async function postChat(payload: ChatApiRequest): Promise<ChatApiResponse
 export async function postChatStream(
   payload: ChatApiRequest,
   onTextDelta: (delta: string) => void,
+  onUiDirective: (ui: UIDirective, hints?: Hints) => void,
   onDone: (response: ChatApiResponse) => void,
   onError: (error: Error) => void,
 ): Promise<void> {
@@ -126,6 +127,7 @@ export async function postChatStream(
    * Streaming version of postChat using Server-Sent Events (SSE).
    * 
    * Events:
+   * - event: ui, data: {"ui": {view,...}, "hints": {...}} - Early UI directive (optional)
    * - event: text, data: {"delta": "..."} - Text chunks as they arrive
    * - event: done, data: {ChatApiResponse} - Complete response with artifacts
    * - event: error, data: {"error": "..."} - Error occurred
@@ -185,6 +187,12 @@ export async function postChatStream(
             const delta = data.delta;
             if (typeof delta === 'string') {
               onTextDelta(delta);
+            }
+          } else if (eventType === 'ui') {
+            // Accept either {"ui": {...}, "hints": {...}} or a raw ui object for compatibility.
+            const maybeUi = (data && typeof data === 'object' && 'ui' in data) ? (data as any).ui : data;
+            if (maybeUi && typeof maybeUi === 'object' && typeof (maybeUi as any).view === 'string') {
+              onUiDirective(maybeUi as UIDirective, (data as any)?.hints as Hints | undefined);
             }
           } else if (eventType === 'done') {
             onDone(data as ChatApiResponse);

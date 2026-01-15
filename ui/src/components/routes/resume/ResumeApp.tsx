@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { postChatStream, type Artifacts, type ClientUI } from '../../../utils/chatApi';
 import type { Message } from '../../domain/types';
@@ -37,6 +37,16 @@ export default function ConceptAApp() {
   const [activeTab, setActiveTab] = useState<'brief' | 'experience'>('brief');
   const [showModal, setShowModal] = useState(false);
   const [transitionState, setTransitionState] = useState<TransitionState>('idle');
+  const viewModeRef = useRef<MainViewMode>(viewMode);
+  const transitionStateRef = useRef<TransitionState>(transitionState);
+
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
+
+  useEffect(() => {
+    transitionStateRef.current = transitionState;
+  }, [transitionState]);
 
   // Restore state from localStorage after mount (client-side only)
   useEffect(() => {
@@ -109,6 +119,7 @@ export default function ConceptAApp() {
     const userMessage: Message = { role: 'user', text: text.trim() };
     const newMessages = [...messages, userMessage];
     const messageNumber = newMessages.filter(m => m.role === 'user').length;
+    let splitTransitionTriggered = false;
     
     setMessages(newMessages);
     setInputValue('');
@@ -149,6 +160,16 @@ export default function ConceptAApp() {
         (delta: string) => {
           setStreamingText(prev => (prev ?? '') + delta);
         },
+        // onUiDirective (early)
+        (ui) => {
+          // If server decides to enter split, do it immediately (while text is still streaming).
+          if (ui.view !== 'split') return;
+          if (splitTransitionTriggered) return;
+          if (viewModeRef.current === 'split') return;
+          if (transitionStateRef.current === 'chat-to-split') return;
+          splitTransitionTriggered = true;
+          transitionToSplit(ui.split?.activeTab, newMessages.length);
+        },
         // onDone
         (response) => {
           // Add complete assistant message
@@ -160,8 +181,9 @@ export default function ConceptAApp() {
           setStreamingText(null); // Clear streaming text
 
           // Update UI based on server directive
-          if (response.ui.view === 'split' && viewMode !== 'split') {
+          if (response.ui.view === 'split' && !splitTransitionTriggered && viewModeRef.current !== 'split') {
             // Trigger animated transition from chat to split
+            splitTransitionTriggered = true;
             transitionToSplit(response.ui.split?.activeTab, newMessages.length + 1);
           } else if (response.ui.view === 'split' && response.ui.split?.activeTab) {
             // Already in split, just update tab
