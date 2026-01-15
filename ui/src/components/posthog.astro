@@ -57,24 +57,15 @@ const POSTHOG_HOST = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://eu.i.postho
         (e.__SV = 1));
     })(document, window.posthog || []);
     
-    // Initialize PostHog with pageview tracking
+    // Initialize PostHog with automatic pageview tracking for Astro view transitions
     if (!window.posthog.__initialized) {
       posthog.init(POSTHOG_KEY, { 
         api_host: POSTHOG_HOST,
-        loaded: function(posthog) {
-          // Track initial pageview
-          posthog.capture('$pageview');
-        }
+        // Automatically track pageviews on history changes (for Astro ViewTransitions)
+        capture_pageview: 'history_change'
       });
       window.posthog.__initialized = true;
     }
-    
-    // Track pageviews on client-side navigation (Astro view transitions)
-    document.addEventListener('astro:page-load', () => {
-      if (window.posthog) {
-        window.posthog.capture('$pageview');
-      }
-    });
   } else {
     // No key provided - create no-op stub
     window.posthog = {
