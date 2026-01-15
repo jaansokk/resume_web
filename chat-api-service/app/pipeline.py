@@ -41,6 +41,10 @@ class ChatPipeline:
         retrieval_k = int(os.environ.get("RETRIEVAL_K", "40"))
         retrieval_results = self.retrieval.retrieve(query_embedding=query_vec, k=retrieval_k)
 
+        # Guard: only recommend entering split if there's at least one UI-visible experience/project item.
+        # This prevents entering split for purely generic/philosophy questions that only retrieve "background".
+        self._guard_router_split(router_out=router_out, req=req, retrieval_results=retrieval_results)
+
         answer_out = await self._answer(req=req, router_out=router_out, retrieval_results=retrieval_results)
 
         sanitized = self._sanitize_and_validate_response(
@@ -50,6 +54,55 @@ class ChatPipeline:
             answer_out=answer_out,
         )
         return ChatResponse.model_validate(sanitized)
+
+    def _guard_router_split(self, *, router_out: dict[str, Any], req: ChatRequest, retrieval_results: dict[str, Any]) -> None:
+        """
+        If the router recommends split, but retrieval contains no UI-visible (artifacts-visible) experience/project,
+        keep the conversation in chat view. This is a best-effort guard; final response is still sanitized later.
+        """
+        try:
+            ui = router_out.get("ui")
+            if not isinstance(ui, dict):
+                return
+            if ui.get("view") != "split":
+                return
+            # Never downgrade if the client is already in split.
+            if req.client and req.client.ui and req.client.ui.view == "split":
+                return
+            if not self._has_ui_visible_main_item(retrieval_results=retrieval_results):
+                ui["view"] = "chat"
+                ui.pop("split", None)
+        except Exception:
+            # Best-effort; never fail the request due to guarding.
+            return
+
+    def _has_ui_visible_main_item(self, *, retrieval_results: dict[str, Any]) -> bool:
+        # Look at a small number of unique non-background slugs and check if they are artifacts-visible.
+        chunks = retrieval_results.get("chunks") if isinstance(retrieval_results, dict) else None
+        if not isinstance(chunks, list):
+            return False
+
+        slugs: list[str] = []
+        seen: set[str] = set()
+        for c in chunks:
+            if not isinstance(c, dict):
+                continue
+            ctype = c.get("type")
+            if ctype not in ("experience", "project"):
+                continue
+            slug = str(c.get("slug") or "").strip()
+            if not slug or slug in seen:
+                continue
+            seen.add(slug)
+            slugs.append(slug)
+            if len(slugs) >= 6:
+                break
+
+        for slug in slugs:
+            payload = self.qdrant.get_item_by_slug(slug)
+            if is_ui_visible_item(payload):
+                return True
+        return False
 
     async def _router(self, *, req: ChatRequest, last_user_text: str) -> dict[str, Any]:
         page = (req.client.page if req.client else None) or None
@@ -341,6 +394,25 @@ Return ONLY valid JSON, no markdown formatting."""
                 if groups:
                     artifacts["relevantExperience"] = {"groups": groups}
 
+        # If we ended up with split view but no renderable artifacts, downgrade to chat (unless client is already split).
+        # This prevents the UI from showing an empty workspace with "Finding..." placeholders indefinitely.
+        if ui_view == "split":
+            client_already_split = bool(req.client and req.client.ui and req.client.ui.view == "split")
+            has_fit_brief = bool(
+                isinstance(artifacts.get("fitBrief"), dict)
+                and isinstance((artifacts.get("fitBrief") or {}).get("sections"), list)
+                and len((artifacts.get("fitBrief") or {}).get("sections") or []) > 0
+            )
+            has_relevant_exp = bool(
+                isinstance(artifacts.get("relevantExperience"), dict)
+                and isinstance((artifacts.get("relevantExperience") or {}).get("groups"), list)
+                and len((artifacts.get("relevantExperience") or {}).get("groups") or []) > 0
+            )
+            if not client_already_split and not (has_fit_brief or has_relevant_exp):
+                ui_view = "chat"
+                ui_directive = {"view": "chat"}
+                artifacts = {}
+
         return {
             "assistant": {"text": assistant_text},
             "ui": ui_directive,
@@ -373,8 +445,15 @@ Return ONLY valid JSON, no markdown formatting."""
         router_out = await self._router(req=req, last_user_text=last_user_text)
         retrieval_query = (router_out.get("retrievalQuery") or last_user_text).strip() or last_user_text
 
-        # Emit early UI directive so the client can transition immediately (before the full answer completes).
-        # This improves the "reveal" feel: the workspace can appear while text is still streaming.
+        # Retrieval step (synchronous, fast)
+        query_vec = self.openai.embed(retrieval_query)
+        retrieval_k = int(os.environ.get("RETRIEVAL_K", "40"))
+        retrieval_results = self.retrieval.retrieve(query_embedding=query_vec, k=retrieval_k)
+
+        # Apply the same split guard for streaming before emitting the UI event.
+        self._guard_router_split(router_out=router_out, req=req, retrieval_results=retrieval_results)
+
+        # Emit early UI directive so the client can transition before the full answer completes.
         ui_raw = router_out.get("ui") if isinstance(router_out.get("ui"), dict) else {"view": "chat"}
         ui_view = ui_raw.get("view") if isinstance(ui_raw, dict) else "chat"
         if ui_view not in ("chat", "split"):
@@ -394,11 +473,6 @@ Return ONLY valid JSON, no markdown formatting."""
         if suggest_tab not in ("brief", "experience", None):
             suggest_tab = None
         yield {"event": "ui", "data": {"ui": ui_payload, "hints": {"suggestTab": suggest_tab}}}
-
-        # Retrieval step (synchronous, fast)
-        query_vec = self.openai.embed(retrieval_query)
-        retrieval_k = int(os.environ.get("RETRIEVAL_K", "40"))
-        retrieval_results = self.retrieval.retrieve(query_embedding=query_vec, k=retrieval_k)
 
         # Answer step (streaming)
         if self.model_provider != "anthropic":
@@ -447,7 +521,7 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 - Refer to Jaan in third person ("Jaan", "he") when describing his experience.
 - Use retrieved text as the source of truth for experience/project claims
 - If no grounded data to respond, suggest the user to contact Jaan in person from the Contact page.
-- Background type content may influence tone/preferences, or illustrate experience, but should not invent facts
+- When citing ideas from books or notes, mention the original authors / books, when relevant.
 - Type "background" can be used as a relevant add-on or illustration of experience, personality or way-of-thinking. But only where it is relevant. 
 - If insufficient info, ask 1-2 short clarifying questions
 - Keep responses short, scannable, and Product Manager or Product Engineer oriented.

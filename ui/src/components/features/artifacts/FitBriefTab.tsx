@@ -5,7 +5,7 @@ interface FitBriefTabProps {
 }
 
 export function FitBriefTab({ artifacts }: FitBriefTabProps) {
-  if (!artifacts?.fitBrief?.sections || artifacts.fitBrief.sections.length === 0) {
+  if (!artifacts) {
     return (
       <div className="p-6">
         <p className="text-sm text-[var(--v2-text-tertiary)]">Building your fit brief...</p>
@@ -13,12 +13,21 @@ export function FitBriefTab({ artifacts }: FitBriefTabProps) {
     );
   }
 
+  const sections = artifacts.fitBrief?.sections || [];
+  if (sections.length === 0) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-[var(--v2-text-tertiary)]">No fit brief to show yet.</p>
+      </div>
+    );
+  }
+
   // Create a stable key based on content to trigger animation when content changes
-  const contentKey = artifacts.fitBrief.sections.map(s => s.id).join('-');
+  const contentKey = sections.map(s => s.id).join('-');
   
   return (
     <div className="p-6 space-y-6" key={contentKey}>
-      {artifacts.fitBrief.sections.map((section: FitBriefSection, idx: number) => (
+      {sections.map((section: FitBriefSection, idx: number) => (
         <div 
           key={section.id}
           className="artifact-item-enter"

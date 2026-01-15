@@ -5,7 +5,7 @@ interface ExperienceTabProps {
 }
 
 export function ExperienceTab({ artifacts }: ExperienceTabProps) {
-  if (!artifacts?.relevantExperience?.groups || artifacts.relevantExperience.groups.length === 0) {
+  if (!artifacts) {
     return (
       <div className="p-6">
         <p className="text-sm text-[var(--v2-text-tertiary)]">Finding relevant experience...</p>
@@ -13,14 +13,23 @@ export function ExperienceTab({ artifacts }: ExperienceTabProps) {
     );
   }
 
+  const groups = artifacts.relevantExperience?.groups || [];
+  if (groups.length === 0) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-[var(--v2-text-tertiary)]">No relevant experience to show yet.</p>
+      </div>
+    );
+  }
+
   // Create a stable key based on content to trigger animation when content changes
-  const contentKey = artifacts.relevantExperience.groups
+  const contentKey = groups
     .flatMap(g => g.items.map(i => i.slug))
     .join('-');
   
   return (
     <div className="p-6 space-y-4" key={contentKey}>
-      {artifacts.relevantExperience.groups.map((group: RelevantExperienceGroup, groupIdx: number) => (
+      {groups.map((group: RelevantExperienceGroup, groupIdx: number) => (
         <div key={groupIdx} className="artifact-item-enter" style={{ animationDelay: `${groupIdx * 100}ms` }}>
           {group.title && (
             <h3 className="text-xs uppercase tracking-wider text-[var(--v2-accent)] mb-3">

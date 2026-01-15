@@ -60,6 +60,15 @@ export function HandshakeView({
             In 60 seconds we'll produce a fit brief you can forward internally to your team.
           </p>
           
+          {/* Try asking label */}
+          <p 
+            className={`text-sm text-[var(--v2-text-tertiary)] text-center mb-3 transition-all duration-700 ${
+              showButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+          >
+            Try asking...
+          </p>
+          
           {/* Quick reply chips - 2x2 grid */}
           <QuickReplyGrid onReplySelect={onSend} showButtons={showButtons} />
           

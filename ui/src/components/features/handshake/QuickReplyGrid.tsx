@@ -22,7 +22,7 @@ export function QuickReplyGrid({ onReplySelect, showButtons }: QuickReplyGridPro
         <button
           key={reply.id}
           onClick={() => handleReplyClick(reply.label)}
-          className="group flex items-center gap-2 px-4 py-3
+          className="group flex items-center justify-start text-left gap-2 px-4 py-3
                      bg-[var(--v2-bg-elevated)] border border-[var(--v2-border-subtle)] 
                      rounded-full
                      hover:border-[var(--v2-accent)]/30 hover:bg-[var(--v2-bg-card)]

@@ -19,6 +19,12 @@ type TransitionState = 'idle' | 'chat-to-split';
 
 const TRANSITION_DURATION = 600; // ms
 
+function hasRenderableArtifacts(a: Artifacts | null | undefined): boolean {
+  const briefCount = a?.fitBrief?.sections?.length ?? 0;
+  const expCount = a?.relevantExperience?.groups?.length ?? 0;
+  return briefCount > 0 || expCount > 0;
+}
+
 export default function ConceptAApp() {
   // Initialize with defaults to match SSR, then restore from localStorage after mount
   const [conversationId] = useState(() => {
@@ -39,6 +45,8 @@ export default function ConceptAApp() {
   const [transitionState, setTransitionState] = useState<TransitionState>('idle');
   const viewModeRef = useRef<MainViewMode>(viewMode);
   const transitionStateRef = useRef<TransitionState>(transitionState);
+  const artifactsRef = useRef<Artifacts | null>(artifacts);
+  const pendingSplitRef = useRef<{ activeTab?: 'brief' | 'experience' } | null>(null);
 
   useEffect(() => {
     viewModeRef.current = viewMode;
@@ -47,6 +55,10 @@ export default function ConceptAApp() {
   useEffect(() => {
     transitionStateRef.current = transitionState;
   }, [transitionState]);
+
+  useEffect(() => {
+    artifactsRef.current = artifacts;
+  }, [artifacts]);
 
   // Restore state from localStorage after mount (client-side only)
   useEffect(() => {
@@ -162,11 +174,15 @@ export default function ConceptAApp() {
         },
         // onUiDirective (early)
         (ui) => {
-          // If server decides to enter split, do it immediately (while text is still streaming).
+          // If server suggests split early, only transition immediately if we already have
+          // something to render on the artifacts side. Otherwise, wait for the final response
+          // (avoids entering split with empty artifacts and getting stuck on placeholders).
           if (ui.view !== 'split') return;
           if (splitTransitionTriggered) return;
           if (viewModeRef.current === 'split') return;
           if (transitionStateRef.current === 'chat-to-split') return;
+          pendingSplitRef.current = { activeTab: ui.split?.activeTab };
+          if (!hasRenderableArtifacts(artifactsRef.current)) return;
           splitTransitionTriggered = true;
           transitionToSplit(ui.split?.activeTab, newMessages.length);
         },
@@ -180,8 +196,11 @@ export default function ConceptAApp() {
           setMessages(prev => [...prev, assistantMessage]);
           setStreamingText(null); // Clear streaming text
 
+          const responseArtifacts = response.artifacts ?? null;
+          const canRender = hasRenderableArtifacts(responseArtifacts);
+
           // Update UI based on server directive
-          if (response.ui.view === 'split' && !splitTransitionTriggered && viewModeRef.current !== 'split') {
+          if (response.ui.view === 'split' && !splitTransitionTriggered && viewModeRef.current !== 'split' && canRender) {
             // Trigger animated transition from chat to split
             splitTransitionTriggered = true;
             transitionToSplit(response.ui.split?.activeTab, newMessages.length + 1);
@@ -195,12 +214,16 @@ export default function ConceptAApp() {
             setChips(response.chips);
           }
 
-          // Update artifacts if provided
-          if (response.artifacts) {
-            setArtifacts(response.artifacts);
+          // Update artifacts only when there is something renderable.
+          // If we're not in split, keep artifacts null to avoid "loading" placeholders.
+          if (canRender && responseArtifacts) {
+            setArtifacts(responseArtifacts);
+          } else if (viewModeRef.current !== 'split') {
+            setArtifacts(null);
           }
 
           setIsLoading(false);
+          pendingSplitRef.current = null;
         },
         // onError
         (error) => {
@@ -211,6 +234,7 @@ export default function ConceptAApp() {
           setMessages(prev => [...prev, errorMessage]);
           setStreamingText(null);
           setIsLoading(false);
+          pendingSplitRef.current = null;
         }
       );
     } catch (err) {

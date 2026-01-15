@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-13T15:58:54.238Z",
+  "generatedAt": "2026-01-15T16:46:17.803Z",
   "items": [
     {
       "type": "experience",
@@ -138,6 +138,31 @@
     },
     {
       "type": "project",
+      "subtype": "hackathon",
+      "visibleIn": [
+        "artifacts",
+        "rag"
+      ],
+      "slug": "leo-edtech-hack",
+      "title": "Leo — CLIL Math PWA (EdTech Estonia Hack 2025 finalist)",
+      "tags": [
+        "AI",
+        "EdTech",
+        "PWA",
+        "Next.js",
+        "React",
+        "TypeScript",
+        "Tailwind",
+        "v0.app",
+        "Vercel"
+      ],
+      "summary": "A mobile-first PWA prototype that helps Russian-native students learn math in Estonian by reducing language-driven cognitive load—finalist project at EdTech Estonia Hack 2025.",
+      "company": "EdTech Estonia Hack",
+      "role": "Solo Engineer (Prototype)",
+      "period": "Dec 2025"
+    },
+    {
+      "type": "project",
       "subtype": "freelance",
       "visibleIn": [
         "artifacts",
@@ -158,6 +183,35 @@
       "company": "MTÜ LÕOKE",
       "role": "Web Designer / Creative Director / Photographer / Videographer",
       "period": "2023 — Present"
+    },
+    {
+      "type": "project",
+      "subtype": "personal",
+      "visibleIn": [
+        "artifacts",
+        "rag"
+      ],
+      "slug": "memecoin-ml-trader",
+      "title": "Memecoin scraper + ML Quant trading (CatBoost, TabNet), live",
+      "tags": [
+        "AI",
+        "ML",
+        "Python",
+        "Data Engineering",
+        "Scraping",
+        "Trading",
+        "CatBoost",
+        "TabNet",
+        "SQLite",
+        "Pandas",
+        "scikit-learn",
+        "AWS/EC2",
+        "Telegram"
+      ],
+      "summary": "An end-to-end pipeline for scraping memecoin markets, building labeled datasets, training models, and running live  ML-assisted trade signals",
+      "company": "Personal project",
+      "role": "Builder (Data + ML + Trading automation)",
+      "period": "Summer 2025"
     },
     {
       "type": "project",
