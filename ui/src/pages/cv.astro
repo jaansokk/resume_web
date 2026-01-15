@@ -6,7 +6,7 @@ import { parseRoleMarkdown } from '../utils/cvRoleParser';
 import { parseSkillsEducationMarkdown } from '../utils/cvSkillsParser';
 import KeyProjectAccordion from '../components/astro/KeyProjectAccordion.astro';
 import { Header } from '../components/ui/Header';
-import { CVChatWidget } from '../components/routes/cv/CVChatWidget';
+// import { CVChatWidget } from '../components/routes/cv/CVChatWidget';
 import { DownloadPdfButton } from '../components/routes/cv/DownloadPdfButton';
 
 // Load roles from content collection
@@ -297,7 +297,7 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
           </div>
         </div>
       </div>
-      <CVChatWidget client:load />
+      {/* <CVChatWidget client:load /> */}
     </body>
   </html>
 
