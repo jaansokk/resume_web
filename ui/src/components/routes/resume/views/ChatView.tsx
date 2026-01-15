@@ -31,6 +31,7 @@ export function ChatView({
   isExiting = false,
 }: ChatViewProps) {
   const [contentOverflows, setContentOverflows] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -45,14 +46,32 @@ export function ChatView({
     checkOverflow();
     window.addEventListener('resize', checkOverflow);
     return () => window.removeEventListener('resize', checkOverflow);
-  }, [messages]);
+  }, [messages, streamingText, isLoading]);
 
-  // Auto-scroll to bottom in chat view
+  // Track whether user is near bottom (avoid yanking when reading history)
   useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [messages, isLoading]);
+    const el = chatContainerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShouldAutoScroll(distanceFromBottom < 96);
+    };
+
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => el.removeEventListener('scroll', update);
+  }, []);
+
+  // Auto-scroll to bottom in chat view (including streaming)
+  useEffect(() => {
+    if (!shouldAutoScroll) return;
+    const behavior: ScrollBehavior = streamingText !== null || isLoading ? 'auto' : 'smooth';
+    const id = requestAnimationFrame(() => {
+      chatBottomRef.current?.scrollIntoView({ behavior, block: 'end' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [messages, streamingText, isLoading, shouldAutoScroll]);
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
@@ -62,7 +81,7 @@ export function ChatView({
       {/* Main content area */}
       <div 
         ref={chatContainerRef}
-        className={`relative z-10 flex-1 flex flex-col px-6 pt-20 pb-24 transition-all duration-500 ${
+        className={`relative z-10 flex-1 flex flex-col overflow-y-auto px-6 pt-20 pb-24 transition-all duration-500 ${
           !contentOverflows ? 'justify-center' : 'justify-start pt-24'
         } ${isExiting ? 'chat-view-exit' : ''}`}
       >

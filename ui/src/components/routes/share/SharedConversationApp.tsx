@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Header } from '../../ui/Header';
 import { ArtifactsPanel } from '../../features/artifacts/ArtifactsPanel';
 import { ChatMessage } from '../../features/chat/ChatMessage';
@@ -23,6 +23,7 @@ export default function SharedConversationApp() {
   const [artifacts, setArtifacts] = useState<Artifacts | null>(null);
   const [title, setTitle] = useState<string>('Shared conversation');
   const [error, setError] = useState<string | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
   const shareId = useMemo(() => {
     if (typeof window === 'undefined') return null;
@@ -98,6 +99,14 @@ export default function SharedConversationApp() {
     };
   }, [shareId]);
 
+  // After loading snapshot, scroll chat to the end
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [messages.length]);
+
   return (
     <div className="v2-concept h-screen flex flex-col overflow-hidden">
       <Header />
@@ -130,6 +139,7 @@ export default function SharedConversationApp() {
                 {messages.map((msg, idx) => (
                   <ChatMessage key={idx} message={msg} index={idx} isInSplitView />
                 ))}
+                <div ref={chatBottomRef} />
               </div>
             )}
           </div>

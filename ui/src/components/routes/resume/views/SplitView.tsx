@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Header } from '../../../ui/Header';
 import { Modal } from '../../../ui/Modal';
 import { ChatMessage } from '../../../features/chat/ChatMessage';
@@ -45,12 +45,40 @@ export function SplitView({
 }: SplitViewProps) {
   const [showStartOverModal, setShowStartOverModal] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
   
   // Mark as entered after mount animation completes
   useEffect(() => {
     const timer = setTimeout(() => setHasEntered(true), 600);
     return () => clearTimeout(timer);
   }, []);
+
+  // Track whether user is near bottom (avoid yanking when reading history)
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShouldAutoScroll(distanceFromBottom < 96);
+    };
+
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => el.removeEventListener('scroll', update);
+  }, []);
+
+  // Auto-scroll during new messages / streaming while user is at bottom
+  useEffect(() => {
+    if (!shouldAutoScroll) return;
+    const behavior: ScrollBehavior = streamingText !== null || isLoading ? 'auto' : 'smooth';
+    const id = requestAnimationFrame(() => {
+      chatBottomRef.current?.scrollIntoView({ behavior, block: 'end' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [messages, streamingText, isLoading, shouldAutoScroll]);
 
   const handleStartOverClick = () => {
     setShowStartOverModal(true);
@@ -92,7 +120,7 @@ export function SplitView({
           </div>
           
           {/* Scrollable chat area */}
-          <div className="flex-1 overflow-y-auto p-6 pb-4">
+          <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-6 pb-4">
             <div className="space-y-6">
               {messages.map((msg, idx) => (
                 <ChatMessage key={idx} message={msg} index={idx} isInSplitView />
@@ -110,6 +138,8 @@ export function SplitView({
               
               {/* Show loading dots only before streaming starts */}
               {isLoading && streamingText === null && <LoadingIndicator isInSplitView />}
+
+              <div ref={chatBottomRef} />
             </div>
           </div>
           
