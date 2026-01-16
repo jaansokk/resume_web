@@ -443,7 +443,7 @@ class AnthropicClient:
         
         # After stream completes, yield the full JSON
         content = accumulated_json.strip()
-        
+
         # Strip markdown code blocks if present
         if content.startswith("```json"):
             content = content[7:]
@@ -455,6 +455,34 @@ class AnthropicClient:
             if content.endswith("```"):
                 content = content[:-3]
             content = content.strip()
-        
+
+        content = _extract_json_payload(content)
+
         yield ("done", content)
+
+
+def _extract_json_payload(content: str) -> str:
+    """
+    Best-effort extraction of a JSON object from model output.
+    Falls back to the original content if parsing fails.
+    """
+    if not content:
+        return content
+    try:
+        json.loads(content)
+        return content
+    except Exception:
+        pass
+
+    start = content.find("{")
+    end = content.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return content
+
+    candidate = content[start : end + 1].strip()
+    try:
+        json.loads(candidate)
+        return candidate
+    except Exception:
+        return content
 

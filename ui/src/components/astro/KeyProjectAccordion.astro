@@ -80,6 +80,18 @@ function renderMarkdown(content: string): string {
  * Process inline markdown (italics, bold)
  */
 function processInlineMarkdown(text: string): string {
+  // Convert [text](url) to links with basic safety checks
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) => {
+    const safeHref = normalizeUrl(href);
+    if (!safeHref) {
+      return label;
+    }
+    const external = isExternalUrl(safeHref);
+    const target = external ? ' target="_blank"' : '';
+    const rel = external ? ' rel="noreferrer"' : '';
+    return `<a href="${safeHref}"${target}${rel}>${label}</a>`;
+  });
+
   // Convert _italic_ or *italic* to <em>
   text = text.replace(/_(.*?)_/g, '<em>$1</em>');
   text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
@@ -88,6 +100,28 @@ function processInlineMarkdown(text: string): string {
   text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   
   return text;
+}
+
+function normalizeUrl(raw: string): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'mailto:') {
+      return trimmed;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function isExternalUrl(href: string): boolean {
+  return href.startsWith('http://') || href.startsWith('https://');
 }
 ---
 
@@ -289,6 +323,17 @@ function processInlineMarkdown(text: string): string {
 
   .project-content strong {
     font-weight: 600;
+  }
+
+  .project-content a {
+    color: var(--v2-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+  }
+
+  .project-content a:hover {
+    color: var(--v2-text);
   }
 
   .project-content :global(.section-label) {

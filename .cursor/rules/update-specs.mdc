@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+After implementation has finished, always review if the specs need to be updated, so they will not lag behind (specs will be used for any subsequent work).
+Use `_specs/spec-index.md` to decide which spec(s) apply to the current task and should be updated.

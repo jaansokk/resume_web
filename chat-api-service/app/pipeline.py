@@ -240,6 +240,8 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 - Keep responses short, scannable, and Product Manager or Product Engineer oriented.
 - Never assume metrics or achievements, only use exact references from experience type content.
 - Never expose raw original source content.
+- When bringing an example of work with relevant links, use them in the response (no hedging) as Markdown links.
+- If official links exist in retrieved content, include them in assistant.text and in relevantExperience bullets when relevant (even if the user didn’t ask).
 - Chips policy:
   - Chips are optional, but when provided they MUST be plausible “next user messages” that directly answer your most recent clarifying question(s).
   - If you ask for clarification (industry/domain, product type, stage, team size, constraints, success metric), include 2–4 chips that are short answer-options (not generic questions).
@@ -254,12 +256,17 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
+- Always copy the slug exactly from the retrieved chunk labels (e.g., [experience:slug:chunkId]).
+- If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
+- If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
 - Type "background" can be used as a relevant add-on or illustration in the artifacts, but not as an artifact or its sub-item itself.
 - Never assume metrics or achievements, only use exact references from experience type content.
 - Each experience item must have 2-4 grounded bullets with outcomes/metrics when that data is available.
 - If producing artifacts, keep assistant.text brief (an example, but can be different "Two quick checks so I don't hallucinate the fit: what's the team size, and is this greenfield or existing product?")
+- assistant.text may include Markdown for bold, lists, and links (no headings, no fenced code blocks).
+- Do not include Markdown outside assistant.text or artifacts.
 
-Return ONLY valid JSON, no markdown formatting."""
+Return ONLY valid JSON (no surrounding prose or code fences)."""
 
         msgs: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
         # Client-managed memory; keep it bounded.
@@ -290,7 +297,7 @@ Return ONLY valid JSON, no markdown formatting."""
         assistant = answer_out.get("assistant") if isinstance(answer_out.get("assistant"), dict) else {}
         assistant_text = (assistant.get("text") if isinstance(assistant, dict) else None) or ""
         if not isinstance(assistant_text, str) or not assistant_text.strip():
-            assistant_text = "I'd be happy to help! What do you have in mind today?"
+            assistant_text = "Whoa... a problem occurred! Please try that again."
 
         # UI directive
         ui_raw = answer_out.get("ui") or router_out.get("ui") or {"view": "chat"}
@@ -541,12 +548,17 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
+- Always copy the slug exactly from the retrieved chunk labels (e.g., [experience:slug:chunkId]).
+- If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
+- If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
 - Type "background" can be used as a relevant add-on or illustration in the artifacts, but not as an artifact or its sub-item itself.
 - Never assume metrics or achievements, only use exact references from experience type content.
 - Each experience item must have 2-4 grounded bullets with outcomes/metrics when that data is available.
 - If producing artifacts, keep assistant.text brief (an example, but can be different "Two quick checks so I don't hallucinate the fit: what's the team size, and is this greenfield or existing product?")
+- assistant.text may include Markdown for bold, lists, and links (no headings, no fenced code blocks).
+- Do not include Markdown outside assistant.text or artifacts.
 
-Return ONLY valid JSON, no markdown formatting."""
+Return ONLY valid JSON (no surrounding prose or code fences)."""
 
         msgs: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
         for m in req.messages[-12:]:

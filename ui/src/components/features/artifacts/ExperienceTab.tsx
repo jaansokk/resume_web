@@ -1,4 +1,59 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { RelevantExperienceGroup, RelevantExperienceItem, Artifacts } from '../../../utils/chatApi';
+
+const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:']);
+
+function normalizeUrl(href?: string): string | undefined {
+  if (!href) return undefined;
+  const trimmed = href.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  try {
+    const url = new URL(trimmed);
+    if (!ALLOWED_PROTOCOLS.has(url.protocol)) return undefined;
+    return trimmed;
+  } catch {
+    return undefined;
+  }
+}
+
+function isExternalUrl(href: string): boolean {
+  return href.startsWith('http://') || href.startsWith('https://');
+}
+
+function InlineMarkdown({ text }: { text: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <span>{children}</span>,
+        a: ({ href, children }) => {
+          const safeHref = normalizeUrl(href);
+          if (!safeHref) {
+            return <span className="underline underline-offset-2">{children}</span>;
+          }
+          const external = isExternalUrl(safeHref);
+          return (
+            <a
+              href={safeHref}
+              className="text-[var(--v2-accent)] underline underline-offset-2 hover:text-[var(--v2-text)] transition-colors"
+              target={external ? '_blank' : undefined}
+              rel={external ? 'noreferrer' : undefined}
+            >
+              {children}
+            </a>
+          );
+        },
+        strong: ({ children }) => <strong className="font-semibold text-[var(--v2-text)]">{children}</strong>,
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  );
+}
 
 interface ExperienceTabProps {
   artifacts: Artifacts | null;
@@ -56,12 +111,16 @@ export function ExperienceTab({ artifacts }: ExperienceTabProps) {
               {item.bullets && item.bullets.length > 0 && (
                 <ul className="text-sm text-[var(--v2-text-secondary)] space-y-1">
                   {item.bullets.map((bullet: string, bIdx: number) => (
-                    <li key={bIdx}>• {bullet}</li>
+                    <li key={bIdx}>
+                      • <InlineMarkdown text={bullet} />
+                    </li>
                   ))}
                 </ul>
               )}
               {item.whyRelevant && (
-                <p className="text-xs text-[var(--v2-text-tertiary)] mt-3 italic">{item.whyRelevant}</p>
+                <p className="text-xs text-[var(--v2-text-tertiary)] mt-3 italic">
+                  <InlineMarkdown text={item.whyRelevant} />
+                </p>
               )}
             </div>
           ))}
