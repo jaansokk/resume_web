@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-15T16:46:17.803Z",
+  "generatedAt": "2026-01-16T12:23:24.028Z",
   "items": [
     {
       "type": "experience",
@@ -135,6 +135,32 @@
       "company": "Positium",
       "role": "Technical Project Lead",
       "period": "2025 — Present"
+    },
+    {
+      "type": "experience",
+      "subtype": "projects",
+      "visibleIn": [
+        "artifacts",
+        "rag"
+      ],
+      "slug": "positium-projects",
+      "title": "Technical Project Lead",
+      "tags": [
+        "Engineering",
+        "Data Pipelines",
+        "CI/CD",
+        "Python",
+        "ActivitySim",
+        "PostgREST",
+        "JavaScript",
+        "Sphinx",
+        "Mobility modelling",
+        "Privacy"
+      ],
+      "summary": "Contribution to Positium projects as an engineer: getting end-to-end mobility modelling pipelines running for demos, building a rapid monitoring prototype with PostgREST + vanilla JS, and shipping a Sphinx documentation portal for a data aggregation platform.",
+      "company": "Positium",
+      "role": "Technical Project Lead",
+      "period": "2025 - 2025"
     },
     {
       "type": "project",
