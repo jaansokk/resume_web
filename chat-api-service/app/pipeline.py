@@ -256,6 +256,9 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
+- Role/title must match the source markdown exactly (use the role/title values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
+- For each relevantExperience item: set `title` from chunk `title`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
+- If role/title/period are missing from chunk metadata, leave them null/empty; never infer from user text.
 - Always copy the slug exactly from the retrieved chunk labels (e.g., [experience:slug:chunkId]).
 - If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
 - If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
@@ -548,6 +551,8 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
+- Role/title must match the source markdown exactly (use the role/title values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
+- For each relevantExperience item: set `title` from chunk `title`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
 - Always copy the slug exactly from the retrieved chunk labels (e.g., [experience:slug:chunkId]).
 - If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
 - If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
