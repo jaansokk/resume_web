@@ -90,7 +90,7 @@ export function ArtifactsPanel({
       </div>
       
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-40 lg:pb-0">
         {activeTab === 'brief' ? (
           <FitBriefTab artifacts={artifacts} />
         ) : (

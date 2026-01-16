@@ -23,6 +23,7 @@ export default function SharedConversationApp() {
   const [artifacts, setArtifacts] = useState<Artifacts | null>(null);
   const [title, setTitle] = useState<string>('Shared conversation');
   const [error, setError] = useState<string | null>(null);
+  const [isChatExpandedMobile, setIsChatExpandedMobile] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
   const shareId = useMemo(() => {
@@ -107,6 +108,10 @@ export default function SharedConversationApp() {
     return () => cancelAnimationFrame(id);
   }, [messages.length]);
 
+  const handleChatToggle = () => {
+    setIsChatExpandedMobile((prev) => !prev);
+  };
+
   return (
     <div className="v2-concept h-screen flex flex-col overflow-hidden">
       <Header />
@@ -120,8 +125,33 @@ export default function SharedConversationApp() {
           messageCount={messages.length}
         />
 
-        <div className="flex-1 lg:w-1/2 flex flex-col bg-[var(--v2-bg-elevated)] overflow-hidden">
-          <div className="flex-shrink-0 px-6 py-4 border-b border-[var(--v2-border-subtle)] flex items-center justify-between">
+        <div className={`fixed inset-x-0 bottom-0 z-20 w-full flex flex-col bg-[rgba(20,20,20,0.8)] backdrop-blur-md border-t border-[var(--v2-border-subtle)] shadow-[0_-10px_30px_rgba(0,0,0,0.35)] overflow-hidden lg:static lg:z-auto lg:w-1/2 lg:flex-1 lg:bg-[var(--v2-bg-elevated)] lg:backdrop-blur-none lg:border-t-0 lg:shadow-none ${
+          isChatExpandedMobile ? 'h-[70vh]' : 'h-[56px]'
+        } lg:h-auto`}>
+          {/* Mobile expand/collapse control */}
+          <div className="flex-shrink-0 lg:hidden px-3 py-1 border-b border-[var(--v2-border-subtle)] flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleChatToggle}
+              aria-label={isChatExpandedMobile ? 'Collapse conversation' : 'Expand conversation'}
+              className="w-10 h-6 flex items-center justify-center text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className={`w-5 h-5 transition-transform duration-200 ${isChatExpandedMobile ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 15 12 9 18 15" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="hidden lg:flex flex-shrink-0 px-6 py-4 border-b border-[var(--v2-border-subtle)] items-center justify-between">
             <h2 className="text-lg font-medium text-[var(--v2-text)]">{title}</h2>
             <a
               href="/"
@@ -131,7 +161,7 @@ export default function SharedConversationApp() {
             </a>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 pb-6">
+          <div className={`flex-1 overflow-y-auto p-4 pb-4 lg:p-6 lg:pb-6 ${isChatExpandedMobile ? '' : 'hidden lg:block'}`}>
             {error ? (
               <div className="text-sm text-red-300">{error}</div>
             ) : (

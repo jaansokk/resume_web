@@ -79,6 +79,13 @@ chat is short, surgical
 - “Two quick checks so I don’t hallucinate the fit: …”
 - User answers → artifact updates instantly (like a live doc, typing animation)
 
+**Mobile split view behavior**
+- The chat column collapses into a bottom drawer by default.
+- Collapsed state shows the message input and a chevron to expand.
+- Expanded state opens to a medium-height drawer and reveals the transcript.
+- Expand triggers: chevron tap or user sending a message.
+- No chat header is shown on mobile.
+
 **Tab focus (LLM-driven)**
 - Split view always has both tabs (Fit Brief + Relevant Experience).
 - The AI can recommend focusing the user on one tab per turn (e.g., start on Relevant Experience when evidence is the best persuasion).

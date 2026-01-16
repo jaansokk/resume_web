@@ -45,6 +45,7 @@ export function SplitView({
 }: SplitViewProps) {
   const [showStartOverModal, setShowStartOverModal] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
+  const [isChatExpandedMobile, setIsChatExpandedMobile] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
@@ -92,6 +93,16 @@ export function SplitView({
   const handleStartOverCancel = () => {
     setShowStartOverModal(false);
   };
+
+  const handleChatToggle = () => {
+    setIsChatExpandedMobile((prev) => !prev);
+  };
+
+  const handleSend = () => {
+    setIsChatExpandedMobile(true);
+    onSend(inputValue);
+  };
+
   return (
     <div className="v2-concept h-screen flex flex-col overflow-hidden">
       <Header />
@@ -110,9 +121,34 @@ export function SplitView({
         />
         
         {/* Right: Chat */}
-        <div className={`flex-1 lg:w-1/2 flex flex-col bg-[var(--v2-bg-elevated)] overflow-hidden ${!hasEntered ? 'split-chat-enter' : ''}`}>
-          {/* Chat heading with Start Over button */}
-          <div className="flex-shrink-0 px-6 py-4 border-b border-[var(--v2-border-subtle)] flex items-center justify-between">
+        <div className={`fixed inset-x-0 bottom-0 z-20 w-full flex flex-col bg-[rgba(20,20,20,0.8)] backdrop-blur-md border-t border-[var(--v2-border-subtle)] shadow-[0_-10px_30px_rgba(0,0,0,0.35)] overflow-hidden lg:static lg:z-auto lg:w-1/2 lg:flex-1 lg:bg-[var(--v2-bg-elevated)] lg:backdrop-blur-none lg:border-t-0 lg:shadow-none ${
+          isChatExpandedMobile ? 'h-[70vh]' : 'h-[136px]'
+        } lg:h-auto ${!hasEntered ? 'split-chat-enter' : ''}`}>
+          {/* Mobile expand/collapse control */}
+          <div className="flex-shrink-0 lg:hidden px-3 py-1 border-b border-[var(--v2-border-subtle)] flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleChatToggle}
+              aria-label={isChatExpandedMobile ? 'Collapse conversation' : 'Expand conversation'}
+              className="w-10 h-6 flex items-center justify-center text-[var(--v2-text-secondary)] hover:text-[var(--v2-text)] transition-colors"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className={`w-5 h-5 transition-transform duration-200 ${isChatExpandedMobile ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 15 12 9 18 15" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Chat heading with Start Over button (desktop only) */}
+          <div className="hidden lg:flex flex-shrink-0 px-6 py-4 border-b border-[var(--v2-border-subtle)] items-center justify-between">
             <h2 className="text-lg font-medium text-[var(--v2-text)]">
               {artifacts?.fitBrief?.title || 'Conversation'}
             </h2>
@@ -120,7 +156,10 @@ export function SplitView({
           </div>
           
           {/* Scrollable chat area */}
-          <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-6 pb-4">
+          <div
+            ref={chatScrollRef}
+            className={`flex-1 overflow-y-auto p-4 pb-3 lg:p-6 lg:pb-4 ${isChatExpandedMobile ? '' : 'hidden lg:block'}`}
+          >
             <div className="space-y-6">
               {messages.map((msg, idx) => (
                 <ChatMessage key={idx} message={msg} index={idx} isInSplitView />
@@ -144,11 +183,11 @@ export function SplitView({
           </div>
           
           {/* Fixed input at bottom with gradient fade */}
-          <div className="flex-shrink-0 bg-gradient-to-t from-[var(--v2-bg-elevated)] via-[var(--v2-bg-elevated)] to-transparent pt-6 pb-4 px-4">
+          <div className="flex-shrink-0 bg-gradient-to-t from-[var(--v2-bg-elevated)] via-[var(--v2-bg-elevated)] to-transparent pt-4 pb-3 px-3 lg:pt-6 lg:pb-4 lg:px-4">
             <ChatInput
               value={inputValue}
               onChange={onInputChange}
-              onSend={() => onSend(inputValue)}
+              onSend={handleSend}
               placeholder="Ask about this role..."
               isLoading={isLoading}
               variant="split"
