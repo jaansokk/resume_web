@@ -18,6 +18,11 @@ class RetrievedChunk:
     section: str
     text: str
     score: float
+    # Metadata from source markdown frontmatter
+    title: str | None = None
+    company: str | None = None
+    role: str | None = None
+    period: str | None = None
 
 
 class RetrievalService:
@@ -46,6 +51,10 @@ class RetrievalService:
                 section=str(payload.get("section") or ""),
                 text=str(payload.get("text") or ""),
                 score=score,
+                title=str(payload.get("title")) if payload.get("title") else None,
+                company=str(payload.get("company")) if payload.get("company") else None,
+                role=str(payload.get("role")) if payload.get("role") else None,
+                period=str(payload.get("period")) if payload.get("period") else None,
             )
             if not chunk.slug or not chunk.text:
                 continue

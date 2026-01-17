@@ -70,7 +70,17 @@ def test_chat_v2_contract_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
         return [
             {
                 "score": 0.9,
-                "payload": {"type": "experience", "slug": "guardtime-po", "chunkId": 0, "section": "A", "text": "Product strategy"},
+                "payload": {
+                    "type": "experience",
+                    "slug": "guardtime-po",
+                    "chunkId": 0,
+                    "section": "A",
+                    "text": "Product strategy",
+                    "title": "Product Owner",
+                    "company": "Guardtime",
+                    "role": "Product Owner",
+                    "period": "2024 — 2025",
+                },
             },
             {
                 "score": 0.8,
@@ -155,7 +165,17 @@ def test_chat_v2_split_view_with_artifacts(monkeypatch: pytest.MonkeyPatch) -> N
         return [
             {
                 "score": 0.9,
-                "payload": {"type": "experience", "slug": "guardtime-po", "chunkId": 0, "section": "A", "text": "Blockchain PM"},
+                "payload": {
+                    "type": "experience",
+                    "slug": "guardtime-po",
+                    "chunkId": 0,
+                    "section": "A",
+                    "text": "Blockchain PM",
+                    "title": "Product Owner",
+                    "company": "Guardtime",
+                    "role": "Product Owner",
+                    "period": "2024 — 2025",
+                },
             },
         ]
 
@@ -242,7 +262,17 @@ def test_background_never_in_ui_visible_experience(monkeypatch: pytest.MonkeyPat
             },
             {
                 "score": 0.85,
-                "payload": {"type": "experience", "slug": "guardtime-po", "chunkId": 0, "section": "A", "text": "Work"},
+                "payload": {
+                    "type": "experience",
+                    "slug": "guardtime-po",
+                    "chunkId": 0,
+                    "section": "A",
+                    "text": "Work",
+                    "title": "Product Owner",
+                    "company": "Guardtime",
+                    "role": "Product Owner",
+                    "period": "2024 — 2025",
+                },
             },
         ]
 

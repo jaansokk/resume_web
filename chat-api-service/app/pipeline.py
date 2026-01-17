@@ -201,9 +201,23 @@ Return ONLY valid JSON, no markdown formatting."""
             chunk_id = chunk.get("chunkId", 0)
             section = chunk.get("section", "")
             text = chunk.get("text", "")
+            title = chunk.get("title")
+            company = chunk.get("company")
+            role = chunk.get("role")
+            period = chunk.get("period")
+            
             label = f"[{ctype}:{slug}:{chunk_id}]"
+            # Add metadata to label so LLM can use exact values
+            if title:
+                label += f' title:"{title}"'
+            if company:
+                label += f' company:"{company}"'
+            if role:
+                label += f' role:"{role}"'
+            if period:
+                label += f' period:"{period}"'
             if section:
-                label += f" section:{section}"
+                label += f' section:"{section}"'
             context_parts.append(f"{label}\n{text}")
 
         context_text = "\n\n---\n\n".join(context_parts)
@@ -259,7 +273,7 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 - Role/title must match the source markdown exactly (use the role/title values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
 - For each relevantExperience item: set `title` from chunk `title`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
 - If role/title/period are missing from chunk metadata, leave them null/empty; never infer from user text.
-- Always copy the slug exactly from the retrieved chunk labels (e.g., [experience:slug:chunkId]).
+- Extract the slug from chunk labels: labels are formatted as [type:slug:chunkId] - use ONLY the middle part (slug) without the type or chunkId. Example: from [experience:positium:0], use slug "positium" not "experience:positium:0".
 - If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
 - If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
 - Type "background" can be used as a relevant add-on or illustration in the artifacts, but not as an artifact or its sub-item itself.
@@ -506,9 +520,23 @@ Return ONLY valid JSON (no surrounding prose or code fences)."""
             chunk_id = chunk.get("chunkId", 0)
             section = chunk.get("section", "")
             text = chunk.get("text", "")
+            title = chunk.get("title")
+            company = chunk.get("company")
+            role = chunk.get("role")
+            period = chunk.get("period")
+            
             label = f"[{ctype}:{slug}:{chunk_id}]"
+            # Add metadata to label so LLM can use exact values
+            if title:
+                label += f' title:"{title}"'
+            if company:
+                label += f' company:"{company}"'
+            if role:
+                label += f' role:"{role}"'
+            if period:
+                label += f' period:"{period}"'
             if section:
-                label += f" section:{section}"
+                label += f' section:"{section}"'
             context_parts.append(f"{label}\n{text}")
 
         context_text = "\n\n---\n\n".join(context_parts)
@@ -553,7 +581,7 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
 - Role/title must match the source markdown exactly (use the role/title values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
 - For each relevantExperience item: set `title` from chunk `title`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
-- Always copy the slug exactly from the retrieved chunk labels (e.g., [experience:slug:chunkId]).
+- Extract the slug from chunk labels: labels are formatted as [type:slug:chunkId] - use ONLY the middle part (slug) without the type or chunkId. Example: from [experience:positium:0], use slug "positium" not "experience:positium:0".
 - If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
 - If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
 - Type "background" can be used as a relevant add-on or illustration in the artifacts, but not as an artifact or its sub-item itself.
