@@ -129,7 +129,16 @@ def test_correct_slug_passes_validation(monkeypatch: pytest.MonkeyPatch) -> None
     
     def _get_item_by_slug(self: QdrantClient, slug: str) -> dict[str, Any] | None:
         if slug == "positium":
-            return {"type": "experience", "visibleIn": ["artifacts"], "uiVisible": True, "slug": "positium"}
+            return {
+                "type": "experience",
+                "visibleIn": ["artifacts"],
+                "uiVisible": True,
+                "slug": "positium",
+                "title": "Technical Project Lead",
+                "company": "Positium",
+                "role": "Technical Project Lead",
+                "period": "2025 — 2025",
+            }
         return None
     
     monkeypatch.setattr(QdrantClient, "get_item_by_slug", _get_item_by_slug)
@@ -213,7 +222,10 @@ def test_role_matches_source_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
                 "visibleIn": ["artifacts"],
                 "uiVisible": True,
                 "slug": "guardtime-pm",
+                "title": "Technical Project Manager / ScrumMaster",
+                "company": "Guardtime",
                 "role": "Technical Project Manager / ScrumMaster",
+                "period": "2019 — 2024",
             }
         return None
     

@@ -265,14 +265,14 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
   - If the best next turn is open-ended, return an empty chips array.
 
 **Response JSON:**
-{{"assistant": {{"text": "..."}}, "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "hints": {{"suggestTab": null|"brief"|"experience"}}, "chips": ["..."], "artifacts": {{"fitBrief": {{"title": "...", "sections": [{{"id": "need|proof|risks|plan|questions", "title": "...", "content": "..."}}]}}, "relevantExperience": {{"groups": [{{"title": "...", "items": [{{"slug": "slug-from-retrieval", "type": "experience"|"project", "title": "...", "role": "...", "period": "...", "bullets": ["..."], "whyRelevant": "..."}}]}}]}}}}}}
+{{"assistant": {{"text": "..."}}, "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "hints": {{"suggestTab": null|"brief"|"experience"}}, "chips": ["..."], "artifacts": {{"fitBrief": {{"title": "...", "sections": [{{"id": "need|proof|risks|plan|questions", "title": "...", "content": "..."}}]}}, "relevantExperience": {{"groups": [{{"title": "...", "items": [{{"slug": "slug-from-retrieval", "type": "experience"|"project", "title": "...", "company": "...", "role": "...", "period": "...", "bullets": ["..."], "whyRelevant": "..."}}]}}]}}}}}}
 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
-- Role/title must match the source markdown exactly (use the role/title values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
-- For each relevantExperience item: set `title` from chunk `title`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
-- If role/title/period are missing from chunk metadata, leave them null/empty; never infer from user text.
+- Metadata must match the source markdown exactly (use the title/company/role/period values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
+- For each relevantExperience item: set `title` from chunk `title`, set `company` from chunk `company`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
+- If title/company/role/period are missing from chunk metadata, leave them null/empty; never infer from user text.
 - Extract the slug from chunk labels: labels are formatted as [type:slug:chunkId] - use ONLY the middle part (slug) without the type or chunkId. Example: from [experience:positium:0], use slug "positium" not "experience:positium:0".
 - If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
 - If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.
@@ -399,12 +399,20 @@ Return ONLY valid JSON (no surrounding prose or code fences)."""
                         bullets = item.get("bullets") if isinstance(item.get("bullets"), list) else []
                         bullets = [str(b).strip() for b in bullets if b][:6]  # Limit to 6 bullets
                         
+                        # Use Qdrant payload as source of truth for metadata (title, company, role, period)
+                        # Fall back to LLM values if payload missing (shouldn't happen for valid slugs)
+                        title = payload.get("title") if payload else item.get("title")
+                        company = payload.get("company") if payload else item.get("company")
+                        role = payload.get("role") if payload else item.get("role")
+                        period = payload.get("period") if payload else item.get("period")
+                        
                         items.append({
                             "slug": slug,
                             "type": item_type,
-                            "title": str(item.get("title") or "")[:200],
-                            "role": str(item.get("role"))[:200] if item.get("role") else None,
-                            "period": str(item.get("period"))[:100] if item.get("period") else None,
+                            "title": str(title)[:200] if title else "",
+                            "company": str(company)[:200] if company else None,
+                            "role": str(role)[:200] if role else None,
+                            "period": str(period)[:100] if period else None,
                             "bullets": bullets,
                             "whyRelevant": str(item.get("whyRelevant"))[:500] if item.get("whyRelevant") else None,
                         })
@@ -574,13 +582,13 @@ The intended audience of the site is hiring managers, recruiters, HR, or anyone 
   - If the best next turn is open-ended, return an empty chips array.
 
 **Response JSON:**
-{{"assistant": {{"text": "..."}}, "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "hints": {{"suggestTab": null|"brief"|"experience"}}, "chips": ["..."], "artifacts": {{"fitBrief": {{"title": "...", "sections": [{{"id": "need|proof|risks|plan|questions", "title": "...", "content": "..."}}]}}, "relevantExperience": {{"groups": [{{"title": "...", "items": [{{"slug": "slug-from-retrieval", "type": "experience"|"project", "title": "...", "role": "...", "period": "...", "bullets": ["..."], "whyRelevant": "..."}}]}}]}}}}}}
+{{"assistant": {{"text": "..."}}, "ui": {{"view": "chat"|"split", "split": {{"activeTab": "brief"|"experience"}}}}, "hints": {{"suggestTab": null|"brief"|"experience"}}, "chips": ["..."], "artifacts": {{"fitBrief": {{"title": "...", "sections": [{{"id": "need|proof|risks|plan|questions", "title": "...", "content": "..."}}]}}, "relevantExperience": {{"groups": [{{"title": "...", "items": [{{"slug": "slug-from-retrieval", "type": "experience"|"project", "title": "...", "company": "...", "role": "...", "period": "...", "bullets": ["..."], "whyRelevant": "..."}}]}}]}}}}}}
 
 **Artifact generation rules (only when view is "split"):**
 - fitBrief: Infer what the user needs based on context from the user; omit sections if not confident
 - relevantExperience: ONLY include items where slug exists in retrieved chunks and type is "experience" or "project" (never "background").
-- Role/title must match the source markdown exactly (use the role/title values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
-- For each relevantExperience item: set `title` from chunk `title`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
+- Metadata must match the source markdown exactly (use the title/company/role/period values present in retrieved chunk metadata; do not paraphrase, merge, or invent).
+- For each relevantExperience item: set `title` from chunk `title`, set `company` from chunk `company`, set `role` from chunk `role`, set `period` from chunk `period` if present; never combine multiple roles or titles into one.
 - Extract the slug from chunk labels: labels are formatted as [type:slug:chunkId] - use ONLY the middle part (slug) without the type or chunkId. Example: from [experience:positium:0], use slug "positium" not "experience:positium:0".
 - If any retrieved experience/project chunks exist, include at least one relevantExperience item (don’t leave it empty).
 - If a retrieved chunk includes “See also” or official links, include them as Markdown links in the relevantExperience bullets.

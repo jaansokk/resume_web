@@ -43,6 +43,7 @@ export interface RelevantExperienceItem {
   slug: string;
   type: 'experience' | 'project';
   title: string;
+  company?: string;
   role?: string;
   period?: string;
   bullets: string[];

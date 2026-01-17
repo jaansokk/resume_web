@@ -53,6 +53,7 @@ class RelevantExperienceItem(BaseModel):
     slug: str
     type: Literal["experience", "project"]
     title: str
+    company: str | None = None
     role: str | None = None
     period: str | None = None
     bullets: list[str] = Field(default_factory=list)

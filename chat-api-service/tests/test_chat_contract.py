@@ -95,7 +95,15 @@ def test_chat_v2_contract_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
         if slug == "principles":
             return {"type": "background", "uiVisible": False, "slug": "principles"}
         if slug == "guardtime-po":
-            return {"type": "experience", "uiVisible": True, "slug": "guardtime-po"}
+            return {
+                "type": "experience",
+                "uiVisible": True,
+                "slug": "guardtime-po",
+                "title": "Product Owner",
+                "company": "Guardtime",
+                "role": "Product Owner",
+                "period": "2024 — 2025",
+            }
         return None
 
     monkeypatch.setattr(QdrantClient, "get_item_by_slug", _get_item_by_slug)
@@ -183,7 +191,15 @@ def test_chat_v2_split_view_with_artifacts(monkeypatch: pytest.MonkeyPatch) -> N
 
     def _get_item_by_slug(self: QdrantClient, slug: str) -> dict[str, Any] | None:
         if slug == "guardtime-po":
-            return {"type": "experience", "uiVisible": True, "slug": "guardtime-po"}
+            return {
+                "type": "experience",
+                "uiVisible": True,
+                "slug": "guardtime-po",
+                "title": "Product Owner",
+                "company": "Guardtime",
+                "role": "Product Owner",
+                "period": "2024 — 2025",
+            }
         return None
 
     monkeypatch.setattr(QdrantClient, "get_item_by_slug", _get_item_by_slug)
@@ -282,7 +298,15 @@ def test_background_never_in_ui_visible_experience(monkeypatch: pytest.MonkeyPat
         if slug == "principles":
             return {"type": "background", "uiVisible": False, "slug": "principles"}
         if slug == "guardtime-po":
-            return {"type": "experience", "uiVisible": True, "slug": "guardtime-po"}
+            return {
+                "type": "experience",
+                "uiVisible": True,
+                "slug": "guardtime-po",
+                "title": "Product Owner",
+                "company": "Guardtime",
+                "role": "Product Owner",
+                "period": "2024 — 2025",
+            }
         return None
 
     monkeypatch.setattr(QdrantClient, "get_item_by_slug", _get_item_by_slug)

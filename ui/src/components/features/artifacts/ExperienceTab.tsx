@@ -105,8 +105,8 @@ export function ExperienceTab({ artifacts }: ExperienceTabProps) {
                   <span className="text-xs text-[var(--v2-text-tertiary)]">{item.period}</span>
                 )}
               </div>
-              {item.role && (
-                <p className="text-xs text-[var(--v2-accent)] mb-2">{item.role}</p>
+              {item.company && (
+                <p className="text-xs text-[var(--v2-accent)] mb-2">{item.company}</p>
               )}
               {item.bullets && item.bullets.length > 0 && (
                 <ul className="text-sm text-[var(--v2-text-secondary)] space-y-1">
