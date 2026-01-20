@@ -109,10 +109,10 @@ export function ExperienceTab({ artifacts }: ExperienceTabProps) {
                 <p className="text-xs text-[var(--v2-accent)] mb-2">{item.company}</p>
               )}
               {item.bullets && item.bullets.length > 0 && (
-                <ul className="text-sm text-[var(--v2-text-secondary)] space-y-1">
+                <ul className="text-sm mt-2 first:mt-0 list-disc pl-5 space-y-1 leading-relaxed text-[var(--v2-text-secondary)]">
                   {item.bullets.map((bullet: string, bIdx: number) => (
-                    <li key={bIdx}>
-                      • <InlineMarkdown text={bullet} />
+                    <li key={bIdx} className="leading-relaxed">
+                      <InlineMarkdown text={bullet} />
                     </li>
                   ))}
                 </ul>

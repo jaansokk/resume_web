@@ -31,6 +31,57 @@ interface ChatMessageProps {
   isStreaming?: boolean;
 }
 
+function normalizeBulletsForMarkdown(input: string): string {
+  // Some model outputs use unicode bullets (• / ·) which markdown does not treat as list markers.
+  // We normalize these into "-" lists so ReactMarkdown renders proper <ul><li> blocks.
+  if (!input) return input;
+
+  const lines = input.split('\n');
+  let inCodeFence = false;
+
+  const out: string[] = [];
+  for (const rawLine of lines) {
+    const line = rawLine;
+
+    // Skip any transformations inside fenced code blocks.
+    if (line.trimStart().startsWith('```')) {
+      inCodeFence = !inCodeFence;
+      out.push(line);
+      continue;
+    }
+    if (inCodeFence) {
+      out.push(line);
+      continue;
+    }
+
+    // Convert inline bullets like: "Intro: • A • B • C" into a proper list.
+    // Also handles lines that start with a bullet: "• A • B".
+    const inlineParts = line.split(/\s*[•·]\s+/).map((p) => p.trim()).filter(Boolean);
+    const hasInlineBullets = /\s*[•·]\s+/.test(line) && inlineParts.length > 1;
+    if (hasInlineBullets) {
+      // If the first segment originally contained text before the first bullet, keep it as a paragraph.
+      // Heuristic: if the line starts with a bullet, the prefix is empty.
+      const startsWithBullet = /^\s*[•·]\s+/.test(line);
+      const prefix = startsWithBullet ? '' : inlineParts[0];
+      const items = startsWithBullet ? inlineParts : inlineParts.slice(1);
+
+      if (prefix) out.push(prefix, '');
+      for (const item of items) out.push(`- ${item}`);
+      continue;
+    }
+
+    // Convert newline bullets like "• Something" into "- Something"
+    if (/^\s*[•·]\s+/.test(line)) {
+      out.push(line.replace(/^\s*[•·]\s+/, '- '));
+      continue;
+    }
+
+    out.push(line);
+  }
+
+  return out.join('\n');
+}
+
 export function ChatMessage({ message, index, isInSplitView = false, isStreaming = false }: ChatMessageProps) {
   // Cursor style for streaming
   const cursor = isStreaming ? (
@@ -44,7 +95,11 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
       remarkPlugins={[remarkGfm]}
       components={{
         p: ({ children }) => (
-          <p className={`${isInSplitView ? 'text-sm' : 'text-base'} leading-relaxed text-[var(--v2-text-secondary)]`}>
+          <p
+            className={`${
+              isInSplitView ? 'text-sm' : 'text-base'
+            } mt-2 first:mt-0 leading-relaxed text-[var(--v2-text-secondary)]`}
+          >
             {children}
           </p>
         ),
@@ -52,7 +107,7 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
           <ul
             className={`${
               isInSplitView ? 'text-sm' : 'text-base'
-            } mt-2 list-disc pl-5 space-y-1 leading-relaxed text-[var(--v2-text-secondary)]`}
+            } mt-2 first:mt-0 list-disc pl-5 space-y-1 leading-relaxed text-[var(--v2-text-secondary)]`}
           >
             {children}
           </ul>
@@ -61,7 +116,7 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
           <ol
             className={`${
               isInSplitView ? 'text-sm' : 'text-base'
-            } mt-2 list-decimal pl-5 space-y-1 leading-relaxed text-[var(--v2-text-secondary)]`}
+            } mt-2 first:mt-0 list-decimal pl-5 space-y-1 leading-relaxed text-[var(--v2-text-secondary)]`}
           >
             {children}
           </ol>
@@ -87,7 +142,7 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
         },
       }}
     >
-      {message.text}
+      {normalizeBulletsForMarkdown(message.text)}
     </ReactMarkdown>
   ) : (
     message.text

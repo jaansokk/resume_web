@@ -50,9 +50,11 @@ function renderFitBriefContent(content: string) {
 
   if (bullets.length > 0) {
     return (
-      <ul className="text-sm text-[var(--v2-text-secondary)] space-y-1 leading-relaxed">
+      <ul className="text-sm mt-2 first:mt-0 list-disc pl-5 space-y-1 leading-relaxed text-[var(--v2-text-secondary)]">
         {bullets.map((bullet, bIdx) => (
-          <li key={bIdx}>• {bullet}</li>
+          <li key={bIdx} className="leading-relaxed">
+            {bullet}
+          </li>
         ))}
       </ul>
     );
