@@ -5,9 +5,8 @@
   "version": "0.0.1",
   "scripts": {
     "verify": "node src/verify-opensearch.mjs",
-    "export": "node src/export-content-index.mjs",
     "vectors": "node src/vectors.mjs",
-    "all": "pnpm run export && pnpm run vectors"
+    "all": "pnpm run vectors"
   }
 }
 

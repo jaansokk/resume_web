@@ -42,6 +42,8 @@ Optional fields:
 - `urlPath`: string (canonical UI path for the item; optional)
 - `highlights`: string[] (optional curated proof points; short bullets)
 - `links`: object (optional graph edges)
+- `sourcePath`: string (relative path to the markdown source file; for debugging)
+- `sourceHash`: string (hash of the full source markdown; for idempotency/debugging)
 - For experience/project: `company`, `role`, `period`, optional `startDate`, `endDate`
 
 Point ID strategy:
@@ -111,10 +113,6 @@ Preferred approach (recommended):
   - slug exists
   - `uiVisible=true`
   - `type != "background"`
-
-Alternative approach (acceptable for MVP):
-- Treat `ui/public/content-index.json` as the canonical list of UI-visible items and load it at service startup.
-- Still store background in `content_chunks_v1` for retrieval, but never accept background slugs for UI.
 
 ---
 

@@ -23,8 +23,9 @@ This doc defines:
 ### Stage 0: Entry (Handshake)
 **UI**: handshake layout (but it’s the same conversation as chat).
 
-**Assistant opening line**
-“Hey — I’m Jaan. What kind of product are you building?”
+**Current implementation note**
+- The “Handshake” screen is **UI copy** (hero headline + quick replies + free text input).
+- The backend only sees messages once the user sends the first message.
 
 **User input options**
 - Quick replies (role intent)
@@ -47,9 +48,10 @@ This doc defines:
   - what “good” looks like / success metric
 
 **Chips**
-- Chips are **LLM-generated** (not hardcoded).
-- Default: server returns suggested chips for speed; user can always free-type.
-- If the assistant intentionally wants an open-ended answer, the server may return **no chips** (LLM-driven decision).
+- Chips are **LLM-generated** (not hardcoded) and are returned by the **answer** step (must match `assistant.text`).
+- The router step is intentionally lightweight and does not drive chips.
+- Default: server may return suggested chips for speed; user can always free-type.
+- If the assistant intentionally wants an open-ended answer, the server may return **no chips**.
 
 ### Stage 2: Workspace (Split view)
 **When to enter**
@@ -84,6 +86,9 @@ Rules:
 - The user can always switch tabs manually.
 - The server returns a suggestion hint (e.g., `hints.suggestTab = "brief" | "experience"`) so the UI can highlight a tab without auto-switching.
 - The client should include the current active tab in the request context (so the model can be tactful and consistent).
+
+Current implementation note:
+- The server emits `hints.suggestTab`, including in the SSE `ui` event, but the UI does not currently use it to highlight tabs.
 
 ---
 
@@ -121,5 +126,10 @@ When Share is initiated:
 Shared link behavior:
 - Read-only snapshot.
 - Continuing chat from a shared view creates a fork (new conversation).
+
+Current implementation note:
+- The API supports `/api/share` and `/api/share/{shareId}`.
+- The UI implements “Copy link” from the share snapshot.
+- “Download PDF” is not enabled yet in the UI.
 
 

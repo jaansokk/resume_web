@@ -40,13 +40,11 @@ Notes:
 
 ### Screen 1: “Handshake” (chat-first, but zero clutter)
 **Visible elements**
-- Centered chat bubble (not a full chat window yet) with a single opening line:**“Hey — I’m Jaan. What kind of product are you building?”**
+- Hero headline / opening prompt (not a full chat window yet), currently implemented as two lines:
+  - **“Hey — I’m Jaan.”**
+  - **“What kind of product are you building?”**
 - Subline, fades in, smaller: “In 60 seconds we'll produce a fit brief you can forward internally to your team.”
-- Under it: 4 big quick-reply buttons (square):
-	1. “Hiring for Product / PO”
-	2. “Hiring for Product Engineer / AI Engineer”
-	3. “Just browsing”
-	4. “Something else”
+- Under it: quick replies (2x2 grid in current UI; labels may differ from the original copy in this spec)
     
 ### Screen 2: First Interaction
 - User clicks a button on Screen 1 → the interface expands into full chat.
@@ -74,6 +72,7 @@ Opens modal with 2 steps
 - Buttons:
   - Copy link to this conversation (creates a share snapshot at `/c/{shareId}` that includes both artifacts)
   - Download PDF (generated from the same snapshot; PDF includes **Fit Brief + Relevant Experience**)
+    - Current implementation: PDF is not enabled yet (button is disabled/commented out).
 **Right: chat: **
 chat is short, surgical
 - “Two quick checks so I don’t hallucinate the fit: …”

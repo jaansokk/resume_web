@@ -65,9 +65,9 @@ Notes:
 
 ### A) Content graph export (for UI)
 Write to: `ingest/exported-content/content-index.json`
-And copy to UI as one of:
-- `ui/public/content-index.json` (simplest), OR
-- `ui/src/generated/content-index.ts`
+
+Note:
+- This export is optional and kept under `ingest/exported-content/` (ignored by git) to avoid shipping a full content catalog in the public UI bundle.
 
 Rules:
 - Export ONLY `experience` and `project` items.
@@ -94,23 +94,26 @@ Shape (suggested):
 }
 
 ### B) Qdrant collections
-Index ALL types into Qdrant:
+Index ALL types into Qdrant **items**:
 - `content_items_v1`  (one point per item: experience/project/background)
-- `content_chunks_v1` (many points per item: experience/project/background)
+- `content_chunks_v1` (many points per item)
+
+Current implementation note:
+- `content_items_v1` contains all ingested markdown files (experience/project/background).
+- `content_chunks_v1` is only created for items where `visibleIn[]` includes `"rag"` (i.e. chunk/embed/index is gated by RAG eligibility).
 
 Indexing rules for `background`:
 - `type="background"`
 - `uiVisible=false` in `content_items_v1`
-- Still chunk + embed into `content_chunks_v1`
+- Only chunk + embed into `content_chunks_v1` if `visibleIn` includes `"rag"`
 
 ---
 
 ## CLI commands (suggested)
 From repo root:
 
-- `pnpm ingest:export`  -> generates content-index.json (experience/projects only)
-- `pnpm ingest:vectors` -> chunks + embeddings + indexing/upserts (all types)
-- `pnpm ingest:all`     -> export + vectors
+- `pnpm ingest:vectors` -> chunks + embeddings + indexing/upserts (items for all types; chunks for `visibleIn: ["...","rag"]`)
+- `pnpm ingest:all`     -> vectors (alias)
 
 ---
 
@@ -137,6 +140,10 @@ Special note for `background`:
 - headings are often less structured; paragraph-based splitting is fine.
 - keep chunks small enough to fit alongside experience chunks in the answer prompt.
 
+Current implementation values:
+- experience/project: target ~600–900 chars
+- background: target ~450–800 chars
+
 ---
 
 ## Embeddings step (OpenAI)
@@ -149,6 +156,9 @@ For each chunk:
     - for background: `${title}\n\n`
 
 Also embed user queries at runtime in the chat API service (not part of ingestion).
+
+Current implementation note:
+- An embeddings cache is written to: `ingest/exported-content/embeddings-cache.json`
 
 ---
 
@@ -176,6 +186,7 @@ After ingesting 3–5 experience entries (+ optional background docs):
    - confirm background appears for "principles / beliefs / books" queries
 4) Confirm UI can render cards from `content-index.json` and link to pages.
    - verify that background does NOT appear anywhere in browse/cards.
+   - (v2) The UI renders Relevant Experience directly from chat API artifacts.
 
 ---
 

@@ -1,179 +1,102 @@
-# resume_web
+# Chat-driven resume / portfolio site
 
-This repo contains:
-- `ui/`: Astro resume site (currently uses `package-lock.json` / npm)
-- `chat-api-service/`: **NEW baseline (planned)** long-lived chat API orchestrator service (Qdrant-backed), deployed on Lightsail behind a reverse proxy
-- `ingest/`: ingestion CLI (chunk + embed + index/upsert vectors)
-- `chat-api-lambda/`: **DEPRECATED** legacy Lambda-based chat API (OpenSearch-backed) kept during migration/cleanup
-- `infra-vps/`: **NEW baseline (planned)** Lightsail deploy assets (Docker Compose, Caddy/Nginx config, scripts)
-- `infra/`: **DEPRECATED** legacy Lambda/OpenSearch deployment scripts kept during migration/cleanup
+![Screenshot](./screenshot.png)
 
-## Current architecture (baseline)
-Target baseline is a **single AWS Lightsail instance** running:
-- Reverse proxy (Caddy or Nginx) terminating TLS and routing `/api/*`
-- Chat API service (orchestrator) implementing `/chat`
-- Qdrant (vector store)
+Main components / repo layout:
+- **UI** (`ui/`): Astro + v2 React experience (`/`, `/cv`, `/contact`, `/c/{shareId}`)
+- **Chat API** (`chat-api-service/`): FastAPI app implementing `/chat`, `/chat/stream`, `/share`, `/share/{shareId}`
+- **Ingestion** (`ingest/`): Node scripts (no npm deps) for export + embeddings + Qdrant upserts
+- **Deployment** (`infra-vps/`): Lightsail/VPS deployment (Docker Compose + Caddy)
+- **Legacy** (`chat-api-lambda/`, `infra/`): deprecated (kept for migration/cleanup)
 
-Key specs:
+Core specs (source of truth):
+- `_specs/spec-index.md` (start here)
 - `_specs/chat-api-rag-contract.md`
 - `_specs/qdrant-index-design.md`
 - `_specs/ingestion-pipeline.md`
 
-Legacy (deprecated) architecture:
-- Lambda + API Gateway + OpenSearch Serverless (kept for reference during migration/cleanup)
+## Architecture (baseline)
+
+Target baseline is a **single VPS/Lightsail instance** running:
+- Reverse proxy (Caddy) terminating TLS and routing **same-origin** `/api/*`
+- Chat API service (FastAPI)
+- Qdrant (vector store)
 
 ## Prerequisites
 
-- **Node.js 18+** (needs native `fetch`)
-- **aws-vault** (optional; only needed if you want AWS-backed legacy flows)
-- **Corepack** (recommended for `pnpm` without global installs)
-- **Conda** + **Python 3.11+** (for `chat-api-service/`)
-- **Docker** (for local Qdrant via `docker-compose.yml`)
+- **Node.js 18+**
+- **Python 3.11+**
+- **Docker** (optional, for local Qdrant)
 
-Enable Corepack once:
+For full local end-to-end runs you’ll typically want:
+- `OPENAI_API_KEY` (embeddings)
+- `ANTHROPIC_API_KEY` (chat/router; streaming is currently Anthropic-only)
 
-```bash
-corepack enable
-```
+## Environment
 
-## Ingestion env setup
+For a clean publishable repo, env vars live in two places (copy the examples and fill secrets):
 
-Create `ingest/.env` (or repo-root `.env`). `ingest/.env.example` shows all supported variables.
+- **Local ingestion**: `ingest/.env.example` → `ingest/.env`
+  - Used by `npm run ingest:*` scripts (load order: `ENV_FILE` → `ingest/.env` → repo root `.env`)
+- **Production stack (VPS/Lightsail)**: `infra-vps/.env.example` → `infra-vps/.env`
+  - Used by `infra-vps/docker-compose.yml` (API + Qdrant + Caddy)
 
-Preferred variables:
-- `OPENAI_API_KEY`
-- `OPENAI_EMBEDDING_MODEL` (default: `text-embedding-3-small`)
-- `OPENAI_EMBEDDING_DIM` (optional; OpenAI `dimensions` parameter)
-- `QDRANT_URL` (e.g. `http://127.0.0.1:6333` or `http://qdrant:6333`)
-- `QDRANT_COLLECTION_ITEMS` (default: `content_items_v1`)
-- `QDRANT_COLLECTION_CHUNKS` (default: `content_chunks_v1`)
-- `QDRANT_NAMESPACE_UUID` (optional; deterministic UUIDv5 namespace for point IDs)
+## Source markdown
 
-DEPRECATED (legacy OpenSearch ingestion / verification):
-- `AOSS_ENDPOINT`, `AOSS_ITEMS_INDEX`, `AOSS_CHUNKS_INDEX`, `AWS_REGION`
-
-## Running ingestion (from repo root)
-
-You can run ingestion **without pnpm** (recommended) since `ingest/` has no external dependencies.
-
-## Keeping Markdown content out of this repo (optional)
-
-If you plan to make `resume_web/` public, you can keep the Markdown source content in a sibling directory, e.g.:
-
+You can keep source Markdown in a sibling private repo/directory:
 - Public repo: `resume_web/`
-- Private content: `resume_web_content/ui/src/content/**`
+- Private content: `../resume_web_content/ui/src/content/**`
 
-This workspace is set up so `ui/src/content/experience` is a symlink to the sibling private folder, and ingestion will also auto-detect that sibling folder.
-
-If you prefer explicit config (useful in CI/deploy), set:
+Ingestion auto-detects that sibling path. For explicit config (CI/deploy), set:
 - `RESUME_UI_CONTENT_ROOT=../resume_web_content/ui/src/content`
 
-Important: removing Markdown files from the working tree does **not** remove them from git history. If you already committed sensitive content, you’ll need to rewrite history before making the repo public.
+For the CV page (`/cv`), Astro reads content at build-time. In CI you can inject content into `ui/src/content/` (workspace-only; never commit) before building.
 
-### Build-time content workflow for CV page
+## Ingestion
 
-The CV page (`/cv`) renders directly from markdown at build time using Astro content collections.
+All ingestion scripts can be run from the repo root (no install needed for `ingest/` itself):
 
-**Local development:** The symlink (`ui/src/content/experience` → `../../../resume_web_content/ui/src/content/experience`) makes content available to Astro at build time.
-
-**CI/deployment workflow (ephemeral content injection):**
-
-1. Checkout both repos in your CI environment
-2. Copy/symlink content into `resume_web/ui/src/content/` (workspace-only; never commit):
-   ```bash
-   cp -r ../resume_web_content/ui/src/content/* resume_web/ui/src/content/
-   ```
-3. Run the build (Astro reads content at build time; `dist/` does not contain source `.md` files):
-   ```bash
-   cd resume_web/ui && npm ci && npm run build
-   ```
-4. Deploy `dist/` (the built static site)
-5. Cleanup (optional; CI workspace is typically discarded automatically)
-
-The build-time injection keeps markdown out of the public repo as long as:
-- Private content is never committed to `resume_web/`
-- CI/build environment has controlled access to the private content repo
-
-
-### 1) Export UI content index (no AWS/OpenAI needed)
-
-```bash
-npm run ingest:export
-```
-
-Outputs:
-- `ingest/exported-content/content-index.json`
-- `ui/public/content-index.json`
-
-### 2) Verify OpenSearch Serverless access (DEPRECATED; AWS creds required)
-
-Run via `aws-vault`:
-
-```bash
-aws-vault exec resume-web-ingest -- npm run ingest:verify
-```
-
-### 3) Vectors pipeline (chunk + embed + optional index)
-
-- **Dry-run** (no OpenAI key, no AWS):
-
-```bash
-npm run ingest:vectors -- --dry-run
-```
-
-Writes debug dumps:
-- `ingest/exported-content/debug/items.json`
-- `ingest/exported-content/debug/chunks.json`
-
-- **Embed only** (OpenAI key required, no AWS indexing):
-
-```bash
-npm run ingest:vectors -- --no-index
-```
-
-- **Embed + index (full run)**:
-  - NEW baseline: OpenAI key + reachable Qdrant
-  - DEPRECATED legacy: OpenAI key + AWS (OpenSearch Serverless)
+- Vectors (chunk + embed + index into Qdrant):
 
 ```bash
 npm run ingest:vectors
 ```
 
-### 4) Full “all” command
+Useful flags:
 
-Runs export + vectors:
+```bash
+npm run ingest:vectors -- --dry-run
+npm run ingest:vectors -- --no-index
+```
+
+- Full run:
 
 ```bash
 npm run ingest:all
 ```
 
-## Local dev: Qdrant + Chat API + UI (end-to-end)
+## Local dev (end-to-end)
 
 ### 1) Start local Qdrant
-
-From repo root:
 
 ```bash
 docker compose up -d
 ```
 
-Qdrant will be reachable at `http://127.0.0.1:6333`.
+Qdrant should be reachable at `http://127.0.0.1:6333`.
 
-### 2) Run ingestion into Qdrant
-
-Ensure you have `OPENAI_API_KEY` set and (optionally) `QDRANT_URL=http://127.0.0.1:6333`.
+### 2) Ingest content into Qdrant
 
 ```bash
 npm run ingest:all
 ```
 
-### 3) Run the FastAPI chat service
+### 3) Run the Chat API (FastAPI)
 
 ```bash
 cd chat-api-service
-# Create a dedicated env (recommended)
-conda create -n resume-web-api python=3.11 -y
-conda activate resume-web-api
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
@@ -184,18 +107,15 @@ Health check:
 curl http://127.0.0.1:8000/healthz
 ```
 
-### 4) Run API tests
+### 4) Run the UI (Astro)
 
-```bash
-cd chat-api-service
-conda activate resume-web-api
-pip install -r requirements-dev.txt
-pytest -q
-```
+The UI calls these same-origin endpoints:
+- `POST /api/chat`
+- `POST /api/chat/stream`
+- `POST /api/share`
+- `GET /api/share/{shareId}`
 
-### 5) Run the UI against the local service
-
-The UI defaults to calling **same-origin** `POST /api/chat`. During dev, Astro proxies:\n- `/api/chat` → `${CHAT_API_PROXY_TARGET:-http://127.0.0.1:8000}/chat`
+During dev, Astro proxies `/api/*` to the local FastAPI service (default target is `http://127.0.0.1:8000`).
 
 ```bash
 cd ui
@@ -203,36 +123,21 @@ npm ci
 npm run dev
 ```
 
-Optional (to point the dev proxy somewhere else later, e.g. Lightsail):
+To point the dev proxy elsewhere:
 
 ```bash
 CHAT_API_PROXY_TARGET=http://<host>:8000 npm run dev
 ```
 
-## (Optional) Using pnpm
-
-If you prefer pnpm, enable Corepack:
+## Tests (Chat API)
 
 ```bash
-corepack enable
+cd chat-api-service
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest -q
 ```
 
-Then you can use:
+## Deployment
 
-```bash
-corepack pnpm ingest:export
-corepack pnpm ingest:vectors -- --dry-run
-aws-vault exec resume-web-ingest -- zsh -lc 'corepack pnpm ingest:vectors'
-```
-
-## UI setup (`ui/`)
-
-`ui/` currently has a `package-lock.json`, so use npm:
-
-```bash
-cd ui
-npm ci
-npm run dev
-```
-
-
+See `infra-vps/DEPLOY-LIGHTSAIL.md`.

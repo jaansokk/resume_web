@@ -4,9 +4,8 @@
   "packageManager": "pnpm@9.15.2",
   "scripts": {
     "ingest:verify": "node ingest/src/verify-opensearch.mjs",
-    "ingest:export": "node ingest/src/export-content-index.mjs",
     "ingest:vectors": "node ingest/src/vectors.mjs",
-    "ingest:all": "node ingest/src/export-content-index.mjs && node ingest/src/vectors.mjs"
+    "ingest:all": "node ingest/src/vectors.mjs"
   }
 }
 

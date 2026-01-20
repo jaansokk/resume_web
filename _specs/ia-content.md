@@ -12,7 +12,7 @@ The product has a **single, consistent header** across all views/routes.
 
 ### Brand (left side)
 - **"Jaan Sokk"** — non-clickable branding (no home link).
-- A separate "Start Over" action will be added later for explicit conversation reset.
+- A separate global "Start Over" action may be added later; today Start Over exists in the **Split view chat header** (desktop).
 
 ### Main menu links (right side)
 
@@ -30,7 +30,9 @@ The product has a **single, consistent header** across all views/routes.
 **Notes**
 - Split view takes precedence over Chat because it's the more advanced state.
 - The conditional link is placed first so the positioning of **CV / LinkedIn / Contact** remains unchanged.
-- **State persistence**: Conversation state (messages, artifacts, viewMode, hasSeenSplit) is stored in `localStorage` and persists across tabs, page reloads, and browser sessions.
+- **State persistence**: Conversation state persists in `localStorage` across tabs, page reloads, and browser sessions.
+  - Conversation state key: `v2:conversationState`
+  - “Has seen split” key: `v2:hasSeenSplit`
 - **Auto-restore**: On mount at any route, the app checks `localStorage` and restores the last conversation state if present.
 
 ---
@@ -58,10 +60,13 @@ Browsing happens via:
 **Purpose**: one strong action; zero clutter.
 
 **Visible**
-- Opening prompt: “Hey — I’m Jaan. What kind of product are you building?”
-- Supporting subline: “In 60 seconds we’ll produce a fit brief you can forward internally to your team.”
-- Quick replies (large buttons)
-- Optional freeform input
+- Hero headline:
+  - “Hey — I’m Jaan.”
+  - “What kind of product are you building?”
+- Supporting subline: “In 60 seconds we'll produce a fit brief you can forward internally to your team.”
+- “Try asking…” label
+- Quick replies (2x2 grid)
+- Optional freeform input (placeholder: “Or tell me what you're looking for...”)
 - Header: name + links (CV / LinkedIn / Contact)
 
 **Notes**
@@ -89,6 +94,7 @@ Browsing happens via:
 **Tab focus**
 - The assistant may recommend a focus (Fit Brief vs Relevant Experience) per turn.
 - The user can always switch tabs manually.
+  - Current UI behavior: active tab is user-controlled; the UI does not highlight tabs based on `hints.suggestTab` yet.
 
 ---
 
@@ -182,14 +188,18 @@ Capture **LinkedIn OR email**.
 When contact is provided, the system creates an **immutable share snapshot** and reveals:
 - **Copy link**: permalink to the shared conversation at `/c/{shareId}`.
   - The snapshot includes **messages + rendered Fit Brief + rendered Relevant Experience** (independent of which tab is active).
-- **Download PDF**: generates a PDF artifact from the same share snapshot.
-  - PDF includes **Fit Brief + Relevant Experience**.
+- **Download PDF**: not enabled yet in the current UI (button is disabled/commented out).
 
 **Immutability + forking**
 - Share links never expire.
 - Shared view is a snapshot (no writebacks).
 - If someone continues chatting from a shared link, it creates a **new conversation** (“fork”) with a new `conversationId`.
 - The fork does **not** inherit the captured LinkedIn/email.
+
+Implementation notes (current code):
+- The shared view (`/c/{shareId}`) loads the snapshot via `GET /api/share/{shareId}` and renders workspace + transcript.
+- The shared view seeds `localStorage` with a forked `conversationId` so navigation back to `/` resumes in Split view.
+- In production, the reverse proxy rewrites `/c/<shareId>` to serve the SPA while keeping the browser URL intact (so the client can still extract the shareId from `window.location.pathname`).
 
 ---
 
