@@ -11,23 +11,44 @@ interface HandshakeViewProps {
   isLoading: boolean;
 }
 
+const HANDSHAKE_INTRO_PLAYED_KEY = 'v2:handshakeIntroPlayed';
+
 export function HandshakeView({ 
   inputValue, 
   onInputChange, 
   onSend, 
   isLoading,
 }: HandshakeViewProps) {
-  const [showSubline, setShowSubline] = useState(false);
-  const [showButtons, setShowButtons] = useState(false);
+  // If something causes this view to be remounted (e.g. SPA transitions, reload loops),
+  // we still want to avoid replaying the hero intro continuously.
+  const [introEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return window.sessionStorage.getItem(HANDSHAKE_INTRO_PLAYED_KEY) !== '1';
+    } catch {
+      return true;
+    }
+  });
+
+  const [showSubline, setShowSubline] = useState(() => !introEnabled);
+  const [showButtons, setShowButtons] = useState(() => !introEnabled);
 
   useEffect(() => {
+    if (!introEnabled) return;
+
+    try {
+      window.sessionStorage.setItem(HANDSHAKE_INTRO_PLAYED_KEY, '1');
+    } catch {
+      // ignore
+    }
+
     const t1 = setTimeout(() => setShowSubline(true), 800);
     const t2 = setTimeout(() => setShowButtons(true), 1200);
     return () => { 
       clearTimeout(t1); 
       clearTimeout(t2); 
     };
-  }, []);
+  }, [introEnabled]);
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
@@ -38,7 +59,10 @@ export function HandshakeView({
       <div className="relative z-10 flex-1 flex flex-col px-6 pt-20 pb-24 justify-center">
         {/* Hero section */}
         <div className="max-w-3xl mx-auto text-center">
-          <div className="animate-fade-up opacity-0 mb-6" style={{ animationFillMode: 'forwards' }}>
+          <div
+            className={introEnabled ? 'animate-fade-up opacity-0 mb-6' : 'mb-6'}
+            style={introEnabled ? { animationFillMode: 'forwards' } : undefined}
+          >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.15] tracking-[-0.02em]">
               Hey {'\u2014'} I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.
             </h1>

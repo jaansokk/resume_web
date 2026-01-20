@@ -9,6 +9,10 @@
 export const EVENTS = {
   // Navigation & Journey
   PAGE_VIEW: 'page_view',
+
+  // Resume island (root) lifecycle
+  RESUME_APP_MOUNTED: 'resume_app_mounted',
+  RESUME_APP_UNMOUNTED: 'resume_app_unmounted',
   
   // Handshake View
   HANDSHAKE_QUICK_REPLY_CLICKED: 'handshake_quick_reply_clicked',
@@ -50,6 +54,46 @@ export const EVENTS = {
 function getPostHog() {
   if (typeof window === 'undefined') return null;
   return (window as any).posthog;
+}
+
+/**
+ * Track the main resume island mounting/unmounting.
+ * If this loops, any view-level animations can appear to "replay".
+ */
+export function trackResumeAppMounted(params: {
+  mountId: string;
+  path?: string;
+  platform?: string;
+  conversationId?: string;
+}) {
+  const posthog = getPostHog();
+  if (!posthog) return;
+
+  posthog.capture(EVENTS.RESUME_APP_MOUNTED, {
+    mount_id: params.mountId,
+    path: params.path,
+    platform: params.platform,
+    conversation_id: params.conversationId,
+  });
+}
+
+export function trackResumeAppUnmounted(params: {
+  mountId: string;
+  elapsedMs?: number;
+  path?: string;
+  platform?: string;
+  conversationId?: string;
+}) {
+  const posthog = getPostHog();
+  if (!posthog) return;
+
+  posthog.capture(EVENTS.RESUME_APP_UNMOUNTED, {
+    mount_id: params.mountId,
+    elapsed_ms: params.elapsedMs,
+    path: params.path,
+    platform: params.platform,
+    conversation_id: params.conversationId,
+  });
 }
 
 /**

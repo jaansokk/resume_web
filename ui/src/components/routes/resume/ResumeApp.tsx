@@ -11,7 +11,9 @@ import {
   trackChatMessage, 
   trackSplitViewOpened, 
   trackStartOverClicked,
-  trackConversationAbandoned 
+  trackConversationAbandoned,
+  trackResumeAppMounted,
+  trackResumeAppUnmounted,
 } from '../../../utils/posthogTracking';
 
 type MainViewMode = 'handshake' | 'chat' | 'split';
@@ -32,6 +34,27 @@ export default function ConceptAApp() {
     const savedState = loadConversationState();
     return savedState?.conversationId ?? uuidv4();
   });
+
+  // Detect unexpected island remount loops (can cause repeated "hero" animations across views).
+  useEffect(() => {
+    const mountId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const path = typeof window !== 'undefined' ? window.location.pathname : undefined;
+    const platform =
+      typeof navigator === 'undefined'
+        ? undefined
+        : ((navigator as any).userAgentData?.platform ?? navigator.platform ?? 'unknown');
+
+    console.info('[ResumeApp] mount', { mountId, path, platform, conversationId });
+    trackResumeAppMounted({ mountId, path, platform, conversationId });
+
+    return () => {
+      const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const elapsedMs = Math.max(0, end - startedAt);
+      console.info('[ResumeApp] unmount', { mountId, path, platform, elapsedMs, conversationId });
+      trackResumeAppUnmounted({ mountId, elapsedMs, path, platform, conversationId });
+    };
+  }, [conversationId]);
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
