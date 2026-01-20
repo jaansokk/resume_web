@@ -210,7 +210,7 @@ export function ContactView({ onClose }: ContactViewProps) {
                   <button
                     type="submit"
                     disabled={!canSubmit || isSending}
-                    className={`rounded-xl px-5 py-3 text-sm font-medium transition-all border ${
+                    className={`rounded-full px-5 py-3 text-sm font-medium transition-all border ${
                       canSubmit
                         ? 'bg-[var(--v2-accent)] text-black border-transparent hover:opacity-90'
                         : 'bg-black/20 text-[var(--v2-text-secondary)] border-[var(--v2-border)] cursor-not-allowed'
