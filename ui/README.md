@@ -46,9 +46,10 @@ If the UI shows a 500 from the chat service, check the FastAPI logs first. A com
 - `/src/content/experience/` - Experience content (Markdown). This is typically a **symlink** to a sibling private repo.
 - `/src/utils/` - Utility functions for keyword matching
 
-## Keeping Markdown content out of the public repo
+## Keeping source content out of the public repo
 
-If you plan to make `resume_web/` public, you can keep the Markdown source in a sibling directory:
+### Markdown
+Markdown source is in a sibling directory to keep the main repo clean:
 
 - Public repo: `resume_web/`
 - Private content: `resume_web_content/ui/src/content/experience/*.md` (and optionally `projects/`, `background/`)
@@ -59,6 +60,13 @@ This repo expects `ui/src/content/experience` to be a symlink to:
 Notes:
 - The UI build still renders the content on the website, so **site scraping is still possible**. This only prevents scraping the content via the public git repo.
 - If you previously committed Markdown files, removing them now does **not** remove them from git history. To truly purge, you’ll need a history rewrite before going public.
+
+### The CV PDF
+
+During `npm run dev` and `npm run build`, the UI runs a sync step that copies the PDF into: `resume_web/ui/public/jaan-sokk-cv.pdf`
+
+If your content repo is not located at `../../resume_web_content`, set:
+- `RESUME_WEB_CONTENT_DIR=/absolute/path/to/resume_web_content`
 
 ## Features
 

@@ -9,4 +9,5 @@ resume_web/                # This repo
   shared/                  # shared types + zod schemas + content model contracts
 
 resume_web_content/
-  ui/src/content/          # Source markdowns for Astro (in resume_web_ui)
+  ui/src/content/          # Source markdowns for Astro (in resume_web/ui)
+  ui/public/               # Private static assets (e.g. CV PDF) synced into resume_web/ui/public at build/dev time

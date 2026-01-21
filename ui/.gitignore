@@ -15,6 +15,9 @@ pnpm-debug.log*
 # environment variables
 **/.env
 
+## CV is in private repo
+public/jaan-sokk-cv.pdf
+
 # macOS-specific files
 .DS_Store
 
