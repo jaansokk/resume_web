@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, AsyncGenerator
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 # JSON schemas for structured outputs
@@ -21,21 +24,30 @@ ROUTER_SCHEMA = {
                     "properties": {
                         "activeTab": {"type": "string", "enum": ["brief", "experience"]}
                     },
-                    "required": ["activeTab"]
+                    "required": ["activeTab"],
+                    "additionalProperties": False
                 }
             },
-            "required": ["view"]
+            "required": ["view"],
+            "additionalProperties": False
         },
         "chips": {"type": "array", "items": {"type": "string"}},
         "hints": {
             "type": "object",
             "properties": {
-                "suggestTab": {"type": ["string", "null"], "enum": ["brief", "experience", None]}
+                "suggestTab": {
+                    "anyOf": [
+                        {"type": "string", "enum": ["brief", "experience"]},
+                        {"type": "null"}
+                    ]
+                }
             },
-            "required": ["suggestTab"]
+            "required": ["suggestTab"],
+            "additionalProperties": False
         }
     },
-    "required": ["retrievalQuery", "ui", "chips", "hints"]
+    "required": ["retrievalQuery", "ui", "chips", "hints"],
+    "additionalProperties": False
 }
 
 ANSWER_SCHEMA = {
@@ -46,7 +58,8 @@ ANSWER_SCHEMA = {
             "properties": {
                 "text": {"type": "string"}
             },
-            "required": ["text"]
+            "required": ["text"],
+            "additionalProperties": False
         },
         "ui": {
             "type": "object",
@@ -57,16 +70,24 @@ ANSWER_SCHEMA = {
                     "properties": {
                         "activeTab": {"type": "string", "enum": ["brief", "experience"]}
                     },
-                    "required": ["activeTab"]
+                    "required": ["activeTab"],
+                    "additionalProperties": False
                 }
             },
-            "required": ["view"]
+            "required": ["view"],
+            "additionalProperties": False
         },
         "hints": {
             "type": "object",
             "properties": {
-                "suggestTab": {"type": ["string", "null"], "enum": ["brief", "experience", None]}
-            }
+                "suggestTab": {
+                    "anyOf": [
+                        {"type": "string", "enum": ["brief", "experience"]},
+                        {"type": "null"}
+                    ]
+                }
+            },
+            "additionalProperties": False
         },
         "chips": {"type": "array", "items": {"type": "string"}},
         "artifacts": {
@@ -85,11 +106,13 @@ ANSWER_SCHEMA = {
                                     "title": {"type": "string"},
                                     "content": {"type": "string"}
                                 },
-                                "required": ["id", "title", "content"]
+                                "required": ["id", "title", "content"],
+                                "additionalProperties": False
                             }
                         }
                     },
-                    "required": ["title", "sections"]
+                    "required": ["title", "sections"],
+                    "additionalProperties": False
                 },
                 "relevantExperience": {
                     "type": "object",
@@ -108,25 +131,45 @@ ANSWER_SCHEMA = {
                                                 "slug": {"type": "string"},
                                                 "type": {"type": "string", "enum": ["experience", "project"]},
                                                 "title": {"type": "string"},
-                                                "role": {"type": ["string", "null"]},
-                                                "period": {"type": ["string", "null"]},
+                                                "role": {
+                                                    "anyOf": [
+                                                        {"type": "string"},
+                                                        {"type": "null"}
+                                                    ]
+                                                },
+                                                "period": {
+                                                    "anyOf": [
+                                                        {"type": "string"},
+                                                        {"type": "null"}
+                                                    ]
+                                                },
                                                 "bullets": {"type": "array", "items": {"type": "string"}},
-                                                "whyRelevant": {"type": ["string", "null"]}
+                                                "whyRelevant": {
+                                                    "anyOf": [
+                                                        {"type": "string"},
+                                                        {"type": "null"}
+                                                    ]
+                                                }
                                             },
-                                            "required": ["slug", "type", "title", "bullets"]
+                                            "required": ["slug", "type", "title", "bullets"],
+                                            "additionalProperties": False
                                         }
                                     }
                                 },
-                                "required": ["title", "items"]
+                                "required": ["title", "items"],
+                                "additionalProperties": False
                             }
                         }
                     },
-                    "required": ["groups"]
+                    "required": ["groups"],
+                    "additionalProperties": False
                 }
-            }
+            },
+            "additionalProperties": False
         }
     },
-    "required": ["assistant", "ui"]
+    "required": ["assistant", "ui"],
+    "additionalProperties": False
 }
 
 
@@ -144,6 +187,7 @@ class AnthropicClient:
         # Don't raise immediately - allow initialization even without key
         # This lets users choose OpenAI without needing Anthropic key
         self.api_key = api_key
+        # Note: Structured outputs require Sonnet 4.5, Opus 4.1/4.5, or Haiku 4.5
         self.chat_model = os.environ.get("ANTHROPIC_CHAT_MODEL", "claude-sonnet-4-20250514")
         self.router_model = os.environ.get("ANTHROPIC_ROUTER_MODEL", "claude-3-5-haiku-20241022")
         self.router_max_tokens = int(os.environ.get("ANTHROPIC_ROUTER_MAX_TOKENS", "1024"))
@@ -151,19 +195,42 @@ class AnthropicClient:
         # Structured outputs are in beta - enable with ANTHROPIC_USE_STRUCTURED_OUTPUTS=1
         self.use_structured_outputs = os.environ.get("ANTHROPIC_USE_STRUCTURED_OUTPUTS", "0").strip() == "1"
         
+        # Validate model compatibility with structured outputs
+        if self.use_structured_outputs:
+            self._validate_structured_output_support()
+        
         # Create async HTTP client
         self._client: httpx.AsyncClient | None = None
+    
+    def _validate_structured_output_support(self) -> None:
+        """Check if configured models support structured outputs and log warnings."""
+        # Models that support structured outputs (as of 2025-01)
+        # Pattern: sonnet-4-5, opus-4-1, opus-4-5, haiku-4-5, or haiku with 3-5 in name
+        supported_patterns = ["-4-5-", "-4-1-", "3-5-haiku"]
+        
+        for model_name, model_type in [(self.chat_model, "chat"), (self.router_model, "router")]:
+            if not any(pattern in model_name for pattern in supported_patterns):
+                logger.warning(
+                    f"Model '{model_name}' ({model_type}) may not support structured outputs. "
+                    f"Supported models: Sonnet 4.5, Opus 4.1/4.5, Haiku 4.5. "
+                    f"If you see 400 errors, update ANTHROPIC_{model_type.upper()}_MODEL env var."
+                )
     
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create the async HTTP client."""
         if self._client is None:
+            headers = {
+                "anthropic-version": self.API_VERSION,
+                "x-api-key": self.api_key,
+                "content-type": "application/json",
+            }
+            # Add beta header for structured outputs if enabled
+            if self.use_structured_outputs:
+                headers["anthropic-beta"] = "structured-outputs-2025-11-13"
+            
             self._client = httpx.AsyncClient(
                 base_url=self.BASE_URL,
-                headers={
-                    "anthropic-version": self.API_VERSION,
-                    "x-api-key": self.api_key,
-                    "content-type": "application/json",
-                },
+                headers=headers,
                 timeout=60.0,
             )
         return self._client
@@ -229,15 +296,22 @@ class AnthropicClient:
         if json_schema and self.use_structured_outputs:
             request_body["output_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "response",
-                    "strict": True,
-                    "schema": json_schema
-                }
+                "schema": json_schema
             }
+            logger.info(f"Using structured outputs with schema keys: {list(json_schema.get('properties', {}).keys())}")
 
         client = await self._get_client()
+        
+        # Log request details for debugging
+        if self.use_structured_outputs:
+            logger.debug(f"Sending request to Anthropic with output_format: {json.dumps(request_body.get('output_format', {}), indent=2)}")
+        
         response = await client.post("/messages", json=request_body)
+        
+        # Log error details if request fails
+        if response.status_code != 200:
+            logger.error(f"Anthropic API error {response.status_code}: {response.text}")
+        
         response.raise_for_status()
         
         data = response.json()
@@ -331,12 +405,10 @@ class AnthropicClient:
         if self.use_structured_outputs:
             request_body["output_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "response",
-                    "strict": True,
-                    "schema": ANSWER_SCHEMA
-                }
+                "schema": ANSWER_SCHEMA
             }
+            logger.info(f"Using structured outputs for streaming with schema keys: {list(ANSWER_SCHEMA.get('properties', {}).keys())}")
+            logger.debug(f"Full request body output_format: {json.dumps(request_body.get('output_format', {}), indent=2)}")
 
         client = await self._get_client()
         
@@ -355,6 +427,11 @@ class AnthropicClient:
         TARGET_PATTERNS = ['"assistant":{"text":', '"assistant": {"text":', '"assistant":{ "text":']
         
         async with client.stream("POST", "/messages", json=request_body) as response:
+            # Log error details before raising
+            if response.status_code != 200:
+                error_body = await response.aread()
+                logger.error(f"Anthropic streaming API error {response.status_code}: {error_body.decode()}")
+            
             response.raise_for_status()
             
             # Parse Server-Sent Events (SSE) from the stream
