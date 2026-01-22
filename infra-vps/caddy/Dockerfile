@@ -30,8 +30,8 @@ RUN rm -f /app/ui/src/content/background /app/ui/src/content/experience
 COPY resume_web_content/ui/src/content/background /app/ui/src/content/background
 COPY resume_web_content/ui/src/content/experience /app/ui/src/content/experience
 
-# Copy PDF asset from the content repo
-COPY resume_web_content/ui/public/jaan-sokk-cv.pdf /app/ui/public/jaan-sokk-cv.pdf
+# Copy PDF asset to where the sync script expects to find it
+COPY resume_web_content/ui/public/jaan-sokk-cv.pdf /resume_web_content/ui/public/jaan-sokk-cv.pdf
 
 RUN cd /app/ui && npm run build
 
