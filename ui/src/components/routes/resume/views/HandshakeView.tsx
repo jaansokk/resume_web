@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Header } from '../../../ui/Header';
 import { BackgroundOverlay } from '../../../ui/BackgroundOverlay';
 import { QuickReplyGrid } from '../../../features/handshake/QuickReplyGrid';
@@ -11,44 +11,19 @@ interface HandshakeViewProps {
   isLoading: boolean;
 }
 
-const HANDSHAKE_INTRO_PLAYED_KEY = 'v2:handshakeIntroPlayed';
-
 export function HandshakeView({ 
   inputValue, 
   onInputChange, 
   onSend, 
   isLoading,
 }: HandshakeViewProps) {
-  // If something causes this view to be remounted (e.g. SPA transitions, reload loops),
-  // we still want to avoid replaying the hero intro continuously.
-  const [introEnabled] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    try {
-      return window.sessionStorage.getItem(HANDSHAKE_INTRO_PLAYED_KEY) !== '1';
-    } catch {
-      return true;
-    }
-  });
-
-  const [showSubline, setShowSubline] = useState(() => !introEnabled);
-  const [showButtons, setShowButtons] = useState(() => !introEnabled);
-
-  useEffect(() => {
-    if (!introEnabled) return;
-
-    try {
-      window.sessionStorage.setItem(HANDSHAKE_INTRO_PLAYED_KEY, '1');
-    } catch {
-      // ignore
-    }
-
-    const t1 = setTimeout(() => setShowSubline(true), 800);
-    const t2 = setTimeout(() => setShowButtons(true), 1200);
-    return () => { 
-      clearTimeout(t1); 
-      clearTimeout(t2); 
-    };
-  }, [introEnabled]);
+  // IMPORTANT: Keep SSR and client initial render deterministic.
+  // This view previously read sessionStorage during render to decide whether to play an intro.
+  // That causes SSR/client className mismatches and can leave the chips/input stuck hidden
+  // if hydration/effects don't run (observed when navigating back from other routes).
+  //
+  // We always render the handshake controls visible; animations are purely decorative.
+  const alwaysShow = useMemo(() => true, []);
 
   return (
     <div className="v2-concept min-h-screen flex flex-col relative overflow-hidden">
@@ -60,8 +35,8 @@ export function HandshakeView({
         {/* Hero section */}
         <div className="max-w-3xl mx-auto text-center">
           <div
-            className={introEnabled ? 'animate-fade-up opacity-0 mb-6' : 'mb-6'}
-            style={introEnabled ? { animationFillMode: 'forwards' } : undefined}
+            className="mb-6 animate-fade-up"
+            style={{ animationFillMode: 'forwards' }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.15] tracking-[-0.02em]">
               Hey {'\u2014'} I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.
@@ -76,33 +51,20 @@ export function HandshakeView({
           </div>
           
           {/* Subline */}
-          <p 
-            className={`text-lg text-[var(--v2-text-secondary)] max-w-md mx-auto mb-10 transition-all duration-700 ${
-              showSubline ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-            }`}
-          >
+          <p className="text-lg text-[var(--v2-text-secondary)] max-w-md mx-auto mb-10 animate-fade-in">
             In 60 seconds we'll produce a fit brief you can forward internally to your team.
           </p>
           
           {/* Try asking label */}
-          <p 
-            className={`text-sm text-[var(--v2-text-tertiary)] text-center mb-3 transition-all duration-700 ${
-              showButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-          >
+          <p className="text-sm text-[var(--v2-text-tertiary)] text-center mb-3 animate-fade-in">
             Try asking...
           </p>
           
           {/* Quick reply chips - 2x2 grid */}
-          <QuickReplyGrid onReplySelect={onSend} showButtons={showButtons} />
+          <QuickReplyGrid onReplySelect={onSend} showButtons={alwaysShow} />
           
           {/* Free text input below chips */}
-          <div 
-            className={`w-full max-w-2xl mx-auto transition-all duration-700 ${
-              showButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-            style={{ transitionDelay: '100ms' }}
-          >
+          <div className="w-full max-w-2xl mx-auto animate-fade-in">
             <ChatInput
               value={inputValue}
               onChange={onInputChange}
