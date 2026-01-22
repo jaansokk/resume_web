@@ -125,6 +125,12 @@ These are the small choices that make it feel “designed,” not “assembled�
 - **Browser navigation**: Back/forward buttons work naturally across routes (`/`, `/cv`, `/contact`).
 - **State persistence**: Conversation state persists in `localStorage` across tabs and sessions; always auto-restored on mount.
 
+### Privacy banner (analytics choice)
+- On first visit, show a lightweight privacy banner on all routes after a ~2s delay.
+- The banner dims the background and offers two choices: **Understood** or **No, thanks**.
+- The choice is stored in `localStorage` and the banner does not reappear once saved.
+- **Understood** enables analytics + session replay; **No, thanks** keeps analytics but disables session replay.
+
 
 ---
 

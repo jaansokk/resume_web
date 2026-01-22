@@ -211,6 +211,7 @@ export function SplitView({
         isOpen={showStartOverModal}
         onClose={handleStartOverCancel}
         title="Start over?"
+        buttonOrder="secondary-first"
         primaryButton={{
           label: 'Start over',
           onClick: handleStartOverConfirm,

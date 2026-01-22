@@ -6,6 +6,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  buttonOrder?: 'primary-first' | 'secondary-first';
   primaryButton?: {
     label: string;
     onClick: () => void;
@@ -23,6 +24,7 @@ export function Modal({
   onClose, 
   title, 
   children,
+  buttonOrder = 'secondary-first',
   primaryButton,
   secondaryButton,
 }: ModalProps) {
@@ -67,7 +69,7 @@ export function Modal({
         
         {/* Buttons */}
         <div className="flex gap-3">
-          {secondaryButton && (
+          {buttonOrder === 'secondary-first' && secondaryButton && (
             <button 
               onClick={secondaryButton.onClick}
               className="flex-1 px-4 py-3 border border-[var(--v2-border)] rounded-full text-sm
@@ -89,6 +91,16 @@ export function Modal({
                          }`}
             >
               {primaryButton.label}
+            </button>
+          )}
+
+          {buttonOrder === 'primary-first' && secondaryButton && (
+            <button 
+              onClick={secondaryButton.onClick}
+              className="flex-1 px-4 py-3 border border-[var(--v2-border)] rounded-full text-sm
+                         hover:border-[var(--v2-accent)]/50 transition-colors"
+            >
+              {secondaryButton.label}
             </button>
           )}
         </div>

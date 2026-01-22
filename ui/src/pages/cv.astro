@@ -1,5 +1,6 @@
 ---
 import PostHog from '../components/posthog.astro';
+import { PrivacyBanner } from '../components/features/privacy/PrivacyBanner';
 import { getCollection } from 'astro:content';
 import { ViewTransitions } from 'astro:transitions';
 import { parseRoleMarkdown } from '../utils/cvRoleParser';
@@ -53,6 +54,7 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
   </head>
     <body>
       <div class="v2-concept min-h-screen relative">
+        <PrivacyBanner client:load />
         <!-- Background overlay (same as other pages) -->
         <div class="fixed inset-0 z-0">
           <div 

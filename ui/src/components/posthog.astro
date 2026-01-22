@@ -3,20 +3,55 @@ const POSTHOG_KEY = import.meta.env.PUBLIC_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
 ---
 <script is:inline type="text/javascript" id="posthog-js" define:vars={{ POSTHOG_KEY, POSTHOG_HOST }}>
+  const PRIVACY_MODE_KEY = 'privacy:posthog_mode';
+  const PRIVACY_MODE_ALL = 'all';
+  const PRIVACY_MODE_ANALYTICS_ONLY = 'analytics_only';
   // Skip PostHog entirely in local development
   const isLocalDev = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' ||
                      window.location.hostname.includes('192.168.');
-  
+
+  function getStoredPrivacyMode() {
+    try {
+      return window.localStorage.getItem(PRIVACY_MODE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  function storePrivacyMode(mode) {
+    try {
+      window.localStorage.setItem(PRIVACY_MODE_KEY, mode);
+    } catch {
+      // ignore
+    }
+  }
+
+  function applyReplayPreference(mode) {
+    if (!window.posthog) return;
+    if (mode === PRIVACY_MODE_ALL && typeof window.posthog.startSessionRecording === 'function') {
+      window.posthog.startSessionRecording();
+    }
+    if (mode === PRIVACY_MODE_ANALYTICS_ONLY && typeof window.posthog.stopSessionRecording === 'function') {
+      window.posthog.stopSessionRecording();
+    }
+  }
+
   if (isLocalDev) {
     // Create no-op stub for local dev (prevents errors in tracking code)
     window.posthog = {
       capture: function() {},
       identify: function() {},
       reset: function() {},
-      isFeatureEnabled: function() { return false; }
+      isFeatureEnabled: function() { return false; },
+      startSessionRecording: function() {},
+      stopSessionRecording: function() {}
     };
     console.log('[PostHog] Disabled in local development');
+    const storedMode = getStoredPrivacyMode();
+    if (storedMode) {
+      applyReplayPreference(storedMode);
+    }
   } else if (POSTHOG_KEY) {
     // Initialize PostHog only in production with valid key
     !(function(t, e) {
@@ -48,7 +83,7 @@ const POSTHOG_HOST = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://eu.i.postho
             return u.toString(1) + '.people (stub)';
           };
           o =
-            'capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId'.split(
+            'capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId startSessionRecording stopSessionRecording'.split(
               ' '
             );
           for (n = 0; n < o.length; n++) g(u, o[n]);
@@ -62,9 +97,19 @@ const POSTHOG_HOST = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://eu.i.postho
       posthog.init(POSTHOG_KEY, { 
         api_host: POSTHOG_HOST,
         // Automatically track pageviews on history changes (for Astro ViewTransitions)
-        capture_pageview: 'history_change'
+        capture_pageview: 'history_change',
+        // Keep replay off until user explicitly allows it
+        disable_session_recording: true,
+        session_recording: {
+          maskAllInputs: true
+        }
       });
       window.posthog.__initialized = true;
+    }
+
+    const storedMode = getStoredPrivacyMode();
+    if (storedMode) {
+      applyReplayPreference(storedMode);
     }
   } else {
     // No key provided - create no-op stub
@@ -72,8 +117,14 @@ const POSTHOG_HOST = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://eu.i.postho
       capture: function() {},
       identify: function() {},
       reset: function() {},
-      isFeatureEnabled: function() { return false; }
+      isFeatureEnabled: function() { return false; },
+      startSessionRecording: function() {},
+      stopSessionRecording: function() {}
     };
     console.warn('[PostHog] API key not configured');
+    const storedMode = getStoredPrivacyMode();
+    if (storedMode) {
+      applyReplayPreference(storedMode);
+    }
   }
 </script>

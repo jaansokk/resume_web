@@ -103,6 +103,7 @@ export function DownloadPdfButton() {
         isOpen={isModalOpen}
         onClose={handleClose}
         title="Let's stay in touch"
+        buttonOrder="primary-first"
         primaryButton={{
           label: 'Download',
           onClick: handleDownload,

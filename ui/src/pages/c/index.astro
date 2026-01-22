@@ -1,5 +1,6 @@
 ---
 import PostHog from '../../components/posthog.astro';
+import { PrivacyBanner } from '../../components/features/privacy/PrivacyBanner';
 import { ViewTransitions } from 'astro:transitions';
 import SharedConversationApp from '../../components/routes/share/SharedConversationApp';
 ---
@@ -16,6 +17,7 @@ import SharedConversationApp from '../../components/routes/share/SharedConversat
     <PostHog />
   </head>
   <body>
+    <PrivacyBanner client:load />
     <SharedConversationApp client:load />
   </body>
 </html>

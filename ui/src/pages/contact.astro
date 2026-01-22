@@ -1,5 +1,6 @@
 ---
 import PostHog from '../components/posthog.astro';
+import { PrivacyBanner } from '../components/features/privacy/PrivacyBanner';
 import { ViewTransitions } from 'astro:transitions';
 import { ContactView } from '../components/routes/contact/ContactView';
 ---
@@ -16,6 +17,7 @@ import { ContactView } from '../components/routes/contact/ContactView';
     <PostHog />
   </head>
   <body>
+    <PrivacyBanner client:load />
     <ContactView client:load />
   </body>
 </html>
