@@ -174,10 +174,7 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
 
   // Full layout for chat view
   return (
-    <div 
-      className={`${!isStreaming ? 'animate-fade-up opacity-0' : ''} ${message.role === 'user' ? 'text-right' : ''}`}
-      style={!isStreaming ? { animationFillMode: 'forwards', animationDelay: `${index * 100}ms` } : undefined}
-    >
+    <div className={message.role === 'user' ? 'text-right' : ''}>
       <div className={`inline-block max-w-[85%] ${
         message.role === 'user' 
           ? 'bg-[var(--v2-accent-dim)] text-[var(--v2-text)] rounded-3xl rounded-br-lg px-5 py-3'
