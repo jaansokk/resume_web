@@ -189,6 +189,7 @@ class AnthropicClient:
         self.api_key = api_key
         # Note: Structured outputs require Sonnet 4.5, Opus 4.1/4.5, or Haiku 4.5
         self.chat_model = os.environ.get("ANTHROPIC_CHAT_MODEL", "claude-sonnet-4-20250514")
+        self.chat_temperature = os.environ.get("ANTHROPIC_CHAT_TEMPERATURE", 0.7)
         self.router_model = os.environ.get("ANTHROPIC_ROUTER_MODEL", "claude-3-5-haiku-20241022")
         self.router_max_tokens = int(os.environ.get("ANTHROPIC_ROUTER_MAX_TOKENS", "1024"))
         self.answer_max_tokens = int(os.environ.get("ANTHROPIC_ANSWER_MAX_TOKENS", "2048"))
@@ -390,6 +391,7 @@ class AnthropicClient:
             "max_tokens": self.answer_max_tokens,
             "messages": conversation_messages,
             "stream": True,  # Enable streaming
+            "temperature": self.chat_temperature,
         }
         
         if system_content:
