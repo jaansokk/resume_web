@@ -43,6 +43,10 @@ Use these when implementing/changing `/api/chat` and artifact generation:
   - **Answers**: “What does the API return and what must be validated?”
   - **Depends on**: `_specs/qdrant-index-design.md` for payload/schema rules.
 
+- `_specs/thinking-mode.md`
+  - **Use when**: implementing/changing extended thinking (toggle, streaming `event: thinking`, reasoning UI, Anthropic constraints/fallbacks).
+  - **Answers**: “How does thinking mode work end-to-end?”
+
 ---
 
 ## Retrieval schema + ingestion (content → RAG)

@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message } from '../../domain/types';
+import { ThinkingCollapsible } from './ThinkingCollapsible';
 
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:']);
 
@@ -159,6 +160,10 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
               : 'text-left'
           }`}
         >
+          {/* Thinking collapsible for assistant messages */}
+          {isAssistant && message.thinking && !isStreaming && (
+            <ThinkingCollapsible thinking={message.thinking} />
+          )}
           <div
             className={`text-sm leading-relaxed ${
               message.role === 'assistant' ? 'text-[var(--v2-text-secondary)]' : 'text-[var(--v2-text)]'
@@ -180,6 +185,10 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
           ? 'bg-[var(--v2-accent-dim)] text-[var(--v2-text)] rounded-3xl rounded-br-lg px-5 py-3'
           : 'text-left'
       }`}>
+        {/* Thinking collapsible for assistant messages */}
+        {isAssistant && message.thinking && !isStreaming && (
+          <ThinkingCollapsible thinking={message.thinking} />
+        )}
         <div
           className={`text-base leading-relaxed ${
             message.role === 'assistant' ? 'text-[var(--v2-text-secondary)]' : 'text-[var(--v2-text)]'

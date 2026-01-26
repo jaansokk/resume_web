@@ -24,6 +24,7 @@ export interface ChatApiRequest {
     origin: string;
     page: ClientPage;
     ui: ClientUI;
+    thinkingEnabled?: boolean;  // Extended thinking toggle (default: true)
   };
   messages: ChatApiMessage[];
 }
@@ -82,6 +83,7 @@ export interface ChatApiResponse {
   hints?: Hints;
   chips?: string[];
   artifacts?: Artifacts;
+  thinking?: string;  // Extended thinking summary (when enabled)
 }
 
 function getChatApiUrl(): string {
@@ -123,12 +125,14 @@ export async function postChatStream(
   onUiDirective: (ui: UIDirective, hints?: Hints) => void,
   onDone: (response: ChatApiResponse) => void,
   onError: (error: Error) => void,
+  onThinkingDelta?: (delta: string) => void,
 ): Promise<void> {
   /**
    * Streaming version of postChat using Server-Sent Events (SSE).
    * 
    * Events:
    * - event: ui, data: {"ui": {view,...}, "hints": {...}} - Early UI directive (optional)
+   * - event: thinking, data: {"delta": "..."} - Thinking chunks (when thinking enabled)
    * - event: text, data: {"delta": "..."} - Text chunks as they arrive
    * - event: done, data: {ChatApiResponse} - Complete response with artifacts
    * - event: error, data: {"error": "..."} - Error occurred
@@ -184,7 +188,12 @@ export async function postChatStream(
         try {
           const data = JSON.parse(dataStr);
 
-          if (eventType === 'text') {
+          if (eventType === 'thinking') {
+            const delta = data.delta;
+            if (typeof delta === 'string' && onThinkingDelta) {
+              onThinkingDelta(delta);
+            }
+          } else if (eventType === 'text') {
             const delta = data.delta;
             if (typeof delta === 'string') {
               onTextDelta(delta);

@@ -285,4 +285,3 @@ class OpenAIClient:
             response_format=response_format,
             **kwargs
         )
-

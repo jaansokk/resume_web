@@ -3,6 +3,7 @@ import { Header } from '../../../ui/Header';
 import { Modal } from '../../../ui/Modal';
 import { ChatMessage } from '../../../features/chat/ChatMessage';
 import { LoadingIndicator } from '../../../features/chat/LoadingIndicator';
+import { ThinkingCollapsible } from '../../../features/chat/ThinkingCollapsible';
 import { ChatInput } from '../../../features/chat/ChatInput';
 import { StartOverButton } from '../../../features/chat/StartOverButton';
 import { ArtifactsPanel } from '../../../features/artifacts/ArtifactsPanel';
@@ -18,6 +19,7 @@ interface SplitViewProps {
   onSend: (text: string) => void;
   isLoading: boolean;
   streamingText: string | null;
+  streamingThinking?: string | null;
   activeTab: 'brief' | 'experience';
   onTabChange: (tab: 'brief' | 'experience') => void;
   artifacts: Artifacts | null;
@@ -25,6 +27,8 @@ interface SplitViewProps {
   onModalOpen: () => void;
   onModalClose: () => void;
   onStartOver: () => void;
+  thinkingEnabled?: boolean;
+  onThinkingChange?: (enabled: boolean) => void;
 }
 
 export function SplitView({ 
@@ -35,6 +39,7 @@ export function SplitView({
   onSend, 
   isLoading,
   streamingText,
+  streamingThinking,
   activeTab,
   onTabChange,
   artifacts,
@@ -42,6 +47,8 @@ export function SplitView({
   onModalOpen,
   onModalClose,
   onStartOver,
+  thinkingEnabled = true,
+  onThinkingChange,
 }: SplitViewProps) {
   const [showStartOverModal, setShowStartOverModal] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -165,8 +172,13 @@ export function SplitView({
                 <ChatMessage key={idx} message={msg} index={idx} isInSplitView />
               ))}
               
+              {/* Show live reasoning blocks while thinking is streaming */}
+              {isLoading && streamingThinking != null && streamingText === '' && (
+                <ThinkingCollapsible thinking={streamingThinking || ''} isStreaming defaultExpanded />
+              )}
+              
               {/* Show streaming message if active */}
-              {streamingText !== null && (
+              {streamingText !== null && streamingText !== '' && (
                 <ChatMessage 
                   message={{ role: 'assistant', text: streamingText }}
                   index={messages.length}
@@ -175,8 +187,8 @@ export function SplitView({
                 />
               )}
               
-              {/* Show loading dots only before streaming starts */}
-              {isLoading && streamingText === null && <LoadingIndicator isInSplitView />}
+              {/* Show loading dots only before streaming/thinking starts */}
+              {isLoading && streamingText === null && streamingThinking === null && <LoadingIndicator isInSplitView />}
 
               <div ref={chatBottomRef} />
             </div>
@@ -191,6 +203,8 @@ export function SplitView({
               placeholder="Ask about this role..."
               isLoading={isLoading}
               variant="split"
+              thinkingEnabled={thinkingEnabled}
+              onThinkingChange={onThinkingChange}
             />
           </div>
         </div>

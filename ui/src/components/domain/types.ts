@@ -3,6 +3,7 @@ export type ViewMode = 'handshake' | 'chat' | 'split' | 'contact';
 export interface Message {
   role: 'user' | 'assistant';
   text: string;
+  thinking?: string;  // Extended thinking summary (assistant messages only)
 }
 
 export interface QuickReply {

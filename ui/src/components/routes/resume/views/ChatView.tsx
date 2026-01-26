@@ -3,6 +3,7 @@ import { Header } from '../../../ui/Header';
 import { BackgroundOverlay } from '../../../ui/BackgroundOverlay';
 import { ChatMessage } from '../../../features/chat/ChatMessage';
 import { LoadingIndicator } from '../../../features/chat/LoadingIndicator';
+import { ThinkingCollapsible } from '../../../features/chat/ThinkingCollapsible';
 import { ChipList } from '../../../features/chat/ChipList';
 import { ChatInput } from '../../../features/chat/ChatInput';
 import type { Message } from '../../../domain/types';
@@ -14,9 +15,12 @@ interface ChatViewProps {
   onSend: (text: string) => void;
   isLoading: boolean;
   streamingText: string | null;
+  streamingThinking?: string | null;
   chips: string[];
   onChipSelect: (chip: string) => void;
   isExiting?: boolean;
+  thinkingEnabled?: boolean;
+  onThinkingChange?: (enabled: boolean) => void;
 }
 
 export function ChatView({ 
@@ -26,9 +30,12 @@ export function ChatView({
   onSend, 
   isLoading,
   streamingText,
+  streamingThinking,
   chips,
   onChipSelect,
   isExiting = false,
+  thinkingEnabled = true,
+  onThinkingChange,
 }: ChatViewProps) {
   const [contentOverflows, setContentOverflows] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -133,8 +140,13 @@ export function ChatView({
               <ChatMessage key={idx} message={msg} index={idx} />
             ))}
             
+            {/* Show live reasoning blocks while thinking is streaming */}
+            {isLoading && streamingThinking != null && streamingText === '' && (
+              <ThinkingCollapsible thinking={streamingThinking || ''} isStreaming defaultExpanded />
+            )}
+            
             {/* Show streaming message if active */}
-            {streamingText !== null && (
+            {streamingText !== null && streamingText !== '' && (
               <ChatMessage 
                 message={{ role: 'assistant', text: streamingText }}
                 index={messages.length}
@@ -142,8 +154,8 @@ export function ChatView({
               />
             )}
             
-            {/* Show loading dots only before streaming starts */}
-            {isLoading && streamingText === null && <LoadingIndicator />}
+            {/* Show loading dots only before streaming/thinking starts */}
+            {isLoading && streamingText === null && streamingThinking === null && <LoadingIndicator />}
           </div>
           
           {/* Follow-up chips */}
@@ -170,6 +182,8 @@ export function ChatView({
             placeholder="Type your message..."
             isLoading={isLoading}
             variant="chat"
+            thinkingEnabled={thinkingEnabled}
+            onThinkingChange={onThinkingChange}
           />
         </div>
       </div>

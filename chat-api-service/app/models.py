@@ -22,6 +22,7 @@ class Client(BaseModel):
     origin: str | None = None
     page: ClientPage | None = None
     ui: ClientUI | None = None
+    thinkingEnabled: bool | None = None  # Extended thinking toggle (default: True)
 
 
 class ChatMessage(BaseModel):
@@ -98,6 +99,7 @@ class ChatResponse(BaseModel):
     hints: Hints = Field(default_factory=Hints)
     chips: list[str] = Field(default_factory=list)
     artifacts: Artifacts = Field(default_factory=Artifacts)
+    thinking: str | None = None  # Extended thinking summary (when enabled)
 
 
 # Contact form models

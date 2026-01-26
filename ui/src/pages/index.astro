@@ -105,6 +105,12 @@ import { ViewTransitions } from 'astro:transitions';
       0% { transform: translateX(-100%); }
       100% { transform: translateX(100%); }
     }
+
+    /* Shimmering outline (used while reasoning is streaming) */
+    @keyframes v2-outline-shimmer {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 220% 50%; }
+    }
     
     .streaming-gradient {
       position: absolute;

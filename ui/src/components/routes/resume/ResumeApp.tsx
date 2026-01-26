@@ -7,6 +7,7 @@ import { ChatView } from './views/ChatView';
 import { SplitView } from './views/SplitView';
 import { markHasSeenSplit, clearHasSeenSplit } from '../../../utils/navState';
 import { loadConversationState, saveConversationState, clearConversationState } from '../../../utils/conversationState';
+import { useThinkingMode } from '../../features/chat/ThinkingToggle';
 import { 
   trackChatMessage, 
   trackSplitViewOpened, 
@@ -60,16 +61,19 @@ export default function ConceptAApp() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState<string | null>(null);
+  const [streamingThinking, setStreamingThinking] = useState<string | null>(null); // Thinking text during stream
   const [viewMode, setViewMode] = useState<MainViewMode>('handshake'); // Always start with handshake for SSR
   const [chips, setChips] = useState<string[]>([]);
   const [artifacts, setArtifacts] = useState<Artifacts | null>(null);
   const [activeTab, setActiveTab] = useState<'brief' | 'experience'>('brief');
   const [showModal, setShowModal] = useState(false);
   const [transitionState, setTransitionState] = useState<TransitionState>('idle');
+  const [thinkingEnabled, setThinkingEnabled] = useThinkingMode();
   const viewModeRef = useRef<MainViewMode>(viewMode);
   const transitionStateRef = useRef<TransitionState>(transitionState);
   const artifactsRef = useRef<Artifacts | null>(artifacts);
   const pendingSplitRef = useRef<{ activeTab?: 'brief' | 'experience' } | null>(null);
+  const thinkingTextRef = useRef<string>(''); // Accumulate thinking for final message
 
   useEffect(() => {
     viewModeRef.current = viewMode;
@@ -161,6 +165,8 @@ export default function ConceptAApp() {
     setIsLoading(true);
     setChips([]);
     setStreamingText(''); // Start with empty streaming text
+    setStreamingThinking(thinkingEnabled ? '' : null); // Start thinking if enabled
+    thinkingTextRef.current = ''; // Reset accumulated thinking
 
     // Track chat message
     trackChatMessage({
@@ -188,11 +194,14 @@ export default function ConceptAApp() {
             origin: window.location.origin,
             page: { path: window.location.pathname },
             ui: clientUI,
+            thinkingEnabled,
           },
           messages: newMessages.map(m => ({ role: m.role, text: m.text })),
         },
         // onTextDelta
         (delta: string) => {
+          // Clear thinking display when text starts
+          setStreamingThinking(null);
           setStreamingText(prev => (prev ?? '') + delta);
         },
         // onUiDirective (early)
@@ -211,13 +220,15 @@ export default function ConceptAApp() {
         },
         // onDone
         (response) => {
-          // Add complete assistant message
+          // Add complete assistant message with thinking if available
           const assistantMessage: Message = {
             role: 'assistant',
             text: response.assistant.text,
+            thinking: response.thinking || thinkingTextRef.current || undefined,
           };
           setMessages(prev => [...prev, assistantMessage]);
           setStreamingText(null); // Clear streaming text
+          setStreamingThinking(null); // Clear streaming thinking
 
           const responseArtifacts = response.artifacts ?? null;
           const canRender = hasRenderableArtifacts(responseArtifacts);
@@ -256,9 +267,15 @@ export default function ConceptAApp() {
           };
           setMessages(prev => [...prev, errorMessage]);
           setStreamingText(null);
+          setStreamingThinking(null);
           setIsLoading(false);
           pendingSplitRef.current = null;
-        }
+        },
+        // onThinkingDelta
+        (delta: string) => {
+          thinkingTextRef.current += delta;
+          setStreamingThinking(prev => (prev ?? '') + delta);
+        },
       );
     } catch (err) {
       const errorMessage: Message = {
@@ -324,9 +341,12 @@ export default function ConceptAApp() {
           onSend={handleSend}
           isLoading={isLoading}
           streamingText={streamingText}
+          streamingThinking={streamingThinking}
           chips={chips}
           onChipSelect={handleChipSelect}
           isExiting={transitionState === 'chat-to-split'}
+          thinkingEnabled={thinkingEnabled}
+          onThinkingChange={setThinkingEnabled}
         />
       );
 
@@ -340,6 +360,7 @@ export default function ConceptAApp() {
           onSend={handleSend}
           isLoading={isLoading}
           streamingText={streamingText}
+          streamingThinking={streamingThinking}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           artifacts={artifacts}
@@ -347,6 +368,8 @@ export default function ConceptAApp() {
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}
           onStartOver={handleStartOver}
+          thinkingEnabled={thinkingEnabled}
+          onThinkingChange={setThinkingEnabled}
         />
       );
 

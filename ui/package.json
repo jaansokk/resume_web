@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "sync:cv:pdf": "node scripts/sync-cv-pdf.mjs",
+    "generate:cv:md": "node scripts/generate-cv-md.mjs",
     "dev": "npm run sync:cv:pdf && astro dev",
     "build": "npm run sync:cv:pdf && astro build",
     "preview": "astro preview",

@@ -177,6 +177,7 @@ class AnthropicClient:
     """
     Direct HTTP client for Anthropic API using httpx.
     Provides proper async streaming without SDK blocking issues.
+    Supports extended thinking for enhanced reasoning.
     """
     
     BASE_URL = "https://api.anthropic.com/v1"
@@ -189,12 +190,16 @@ class AnthropicClient:
         self.api_key = api_key
         # Note: Structured outputs require Sonnet 4.5, Opus 4.1/4.5, or Haiku 4.5
         self.chat_model = os.environ.get("ANTHROPIC_CHAT_MODEL", "claude-sonnet-4-20250514")
-        self.chat_temperature = os.environ.get("ANTHROPIC_CHAT_TEMPERATURE", 0.7)
+        self.chat_temperature = float(os.environ.get("ANTHROPIC_CHAT_TEMPERATURE", "0.7"))
         self.router_model = os.environ.get("ANTHROPIC_ROUTER_MODEL", "claude-3-5-haiku-20241022")
         self.router_max_tokens = int(os.environ.get("ANTHROPIC_ROUTER_MAX_TOKENS", "1024"))
         self.answer_max_tokens = int(os.environ.get("ANTHROPIC_ANSWER_MAX_TOKENS", "2048"))
         # Structured outputs are in beta - enable with ANTHROPIC_USE_STRUCTURED_OUTPUTS=1
         self.use_structured_outputs = os.environ.get("ANTHROPIC_USE_STRUCTURED_OUTPUTS", "0").strip() == "1"
+        
+        # Extended thinking configuration
+        # Budget tokens for thinking (default 10000, max depends on model)
+        self.thinking_budget_tokens = int(os.environ.get("ANTHROPIC_THINKING_BUDGET_TOKENS", "10000"))
         
         # Validate model compatibility with structured outputs
         if self.use_structured_outputs:
@@ -202,6 +207,7 @@ class AnthropicClient:
         
         # Create async HTTP client
         self._client: httpx.AsyncClient | None = None
+        self._client_with_thinking: httpx.AsyncClient | None = None
     
     def _validate_structured_output_support(self) -> None:
         """Check if configured models support structured outputs and log warnings."""
@@ -217,30 +223,51 @@ class AnthropicClient:
                     f"If you see 400 errors, update ANTHROPIC_{model_type.upper()}_MODEL env var."
                 )
     
-    async def _get_client(self) -> httpx.AsyncClient:
+    async def _get_client(self, with_thinking: bool = False) -> httpx.AsyncClient:
         """Get or create the async HTTP client."""
-        if self._client is None:
-            headers = {
-                "anthropic-version": self.API_VERSION,
-                "x-api-key": self.api_key,
-                "content-type": "application/json",
-            }
-            # Add beta header for structured outputs if enabled
-            if self.use_structured_outputs:
-                headers["anthropic-beta"] = "structured-outputs-2025-11-13"
-            
-            self._client = httpx.AsyncClient(
-                base_url=self.BASE_URL,
-                headers=headers,
-                timeout=60.0,
-            )
-        return self._client
+        if with_thinking:
+            if self._client_with_thinking is None:
+                headers = {
+                    "anthropic-version": self.API_VERSION,
+                    "x-api-key": self.api_key,
+                    "content-type": "application/json",
+                }
+                # Add beta header for structured outputs if enabled
+                if self.use_structured_outputs:
+                    headers["anthropic-beta"] = "structured-outputs-2025-11-13"
+                
+                self._client_with_thinking = httpx.AsyncClient(
+                    base_url=self.BASE_URL,
+                    headers=headers,
+                    timeout=120.0,  # Longer timeout for thinking
+                )
+            return self._client_with_thinking
+        else:
+            if self._client is None:
+                headers = {
+                    "anthropic-version": self.API_VERSION,
+                    "x-api-key": self.api_key,
+                    "content-type": "application/json",
+                }
+                # Add beta header for structured outputs if enabled
+                if self.use_structured_outputs:
+                    headers["anthropic-beta"] = "structured-outputs-2025-11-13"
+                
+                self._client = httpx.AsyncClient(
+                    base_url=self.BASE_URL,
+                    headers=headers,
+                    timeout=60.0,
+                )
+            return self._client
     
     async def close(self) -> None:
-        """Close the HTTP client."""
+        """Close the HTTP clients."""
         if self._client is not None:
             await self._client.aclose()
             self._client = None
+        if self._client_with_thinking is not None:
+            await self._client_with_thinking.aclose()
+            self._client_with_thinking = None
 
     async def chat_json(
         self,
@@ -356,7 +383,10 @@ class AnthropicClient:
         )
 
     async def answer_stream(
-        self, *, messages: list[dict[str, str]]
+        self,
+        *,
+        messages: list[dict[str, str]],
+        thinking_enabled: bool = False,
     ) -> AsyncGenerator[tuple[str, str | None], None]:
         """
         Stream answer with true async streaming using httpx.
@@ -365,7 +395,14 @@ class AnthropicClient:
         We extract and stream only the assistant.text portion for display,
         while accumulating the full JSON for final parsing.
         
+        When thinking_enabled=True, also streams thinking content before text.
+        
+        Args:
+            messages: List of messages (including system message)
+            thinking_enabled: Whether to enable extended thinking mode
+        
         Yields tuples of (event_type, data):
+        - ("thinking", delta_text): Thinking content as it arrives (when thinking_enabled)
         - ("text", delta_text): Just the assistant text content as it arrives
         - ("done", full_json): Complete response JSON string
         """
@@ -391,8 +428,19 @@ class AnthropicClient:
             "max_tokens": self.answer_max_tokens,
             "messages": conversation_messages,
             "stream": True,  # Enable streaming
-            "temperature": self.chat_temperature,
         }
+        
+        # Extended thinking configuration
+        # When thinking is enabled, temperature MUST be 1
+        if thinking_enabled:
+            request_body["temperature"] = 1
+            request_body["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": self.thinking_budget_tokens,
+            }
+            logger.info(f"Extended thinking enabled with budget_tokens={self.thinking_budget_tokens}")
+        else:
+            request_body["temperature"] = self.chat_temperature
         
         if system_content:
             request_body["system"] = [
@@ -403,20 +451,27 @@ class AnthropicClient:
                 }
             ]
 
-        # Add structured output schema if enabled
-        if self.use_structured_outputs:
+        # Add structured output schema if enabled (not compatible with thinking)
+        # When thinking is enabled, we can't use structured outputs
+        if self.use_structured_outputs and not thinking_enabled:
             request_body["output_format"] = {
                 "type": "json_schema",
                 "schema": ANSWER_SCHEMA
             }
             logger.info(f"Using structured outputs for streaming with schema keys: {list(ANSWER_SCHEMA.get('properties', {}).keys())}")
             logger.debug(f"Full request body output_format: {json.dumps(request_body.get('output_format', {}), indent=2)}")
+        elif thinking_enabled and self.use_structured_outputs:
+            logger.info("Structured outputs disabled (incompatible with extended thinking)")
 
-        client = await self._get_client()
+        client = await self._get_client(with_thinking=thinking_enabled)
         
         # Stream the response using httpx
-        # We need to extract just the assistant.text from the JSON structure
         accumulated_json = ""
+        accumulated_thinking = ""
+        
+        # Track which content block we're in
+        current_block_type: str | None = None
+        current_block_index: int = -1
         
         # State machine to extract assistant.text from streaming JSON
         # The JSON looks like: {"assistant":{"text":"..."},"ui":{...},...}
@@ -451,10 +506,27 @@ class AnthropicClient:
                         # Handle different event types from Anthropic's streaming API
                         event_type = data.get("type", "")
                         
-                        if event_type == "content_block_delta":
-                            # Text delta event
+                        if event_type == "content_block_start":
+                            # New content block starting
+                            block = data.get("content_block", {})
+                            current_block_type = block.get("type")
+                            current_block_index = data.get("index", -1)
+                            logger.debug(f"Content block start: type={current_block_type}, index={current_block_index}")
+                        
+                        elif event_type == "content_block_delta":
+                            # Content delta event
                             delta_data = data.get("delta", {})
-                            if delta_data.get("type") == "text_delta":
+                            delta_type = delta_data.get("type", "")
+                            
+                            if delta_type == "thinking_delta":
+                                # Extended thinking content
+                                thinking_chunk = delta_data.get("thinking", "")
+                                if thinking_chunk:
+                                    accumulated_thinking += thinking_chunk
+                                    yield ("thinking", thinking_chunk)
+                            
+                            elif delta_type == "text_delta":
+                                # Regular text content
                                 chunk = delta_data.get("text", "")
                                 if chunk:
                                     accumulated_json += chunk
@@ -512,6 +584,11 @@ class AnthropicClient:
                                         
                                         # state == 3: done with text, just accumulate JSON
                         
+                        elif event_type == "content_block_stop":
+                            # Content block ended
+                            logger.debug(f"Content block stop: index={data.get('index', -1)}")
+                            current_block_type = None
+                        
                         elif event_type == "message_stop":
                             # Stream complete
                             break
@@ -522,6 +599,8 @@ class AnthropicClient:
         
         # After stream completes, yield the full JSON
         content = accumulated_json.strip()
+        
+        logger.info(f"Raw accumulated JSON length: {len(content)}, starts with: {content[:100] if content else 'EMPTY'}")
 
         # Strip markdown code blocks if present
         if content.startswith("```json"):
@@ -529,13 +608,17 @@ class AnthropicClient:
             if content.endswith("```"):
                 content = content[:-3]
             content = content.strip()
+            logger.info("Stripped ```json code fence")
         elif content.startswith("```"):
             content = content[3:]
             if content.endswith("```"):
                 content = content[:-3]
             content = content.strip()
+            logger.info("Stripped ``` code fence")
 
         content = _extract_json_payload(content)
+        
+        logger.info(f"Final JSON payload length: {len(content)}, starts with: {content[:100] if content else 'EMPTY'}")
 
         yield ("done", content)
 
@@ -564,4 +647,3 @@ def _extract_json_payload(content: str) -> str:
         return candidate
     except Exception:
         return content
-

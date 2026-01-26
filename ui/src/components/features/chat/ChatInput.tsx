@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ThinkingToggle } from './ThinkingToggle';
 
 interface ChatInputProps {
   value: string;
@@ -7,6 +8,8 @@ interface ChatInputProps {
   placeholder: string;
   isLoading: boolean;
   variant?: 'handshake' | 'chat' | 'split';
+  thinkingEnabled?: boolean;
+  onThinkingChange?: (enabled: boolean) => void;
 }
 
 export function ChatInput({ 
@@ -15,7 +18,9 @@ export function ChatInput({
   onSend, 
   placeholder, 
   isLoading,
-  variant = 'chat'
+  variant = 'chat',
+  thinkingEnabled = true,
+  onThinkingChange,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -55,6 +60,12 @@ export function ChatInput({
 
   return (
     <div className={`${containerClass} rounded-[1.625rem] overflow-hidden flex items-end gap-2 px-2 py-1`}>
+      {/* Thinking toggle - show only in chat/split variants */}
+      {onThinkingChange && variant !== 'handshake' && (
+        <div className="self-center ml-2">
+          <ThinkingToggle enabled={thinkingEnabled} onChange={onThinkingChange} />
+        </div>
+      )}
       <textarea
         ref={textareaRef}
         value={value}

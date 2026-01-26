@@ -8,9 +8,32 @@ This doc exists so the **API contract** (`_specs/chat-api-rag-contract.md`) can 
 
 - **UI**: public website (serves the v2 flow and the shared conversation view at `/c/{shareId}`).
 - **Reverse proxy**: same-origin routing for `/api/*` (avoids CORS).
-- **Chat API service**: orchestrates RAG + response JSON for the UI.
+- **Chat API service**: orchestrates RAG + response JSON for the UI via agent-based pipeline.
 - **Vector store**: stores embeddings and content payloads (details in `_specs/qdrant-index-design.md`).
 - **Snapshot store (DynamoDB)**: stores immutable share snapshots created via Share modal.
+
+---
+
+## Chat pipeline architecture (agent-based)
+
+The chat service uses a modular agent-based pipeline for request handling:
+
+```
+Request → RouterAgent → RetrievalAgent → ResponseAgent → ValidatorAgent → Response
+```
+
+**Agents:**
+- **RouterAgent**: Analyzes user intent, produces retrieval query and UI recommendations.
+- **RetrievalAgent**: Embeds query, searches Qdrant, guards against split view without UI-visible items.
+- **ResponseAgent**: Generates assistant response with optional extended thinking.
+- **ValidatorAgent**: Sanitizes/validates output, enforces grounding rules, merges artifacts.
+
+**Orchestration:**
+- Currently sequential (via `ChatOrchestrator`).
+- Designed for future LangGraph migration (agents as graph nodes for parallel execution).
+
+**Extended thinking (optional):**
+- See `_specs/thinking-mode.md` for end-to-end behavior and constraints.
 
 ---
 
