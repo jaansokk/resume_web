@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 
 interface ThinkingCollapsibleProps {
   /** The thinking text to display */
@@ -114,25 +115,27 @@ export function ThinkingCollapsible({
       ? 'opacity-0 [clip-path:inset(0_100%_0_0)] group-hover:opacity-100 group-hover:[clip-path:inset(0_0%_0_0)]'
       : 'opacity-100 [clip-path:inset(0_0%_0_0)]';
 
-  const outerFrameClasses = isStreaming
-    ? 'p-[1px] rounded-lg bg-[linear-gradient(90deg,rgba(42,42,42,0.5),rgba(164,198,190,0.35),rgba(42,42,42,0.5))] bg-[length:220%_100%] animate-[v2-outline-shimmer_1.25s_linear_infinite]'
-    : '';
+  const innerPanelClasses = 'rounded-lg';
 
-  const innerPanelClasses = isStreaming
-    ? 'rounded-[7px] bg-[var(--v2-bg-elevated)]/30'
+  // Intentionally use inline backgroundColor:
+  // - Tailwind's "/opacity" suffix can't adjust CSS-variable colors reliably.
+  // - In split view the surrounding surface already uses `--v2-bg-elevated`, so reusing it
+  //   can look like "no background". A subtle white overlay reads as "slightly lighter".
+  const innerPanelStyle: CSSProperties = isStreaming
+    ? { backgroundColor: 'rgba(20,20,20,0.30)' }
     : isExpanded
-      ? 'rounded-lg bg-[var(--v2-bg-elevated)]/38'
-      : 'rounded-lg bg-transparent';
+      ? { backgroundColor: 'rgba(255,255,255,0.035)' }
+      : { backgroundColor: 'transparent' };
 
   return (
-    <div className={`mb-3 ${outerFrameClasses}`}>
-      <div className={`${innerPanelClasses} overflow-hidden`}>
+    <div className="mb-3">
+      <div className={`${innerPanelClasses} overflow-hidden`} style={innerPanelStyle}>
         {/* Header - always visible */}
         <button
           type="button"
           onClick={() => setIsExpanded((v) => !v)}
-          className={`group w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-            isExpanded ? 'bg-transparent' : 'bg-transparent hover:bg-[var(--v2-bg-elevated)]/20'
+          className={`group w-full flex items-center gap-2 py-2 text-left transition-colors ${
+            isExpanded ? 'bg-transparent' : 'bg-transparent hover:bg-white/[0.03]'
           }`}
           aria-expanded={isExpanded}
           aria-label="Reasoning"
@@ -153,27 +156,29 @@ export function ThinkingCollapsible({
             <polyline points="9 18 15 12 9 6" />
           </svg>
 
-          {/* Lightbulb icon */}
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-4 h-4 text-[var(--v2-accent)]/70 flex-shrink-0"
-            aria-hidden="true"
-          >
-            <path d="M9 18h6" />
-            <path d="M10 22h4" />
-            <path d="M12 2a7 7 0 0 0-4 12c.6.5 1 1.2 1 2v1h6v-1c0-.8.4-1.5 1-2a7 7 0 0 0-4-12Z" />
-          </svg>
+          {/* Lightbulb icon + title (shimmer only while streaming) */}
+          <span className={`flex items-center gap-2 ${isStreaming ? 'v2-mask-shimmer' : ''}`}>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-4 h-4 text-[var(--v2-text-secondary)] flex-shrink-0"
+              aria-hidden="true"
+            >
+              <path d="M9 18h6" />
+              <path d="M10 22h4" />
+              <path d="M12 2a7 7 0 0 0-4 12c.6.5 1 1.2 1 2v1h6v-1c0-.8.4-1.5 1-2a7 7 0 0 0-4-12Z" />
+            </svg>
 
-          {/* Title (collapsed hover reveal when finished) */}
-          <span
-            className={`text-xs font-medium text-[var(--v2-text-secondary)] transition-[opacity,clip-path] duration-300 ease-out ${headerTitleClasses}`}
-          >
-            Reasoning
+            {/* Title (collapsed hover reveal when finished) */}
+            <span
+              className={`text-xs font-medium text-[var(--v2-text-secondary)] transition-[opacity,clip-path] duration-300 ease-out ${headerTitleClasses}`}
+            >
+              Reasoning
+            </span>
           </span>
         </button>
 
@@ -181,7 +186,7 @@ export function ThinkingCollapsible({
         {isExpanded && (
           <div className={`${isStreaming ? '' : 'mt-0'} px-3 pb-2`}>
             <div
-              className="text-sm text-[var(--v2-text-secondary)] whitespace-pre-wrap leading-relaxed overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
+              className="pl-4 text-sm text-[var(--v2-text-secondary)] whitespace-pre-wrap leading-relaxed overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
               style={{ opacity: contentOpacity, transition: 'opacity 200ms ease' }}
             >
               {displayBlock}

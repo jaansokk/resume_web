@@ -30,6 +30,7 @@ import SharedConversationApp from '../../components/routes/share/SharedConversat
     :root {
       --v2-bg: #0a0a0a;
       --v2-bg-elevated: #141414;
+      --v2-bg-elevated-rgb: 20 20 20;
       --v2-bg-card: #1a1a1a;
       --v2-text: #e6e6e6;
       --v2-text-secondary: #9f9f9f;
@@ -57,5 +58,30 @@ import SharedConversationApp from '../../components/routes/share/SharedConversat
       background: var(--v2-bg);
       color: var(--v2-text);
       min-height: 100vh;
+    }
+
+    /* Alpha-mask shimmer (used for Reasoning label/icon while streaming) */
+    @keyframes v2-mask-shimmer {
+      0% { -webkit-mask-position: 200% 0; mask-position: 200% 0; }
+      100% { -webkit-mask-position: -200% 0; mask-position: -200% 0; }
+    }
+
+    .v2-mask-shimmer {
+      display: inline-flex;
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        rgba(0,0,0,0.20) 0%,
+        rgba(0,0,0,1.00) 45%,
+        rgba(0,0,0,0.20) 70%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        rgba(0,0,0,0.20) 0%,
+        rgba(0,0,0,1.00) 45%,
+        rgba(0,0,0,0.20) 70%
+      );
+      -webkit-mask-size: 200% 100%;
+      mask-size: 200% 100%;
+      animation: v2-mask-shimmer 1.25s ease-in-out infinite;
     }
   </style>
