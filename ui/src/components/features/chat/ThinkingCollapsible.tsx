@@ -75,6 +75,8 @@ export function ThinkingCollapsible({
     if (isStreaming) setIsExpanded(true);
   }, [isStreaming]);
 
+  const fullThinking = useMemo(() => normalizeNewlines(thinking || '').trimEnd(), [thinking]);
+
   const latestBlock = useMemo(() => extractLatestBlock(thinking, isStreaming), [thinking, isStreaming]);
   const [displayBlock, setDisplayBlock] = useState<string | null>(latestBlock);
   const [contentOpacity, setContentOpacity] = useState(1);
@@ -108,7 +110,11 @@ export function ThinkingCollapsible({
     }
   }, [displayBlock, latestBlock]);
 
-  if (!displayBlock || displayBlock.trim().length === 0) return null;
+  if (isStreaming) {
+    if (!displayBlock || displayBlock.trim().length === 0) return null;
+  } else {
+    if (!fullThinking.trim()) return null;
+  }
 
   const headerTitleClasses =
     !isExpanded && !isStreaming
@@ -182,15 +188,23 @@ export function ThinkingCollapsible({
           </span>
         </button>
 
-        {/* Expanded content (latest block only, clamped to 4 lines) */}
+        {/* Expanded content
+            - Streaming: latest completed block, clamped to 4 lines (intentional)
+            - Finished: full reasoning (no clamp) */}
         {isExpanded && (
           <div className={`${isStreaming ? '' : 'mt-0'} px-3 pb-2`}>
-            <div
-              className="pl-4 text-sm text-[var(--v2-text-secondary)] whitespace-pre-wrap leading-relaxed overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-              style={{ opacity: contentOpacity, transition: 'opacity 200ms ease' }}
-            >
-              {displayBlock}
-            </div>
+            {isStreaming ? (
+              <div
+                className="pl-4 text-sm text-[var(--v2-text-secondary)] whitespace-pre-wrap leading-relaxed overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
+                style={{ opacity: contentOpacity, transition: 'opacity 200ms ease' }}
+              >
+                {displayBlock}
+              </div>
+            ) : (
+              <div className="pl-4 text-sm text-[var(--v2-text-secondary)] whitespace-pre-wrap leading-relaxed">
+                {fullThinking}
+              </div>
+            )}
           </div>
         )}
       </div>
