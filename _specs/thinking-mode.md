@@ -52,7 +52,7 @@ flowchart TB
 
 - **User-visible reasoning**: show a “thinking” phase before the final answer, then show a collapsible reasoning section above the answer.
 - **Toggleable**: users can disable thinking mode (old/simple mode remains available).
-- **Default on**: thinking is enabled by default.
+- **Default off**: thinking is disabled by default.
 - **Streaming-first**: the UI should feel responsive while thinking is happening.
 - **Future-proof**: backend structured as discrete agents so it can migrate to LangGraph later.
 
@@ -62,9 +62,9 @@ flowchart TB
 
 ### Toggle
 
-- **Default**: enabled.
+- **Default**: disabled.
 - **Persistence**: stored in localStorage.
-- **Placement**: small toggle icon near the input (chat + split views).
+- **Placement**: small toggle icon near the input (handshake + chat + split views).
 
 ### Streaming behavior (UI)
 
@@ -89,7 +89,7 @@ This spec complements `_specs/chat-api-rag-contract.md`. The baseline shapes rem
 ### Request
 
 - **`client.thinkingEnabled?: boolean`**
-  - default: `true`
+  - default: `false`
   - when `true`, server attempts to use extended thinking (Anthropic) and streams thinking deltas
 
 ### Response

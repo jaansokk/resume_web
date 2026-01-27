@@ -34,7 +34,7 @@ export function ChatView({
   chips,
   onChipSelect,
   isExiting = false,
-  thinkingEnabled = true,
+  thinkingEnabled = false,
   onThinkingChange,
 }: ChatViewProps) {
   const [contentOverflows, setContentOverflows] = useState(false);

@@ -57,7 +57,7 @@ export function ThinkingToggle({ enabled, onChange }: ThinkingToggleProps) {
  * Hook to manage thinking mode preference with localStorage persistence.
  */
 export function useThinkingMode(): [boolean, (enabled: boolean) => void] {
-  const [enabled, setEnabled] = useState(true); // Default to enabled
+  const [enabled, setEnabled] = useState(false); // Default to disabled
 
   // Load from localStorage on mount
   useEffect(() => {

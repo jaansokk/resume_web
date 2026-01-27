@@ -47,7 +47,7 @@ export function SplitView({
   onModalOpen,
   onModalClose,
   onStartOver,
-  thinkingEnabled = true,
+  thinkingEnabled = false,
   onThinkingChange,
 }: SplitViewProps) {
   const [showStartOverModal, setShowStartOverModal] = useState(false);

@@ -19,7 +19,7 @@ export function ChatInput({
   placeholder, 
   isLoading,
   variant = 'chat',
-  thinkingEnabled = true,
+  thinkingEnabled = false,
   onThinkingChange,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -60,8 +60,8 @@ export function ChatInput({
 
   return (
     <div className={`${containerClass} rounded-[1.625rem] overflow-hidden flex items-end gap-2 px-2 py-1`}>
-      {/* Thinking toggle - show only in chat/split variants */}
-      {onThinkingChange && variant !== 'handshake' && (
+      {/* Thinking toggle */}
+      {onThinkingChange && (
         <div className="self-center ml-2">
           <ThinkingToggle enabled={thinkingEnabled} onChange={onThinkingChange} />
         </div>

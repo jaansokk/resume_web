@@ -339,6 +339,8 @@ export default function ConceptAApp() {
           onInputChange={setInputValue}
           onSend={handleSend}
           isLoading={isLoading}
+          thinkingEnabled={thinkingEnabled}
+          onThinkingChange={setThinkingEnabled}
         />
       );
 

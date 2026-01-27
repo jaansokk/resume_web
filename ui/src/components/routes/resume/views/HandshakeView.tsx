@@ -9,6 +9,8 @@ interface HandshakeViewProps {
   onInputChange: (value: string) => void;
   onSend: (text: string) => void;
   isLoading: boolean;
+  thinkingEnabled?: boolean;
+  onThinkingChange?: (enabled: boolean) => void;
 }
 
 export function HandshakeView({ 
@@ -16,6 +18,8 @@ export function HandshakeView({
   onInputChange, 
   onSend, 
   isLoading,
+  thinkingEnabled,
+  onThinkingChange,
 }: HandshakeViewProps) {
   // IMPORTANT: Keep SSR and client initial render deterministic.
   // This view previously read sessionStorage during render to decide whether to play an intro.
@@ -72,6 +76,8 @@ export function HandshakeView({
               placeholder="Or tell me what you're looking for..."
               isLoading={isLoading}
               variant="handshake"
+              thinkingEnabled={thinkingEnabled}
+              onThinkingChange={onThinkingChange}
             />
           </div>
         </div>
