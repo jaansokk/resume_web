@@ -79,7 +79,12 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
           conversationId,
           createdAt: new Date().toISOString(),
           ui: { view: 'split', split: { activeTab } },
-          messages: messages.map((m) => ({ role: m.role, text: m.text })),
+          messages: messages.map((m) => ({
+            role: m.role,
+            text: m.text,
+            ...(m.role === 'assistant' && m.thinking ? { thinking: m.thinking } : {}),
+            ...(m.role === 'assistant' && m.metrics ? { metrics: m.metrics } : {}),
+          })),
           artifacts: {
             fitBrief: artifacts!.fitBrief!,
             relevantExperience: artifacts!.relevantExperience!,

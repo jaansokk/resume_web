@@ -83,6 +83,13 @@ function normalizeBulletsForMarkdown(input: string): string {
   return out.join('\n');
 }
 
+function formatMetrics(metrics: NonNullable<Message['metrics']>): string {
+  const seconds = Math.max(0, metrics.elapsedMs) / 1000;
+  const s = seconds >= 10 ? seconds.toFixed(0) : seconds.toFixed(1);
+  const t = Math.max(0, Math.round(metrics.outputTokens));
+  return `${s}s / ${t}t`;
+}
+
 export function ChatMessage({ message, index, isInSplitView = false, isStreaming = false }: ChatMessageProps) {
   // Cursor style for streaming
   const cursor = isStreaming ? (
@@ -90,6 +97,7 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
   ) : null;
 
   const isAssistant = message.role === 'assistant';
+  const metricsLabel = isAssistant && !isStreaming && message.metrics ? formatMetrics(message.metrics) : null;
 
   const markdown = isAssistant ? (
     <ReactMarkdown
@@ -154,12 +162,20 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
     return (
       <div className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
         <div
-          className={`max-w-[85%] ${
+          className={`group relative max-w-[85%] ${
             message.role === 'user'
               ? 'bg-[var(--v2-accent-dim)] text-[var(--v2-text)] rounded-3xl rounded-br-lg px-5 py-3'
               : 'text-left'
           }`}
         >
+          {metricsLabel && (
+            <span
+              className="absolute left-full top-0 ml-2 text-xs text-[var(--v2-text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none"
+              aria-label="Response metrics"
+            >
+              {metricsLabel}
+            </span>
+          )}
           {/* Thinking collapsible for assistant messages */}
           {isAssistant && message.thinking && !isStreaming && (
             <ThinkingCollapsible thinking={message.thinking} />
@@ -180,11 +196,19 @@ export function ChatMessage({ message, index, isInSplitView = false, isStreaming
   // Full layout for chat view
   return (
     <div className={message.role === 'user' ? 'text-right' : ''}>
-      <div className={`inline-block max-w-[85%] ${
+      <div className={`group relative inline-block max-w-[85%] ${
         message.role === 'user' 
           ? 'bg-[var(--v2-accent-dim)] text-[var(--v2-text)] rounded-3xl rounded-br-lg px-5 py-3'
           : 'text-left'
       }`}>
+        {metricsLabel && (
+          <span
+            className="absolute left-full top-0 ml-2 text-xs text-[var(--v2-text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none"
+            aria-label="Response metrics"
+          >
+            {metricsLabel}
+          </span>
+        )}
         {/* Thinking collapsible for assistant messages */}
         {isAssistant && message.thinking && !isStreaming && (
           <ThinkingCollapsible thinking={message.thinking} />

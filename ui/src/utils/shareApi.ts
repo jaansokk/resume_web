@@ -6,6 +6,11 @@ export interface ShareSnapshotUI {
 export interface ShareSnapshotMessage {
   role: 'user' | 'assistant';
   text: string;
+  thinking?: string;
+  metrics?: {
+    elapsedMs: number;
+    outputTokens: number;
+  };
 }
 
 export interface ShareSnapshotArtifacts {

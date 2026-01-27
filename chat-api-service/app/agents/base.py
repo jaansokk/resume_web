@@ -37,6 +37,10 @@ class AgentContext:
     assistant_text: str = ""
     thinking_text: str = ""  # Accumulated thinking for display
     answer_raw: dict[str, Any] = field(default_factory=dict)
+
+    # Usage / cost metadata (best-effort, provider dependent)
+    # Example: {"router": {"outputTokens": 123}, "answer": {"outputTokens": 456}}
+    usage_by_agent: dict[str, dict[str, int]] = field(default_factory=dict)
     
     # Final validated output
     response: dict[str, Any] = field(default_factory=dict)

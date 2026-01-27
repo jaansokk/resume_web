@@ -103,6 +103,17 @@ class RouterAgent:
                     {"role": "user", "content": ctx.last_user_text},
                 ]
             )
+
+        # Best-effort usage (tests may monkeypatch router(), so usage may be missing)
+        usage_out_tokens = 0
+        try:
+            if self.model_provider == "anthropic":
+                usage_out_tokens = int(getattr(self.anthropic, "last_router_output_tokens", 0) or 0)
+            else:
+                usage_out_tokens = int(getattr(self.openai, "last_router_output_tokens", 0) or 0)
+        except Exception:
+            usage_out_tokens = 0
+        ctx.usage_by_agent["router"] = {"outputTokens": max(0, usage_out_tokens)}
         
         # Parse output
         try:

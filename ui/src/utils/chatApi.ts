@@ -77,8 +77,18 @@ export interface Hints {
   suggestTab?: 'brief' | 'experience' | null;
 }
 
+export interface AgentUsage {
+  outputTokens: number;
+}
+
+export interface Usage {
+  outputTokens: number;
+  byAgent?: Record<string, AgentUsage>;
+}
+
 export interface ChatApiResponse {
   assistant: { text: string };
+  usage?: Usage;
   ui: UIDirective;
   hints?: Hints;
   chips?: string[];

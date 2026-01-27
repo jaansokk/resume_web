@@ -74,6 +74,7 @@ export default function ConceptAApp() {
   const artifactsRef = useRef<Artifacts | null>(artifacts);
   const pendingSplitRef = useRef<{ activeTab?: 'brief' | 'experience' } | null>(null);
   const thinkingTextRef = useRef<string>(''); // Accumulate thinking for final message
+  const requestStartedAtRef = useRef<number | null>(null); // Send -> done latency
 
   useEffect(() => {
     viewModeRef.current = viewMode;
@@ -167,6 +168,7 @@ export default function ConceptAApp() {
     setStreamingText(''); // Start with empty streaming text
     setStreamingThinking(thinkingEnabled ? '' : null); // Start thinking if enabled
     thinkingTextRef.current = ''; // Reset accumulated thinking
+    requestStartedAtRef.current = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
     // Track chat message
     trackChatMessage({
@@ -220,11 +222,17 @@ export default function ConceptAApp() {
         },
         // onDone
         (response) => {
+          const doneAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+          const startedAt = requestStartedAtRef.current ?? doneAt;
+          const elapsedMs = Math.max(0, doneAt - startedAt);
+          const outputTokens = Math.max(0, response.usage?.outputTokens ?? 0);
+
           // Add complete assistant message with thinking if available
           const assistantMessage: Message = {
             role: 'assistant',
             text: response.assistant.text,
             thinking: response.thinking || thinkingTextRef.current || undefined,
+            metrics: { elapsedMs, outputTokens },
           };
           setMessages(prev => [...prev, assistantMessage]);
           setStreamingText(null); // Clear streaming text
@@ -258,6 +266,7 @@ export default function ConceptAApp() {
 
           setIsLoading(false);
           pendingSplitRef.current = null;
+          requestStartedAtRef.current = null;
         },
         // onError
         (error) => {
@@ -270,6 +279,7 @@ export default function ConceptAApp() {
           setStreamingThinking(null);
           setIsLoading(false);
           pendingSplitRef.current = null;
+          requestStartedAtRef.current = null;
         },
         // onThinkingDelta
         (delta: string) => {

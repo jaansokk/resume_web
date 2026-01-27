@@ -94,6 +94,17 @@ class ResponseAgent:
             raw = await self.anthropic.answer(messages=msgs)
         else:
             raw = self.openai.answer(messages=msgs)
+
+        # Best-effort usage (tests may monkeypatch answer(), so usage may be missing)
+        usage_out_tokens = 0
+        try:
+            if self.model_provider == "anthropic":
+                usage_out_tokens = int(getattr(self.anthropic, "last_answer_output_tokens", 0) or 0)
+            else:
+                usage_out_tokens = int(getattr(self.openai, "last_answer_output_tokens", 0) or 0)
+        except Exception:
+            usage_out_tokens = 0
+        ctx.usage_by_agent["answer"] = {"outputTokens": max(0, usage_out_tokens)}
         
         try:
             ctx.answer_raw = json.loads(raw)
@@ -138,6 +149,14 @@ class ResponseAgent:
                 yield ("thinking", data)
             elif event_type == "text" and data:
                 yield ("text", data)
+            elif event_type == "usage" and data:
+                # Internal usage event from AnthropicClient (JSON string)
+                try:
+                    usage_obj = json.loads(data) if isinstance(data, str) else {}
+                    out_tokens = int((usage_obj or {}).get("output_tokens") or 0)
+                    ctx.usage_by_agent["answer"] = {"outputTokens": out_tokens}
+                except Exception:
+                    pass
             elif event_type == "done" and data:
                 answer_json_str = data
         

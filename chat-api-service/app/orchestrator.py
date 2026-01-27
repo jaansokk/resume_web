@@ -96,6 +96,34 @@ class ChatOrchestrator:
             page_path=page_path,
             thinking_enabled=thinking_enabled,
         )
+
+    def _attach_usage(self, ctx: AgentContext) -> None:
+        """
+        Attach best-effort usage metadata to ctx.response.
+
+        Expected ctx.usage_by_agent format:
+          {"router": {"outputTokens": 12}, "answer": {"outputTokens": 34}}
+        """
+        try:
+            by_agent = ctx.usage_by_agent or {}
+            if not isinstance(by_agent, dict) or not by_agent:
+                return
+            total = 0
+            out_by_agent: dict[str, dict[str, int]] = {}
+            for name, usage in by_agent.items():
+                if not isinstance(name, str) or not isinstance(usage, dict):
+                    continue
+                out_tokens = int(usage.get("outputTokens") or 0)
+                total += max(0, out_tokens)
+                out_by_agent[name] = {"outputTokens": max(0, out_tokens)}
+            if not out_by_agent:
+                return
+            if not isinstance(ctx.response, dict) or not ctx.response:
+                return
+            ctx.response["usage"] = {"outputTokens": total, "byAgent": out_by_agent}
+        except Exception:
+            # Best-effort only; do not fail the request on usage accounting
+            return
     
     async def handle(self, req: ChatRequest) -> ChatResponse:
         """
@@ -109,6 +137,7 @@ class ChatOrchestrator:
         ctx = self.retrieval.run(ctx)
         ctx = await self.response.run(ctx)
         ctx = self.validator.run(ctx)
+        self._attach_usage(ctx)
         
         return ChatResponse.model_validate(ctx.response)
     
@@ -158,6 +187,7 @@ class ChatOrchestrator:
         # 5. Validate
         logger.info(f"ChatOrchestrator: Running validator with answer_raw keys: {list(ctx.answer_raw.keys())}")
         ctx = self.validator.run(ctx)
+        self._attach_usage(ctx)
         
         # 6. Yield final response
         logger.info(f"ChatOrchestrator: Validator complete, response keys: {list(ctx.response.keys())}")

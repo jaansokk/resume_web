@@ -8,6 +8,11 @@ from pydantic import BaseModel, Field
 ChatRole = Literal["system", "user", "assistant"]
 
 
+class MessageMetrics(BaseModel):
+    elapsedMs: int | None = None
+    outputTokens: int | None = None
+
+
 class ClientUI(BaseModel):
     view: Literal["chat", "split"] = "chat"
     split: dict[str, str] | None = None  # {activeTab: "brief" | "experience"}
@@ -28,6 +33,9 @@ class Client(BaseModel):
 class ChatMessage(BaseModel):
     role: ChatRole
     text: str = ""
+    # Optional metadata (used in share snapshots; ignored by chat pipeline)
+    thinking: str | None = None
+    metrics: MessageMetrics | None = None
 
 
 class ChatRequest(BaseModel):
@@ -93,8 +101,27 @@ class AssistantResponse(BaseModel):
     text: str
 
 
+class AgentUsage(BaseModel):
+    outputTokens: int = 0
+
+
+class Usage(BaseModel):
+    """
+    Best-effort usage metadata for a single chat turn.
+
+    Notes:
+    - Values are provider-dependent. For Anthropic streaming, `outputTokens` is derived from
+      `message_delta.usage.output_tokens` (cumulative).
+    - This is intended for UI comparisons (latency/cost) rather than billing-grade accounting.
+    """
+
+    outputTokens: int = 0
+    byAgent: dict[str, AgentUsage] = Field(default_factory=dict)
+
+
 class ChatResponse(BaseModel):
     assistant: AssistantResponse
+    usage: Usage | None = None
     ui: UIDirective
     hints: Hints = Field(default_factory=Hints)
     chips: list[str] = Field(default_factory=list)

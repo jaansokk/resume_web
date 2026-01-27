@@ -53,9 +53,11 @@ export default function SharedConversationApp() {
         if (cancelled) return;
 
         const snap = res.snapshot;
-        const msgs: Message[] = (snap.messages || []).map((m) => ({
+        const msgs: Message[] = (snap.messages || []).map((m: any) => ({
           role: m.role,
           text: m.text,
+          thinking: m.thinking,
+          metrics: m.metrics,
         }));
         setMessages(msgs);
         setArtifacts((snap.artifacts as unknown as Artifacts) || null);

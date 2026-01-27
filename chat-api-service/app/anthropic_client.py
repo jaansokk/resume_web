@@ -208,6 +208,11 @@ class AnthropicClient:
         # Create async HTTP client
         self._client: httpx.AsyncClient | None = None
         self._client_with_thinking: httpx.AsyncClient | None = None
+
+        # Best-effort usage (output tokens) from the most recent calls.
+        # Tests often monkeypatch `router()` / `answer()`, so callers must treat these as optional.
+        self.last_router_output_tokens: int = 0
+        self.last_answer_output_tokens: int = 0
     
     def _validate_structured_output_support(self) -> None:
         """Check if configured models support structured outputs and log warnings."""
@@ -276,7 +281,7 @@ class AnthropicClient:
         messages: list[dict[str, str]],
         max_tokens: int,
         json_schema: dict[str, Any] | None = None,
-    ) -> str:
+    ) -> tuple[str, dict[str, int]]:
         """
         Non-streaming API call that returns raw JSON string.
         Anthropic requires system messages to be passed separately.
@@ -343,6 +348,13 @@ class AnthropicClient:
         response.raise_for_status()
         
         data = response.json()
+
+        usage_out = 0
+        try:
+            usage_obj = data.get("usage") if isinstance(data, dict) else None
+            usage_out = int((usage_obj or {}).get("output_tokens") or 0)
+        except Exception:
+            usage_out = 0
         
         # Extract text content from the response
         content = ""
@@ -362,10 +374,24 @@ class AnthropicClient:
                 content = content[:-3]
             content = content.strip()
         
-        return content
+        return content, {"output_tokens": usage_out}
 
     async def router(self, *, messages: list[dict[str, str]]) -> str:
         """Router call with structured output schema."""
+        content, usage = await self.chat_json(
+            model=self.router_model,
+            messages=messages,
+            max_tokens=self.router_max_tokens,
+            json_schema=ROUTER_SCHEMA,
+        )
+        try:
+            self.last_router_output_tokens = int((usage or {}).get("output_tokens") or 0)
+        except Exception:
+            self.last_router_output_tokens = 0
+        return content
+
+    async def router_with_usage(self, *, messages: list[dict[str, str]]) -> tuple[str, dict[str, int]]:
+        """Router call with usage metadata (best-effort)."""
         return await self.chat_json(
             model=self.router_model,
             messages=messages,
@@ -375,6 +401,20 @@ class AnthropicClient:
 
     async def answer(self, *, messages: list[dict[str, str]]) -> str:
         """Answer call with structured output schema."""
+        content, usage = await self.chat_json(
+            model=self.chat_model,
+            messages=messages,
+            max_tokens=self.answer_max_tokens,
+            json_schema=ANSWER_SCHEMA,
+        )
+        try:
+            self.last_answer_output_tokens = int((usage or {}).get("output_tokens") or 0)
+        except Exception:
+            self.last_answer_output_tokens = 0
+        return content
+
+    async def answer_with_usage(self, *, messages: list[dict[str, str]]) -> tuple[str, dict[str, int]]:
+        """Answer call with usage metadata (best-effort)."""
         return await self.chat_json(
             model=self.chat_model,
             messages=messages,
@@ -468,6 +508,7 @@ class AnthropicClient:
         # Stream the response using httpx
         accumulated_json = ""
         accumulated_thinking = ""
+        latest_output_tokens: int = 0
         
         # Track which content block we're in
         current_block_type: str | None = None
@@ -583,6 +624,16 @@ class AnthropicClient:
                                                 yield ("text", char)
                                         
                                         # state == 3: done with text, just accumulate JSON
+
+                        elif event_type == "message_delta":
+                            # Token counts are reported here; per docs these are cumulative.
+                            try:
+                                usage = data.get("usage") if isinstance(data, dict) else None
+                                maybe = (usage or {}).get("output_tokens")
+                                if maybe is not None:
+                                    latest_output_tokens = int(maybe)
+                            except Exception:
+                                pass
                         
                         elif event_type == "content_block_stop":
                             # Content block ended
@@ -619,6 +670,13 @@ class AnthropicClient:
         content = _extract_json_payload(content)
         
         logger.info(f"Final JSON payload length: {len(content)}, starts with: {content[:100] if content else 'EMPTY'}")
+
+        # Best-effort usage event for the streamed request (not forwarded to UI directly).
+        try:
+            self.last_answer_output_tokens = int(latest_output_tokens or 0)
+        except Exception:
+            self.last_answer_output_tokens = 0
+        yield ("usage", json.dumps({"output_tokens": latest_output_tokens}))
 
         yield ("done", content)
 
