@@ -10,7 +10,8 @@ This doc exists so the **API contract** (`_specs/chat-api-rag-contract.md`) can 
 - **Reverse proxy**: same-origin routing for `/api/*` (avoids CORS).
 - **Chat API service**: orchestrates RAG + response JSON for the UI via agent-based pipeline.
 - **Vector store**: stores embeddings and content payloads (details in `_specs/qdrant-index-design.md`).
-- **Snapshot store (DynamoDB)**: stores immutable share snapshots created via Share modal.
+- **Snapshot store (DynamoDB)**: stores immutable share snapshots created via Share modal and CV download tracking.
+- **Email notifications (SMTP)**: sends notifications when users provide contact information (conversation shares, CV downloads).
 
 ---
 
@@ -79,13 +80,44 @@ Attributes (suggested):
 - `shareId`: string
 - `createdAt`: ISO string
 - `createdByContact`: string (LinkedIn URL or email)
-- `conversation`: object
+- `snapshot`: object
+  - `conversationId`: string
+  - `createdAt`: ISO string
   - `messages`: array (bounded transcript)
   - `ui`: object (e.g., view/tab)
-  - `artifacts`: object (Fit Brief + Relevant Experience)
+  - `artifacts`: object (Fit Brief + Relevant Experience) — optional, depends on shareType
+  - `shareType`: string (`"conversation"` or `"cv_download"`)
 
 Notes:
 - Snapshots never expire (no TTL required for MVP).
 - If you add “revoke” later, add `revokedAt` and treat revoked snapshots as 404.
 
 
+- `shareType` distinguishes between conversation shares (full artifacts) and CV downloads (tracking only).
+
+---
+
+## Email notifications (SMTP)
+
+The chat API service sends email notifications when users provide contact information.
+
+### Notification types:
+- **Conversation shared**: User provides LinkedIn/email in Share modal
+- **CV downloaded**: User provides LinkedIn/email before downloading CV PDF
+
+### Email content:
+- Subject line includes notification type and truncated contact info
+- Body includes:
+  - Contact information (email or LinkedIn URL)
+  - Share URL (for conversation shares)
+  - Client metadata (IP address, user agent, origin)
+
+### Configuration:
+- SMTP settings via environment variables (host, port, credentials, SSL/TLS)
+- Email sending is **best-effort** and non-blocking (failures don't prevent share creation)
+- Email recipient configured via `CONTACT_TO_EMAIL` environment variable
+
+### Implementation notes:
+- Uses standard SMTP with optional SSL/STARTTLS
+- Runs in threadpool to avoid blocking the event loop
+- Failures are logged but don't affect the API response (200 OK is returned even if email fails)

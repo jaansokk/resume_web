@@ -153,12 +153,14 @@ class ShareSnapshot(BaseModel):
     createdAt: str
     ui: UIDirective
     messages: list[ChatMessage] = Field(default_factory=list)
-    artifacts: Artifacts
+    artifacts: Artifacts | None = None  # Optional: required for conversation, not for CV download
 
 
 class ShareCreateRequest(BaseModel):
     createdByContact: str = Field(..., min_length=3, max_length=200)
     snapshot: ShareSnapshot
+    # Optional: "conversation" (default) or "cv_download"
+    shareType: Literal["conversation", "cv_download"] = "conversation"
 
 
 class ShareCreateResponse(BaseModel):

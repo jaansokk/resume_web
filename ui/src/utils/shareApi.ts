@@ -39,12 +39,13 @@ export interface ShareSnapshot {
   createdAt: string;
   ui: ShareSnapshotUI;
   messages: ShareSnapshotMessage[];
-  artifacts: ShareSnapshotArtifacts;
+  artifacts?: ShareSnapshotArtifacts; // Optional: required for conversation, not for CV download
 }
 
 export interface CreateShareRequest {
   createdByContact: string;
   snapshot: ShareSnapshot;
+  shareType?: 'conversation' | 'cv_download'; // Optional: defaults to "conversation"
 }
 
 export interface CreateShareResponse {

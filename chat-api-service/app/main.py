@@ -25,7 +25,7 @@ from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
 from .pipeline import ChatPipeline
 from .qdrant_client import QdrantClient, QdrantConfig
-from .email_sender import load_smtp_config_from_env, send_contact_email
+from .email_sender import load_smtp_config_from_env, send_contact_email, send_share_notification_email
 from .share_store import ShareStore
 from .rate_limiter import InMemoryRateLimiter, load_rate_limit_config_from_env
 
@@ -303,16 +303,22 @@ def create_app() -> FastAPI:
         return ContactResponse(ok=True)
 
     @app.post("/share", response_model=ShareCreateResponse)
-    def create_share(req: ShareCreateRequest) -> ShareCreateResponse:
-        # Validate required artifact presence per contract:
-        # snapshot.artifacts must include BOTH fitBrief and relevantExperience.
-        if req.snapshot.artifacts.fitBrief is None or req.snapshot.artifacts.relevantExperience is None:
-            raise HTTPException(status_code=400, detail="snapshot.artifacts must include fitBrief and relevantExperience")
+    async def create_share(req: ShareCreateRequest, request: Request) -> ShareCreateResponse:
+        # Validate required artifact presence based on shareType:
+        # For "conversation" shares: snapshot.artifacts must include BOTH fitBrief and relevantExperience
+        # For "cv_download": artifacts are optional
+        if req.shareType == "conversation":
+            if req.snapshot.artifacts is None or req.snapshot.artifacts.fitBrief is None or req.snapshot.artifacts.relevantExperience is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="For conversation shares, snapshot.artifacts must include fitBrief and relevantExperience"
+                )
 
         # Bound transcript to keep snapshots sane.
         messages = req.snapshot.messages[-60:]
         snapshot = req.snapshot.model_dump()
         snapshot["messages"] = [m.model_dump() for m in messages]
+        snapshot["shareType"] = req.shareType
 
         try:
             store = ShareStore()
@@ -322,7 +328,36 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=503, detail="Share storage is not configured") from e
 
         share_id = created["shareId"]
-        return ShareCreateResponse(shareId=share_id, path=f"/c/{share_id}")
+        share_path = f"/c/{share_id}"
+        
+        # Send email notification (best-effort, don't fail the request if email fails)
+        try:
+            smtp_config = load_smtp_config_from_env()
+            origin = (request.headers.get("origin") or "").strip() or None
+            client_ip = get_client_ip(request)
+            user_agent = request.headers.get("user-agent")
+            
+            # Build full share URL if origin is available
+            share_url = None
+            if origin:
+                share_url = f"{origin}{share_path}"
+            
+            await run_in_threadpool(
+                send_share_notification_email,
+                config=smtp_config,
+                contact=req.createdByContact,
+                share_type=req.shareType,
+                share_id=share_id,
+                share_url=share_url,
+                origin=origin,
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+        except Exception:
+            # Log but don't fail the request
+            log.exception("Failed sending share notification email (non-fatal)")
+
+        return ShareCreateResponse(shareId=share_id, path=share_path)
 
     @app.get("/share/{shareId}", response_model=ShareGetResponse)
     def get_share(shareId: str) -> ShareGetResponse:

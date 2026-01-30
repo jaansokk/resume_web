@@ -75,6 +75,7 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
     try {
       const res = await postShare({
         createdByContact,
+        shareType: 'conversation',
         snapshot: {
           conversationId,
           createdAt: new Date().toISOString(),
@@ -83,7 +84,12 @@ export function ShareModal({ isOpen, onClose, conversationId, activeTab, message
             role: m.role,
             text: m.text,
             ...(m.role === 'assistant' && m.thinking ? { thinking: m.thinking } : {}),
-            ...(m.role === 'assistant' && m.metrics ? { metrics: m.metrics } : {}),
+            ...(m.role === 'assistant' && m.metrics ? {
+              metrics: {
+                elapsedMs: m.metrics.elapsedMs ? Math.round(m.metrics.elapsedMs) : undefined,
+                outputTokens: m.metrics.outputTokens,
+              }
+            } : {}),
           })),
           artifacts: {
             fitBrief: artifacts!.fitBrief!,

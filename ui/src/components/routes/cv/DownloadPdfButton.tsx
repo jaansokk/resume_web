@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Modal } from '../../ui/Modal';
 import { trackCVPdfDownload, trackCVContactProvided } from '../../../utils/posthogTracking';
 import { DownloadPdfIconButton } from '../../features/chat/DownloadPdfIconButton';
+import { postShare } from '../../../utils/shareApi';
 
 const PDF_PATH = '/jaan-sokk-cv.pdf';
 const PDF_FILENAME = 'Jaan-Sokk-CV.pdf';
@@ -31,6 +32,7 @@ export function DownloadPdfButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contact, setContact] = useState('');
   const [isDownloaded, setIsDownloaded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isContactValid = useMemo(() => {
@@ -41,7 +43,7 @@ export function DownloadPdfButton() {
     return contact.trim().length > 0 && isContactValid;
   }, [contact, isContactValid]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setError(null);
 
     if (!isContactValid) {
@@ -64,26 +66,68 @@ export function DownloadPdfButton() {
       hasEmail,
     });
 
-    // Trigger download
-    const a = document.createElement('a');
-    a.href = PDF_PATH;
-    a.download = PDF_FILENAME;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    // Track download
-    trackCVPdfDownload();
-
-    // Close modal and show downloaded state
-    setIsModalOpen(false);
-    setIsDownloaded(true);
-    setContact('');
-    setError(null);
+    setIsSubmitting(true);
     
-    // Reset downloaded state after 3 seconds
-    setTimeout(() => setIsDownloaded(false), 3000);
+    try {
+      // Send notification to backend via share endpoint
+      await postShare({
+        createdByContact: contactValue,
+        shareType: 'cv_download',
+        snapshot: {
+          conversationId: `cv-download-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          ui: { view: 'chat' },
+          messages: [],
+        },
+      });
+
+      // Trigger download
+      const a = document.createElement('a');
+      a.href = PDF_PATH;
+      a.download = PDF_FILENAME;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      // Track download
+      trackCVPdfDownload();
+
+      // Close modal and show downloaded state
+      setIsModalOpen(false);
+      setIsDownloaded(true);
+      setContact('');
+      setError(null);
+      
+      // Reset downloaded state after 3 seconds
+      setTimeout(() => setIsDownloaded(false), 3000);
+    } catch (e) {
+      // If backend call fails, still allow download (best-effort notification)
+      console.error('Failed to send notification:', e);
+      
+      // Trigger download anyway
+      const a = document.createElement('a');
+      a.href = PDF_PATH;
+      a.download = PDF_FILENAME;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      // Track download
+      trackCVPdfDownload();
+
+      // Close modal and show downloaded state
+      setIsModalOpen(false);
+      setIsDownloaded(true);
+      setContact('');
+      setError(null);
+      
+      // Reset downloaded state after 3 seconds
+      setTimeout(() => setIsDownloaded(false), 3000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -105,9 +149,9 @@ export function DownloadPdfButton() {
         title="Let's stay in touch"
         buttonOrder="primary-first"
         primaryButton={{
-          label: 'Download',
+          label: isSubmitting ? 'Downloading…' : 'Download',
           onClick: handleDownload,
-          disabled: !canDownload,
+          disabled: !canDownload || isSubmitting,
         }}
         secondaryButton={{
           label: 'Close',

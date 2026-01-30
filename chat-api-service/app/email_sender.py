@@ -130,3 +130,88 @@ def send_contact_email(
         server.send_message(msg)
 
 
+def send_share_notification_email(
+    *,
+    config: SmtpConfig,
+    contact: str,
+    share_type: str,
+    share_id: str,
+    share_url: str | None = None,
+    origin: str | None = None,
+    client_ip: str | None = None,
+    user_agent: str | None = None,
+) -> None:
+    """
+    Send notification when someone creates a share or downloads CV.
+    
+    Args:
+        config: SMTP configuration
+        contact: User's email or LinkedIn
+        share_type: "conversation" or "cv_download"
+        share_id: The generated share ID
+        share_url: Full URL to the shared content (if available)
+        origin: Request origin
+        client_ip: Client IP address
+        user_agent: User agent string
+    """
+    msg = EmailMessage()
+    msg["From"] = config.from_email
+    msg["To"] = config.to_email
+    
+    if share_type == "cv_download":
+        subject = f"[resume-web] CV Download: {contact.strip()[:60]}"
+        action = "CV downloaded"
+    else:
+        subject = f"[resume-web] Conversation Shared: {contact.strip()[:60]}"
+        action = "Conversation shared"
+    
+    msg["Subject"] = subject
+
+    meta_lines: list[str] = []
+    if share_url:
+        meta_lines.append(f"Share URL: {share_url}")
+    else:
+        meta_lines.append(f"Share ID: {share_id}")
+    if origin:
+        meta_lines.append(f"Origin: {origin}")
+    if client_ip:
+        meta_lines.append(f"Client IP: {client_ip}")
+    if user_agent:
+        meta_lines.append(f"User-Agent: {user_agent}")
+
+    meta = "\n".join(meta_lines)
+
+    body = "\n".join(
+        [
+            f"{action} by new visitor",
+            "",
+            f"Contact: {contact.strip()}",
+            "",
+            "---",
+            meta,
+        ]
+    ).strip() + "\n"
+
+    msg.set_content(body)
+
+    timeout = float(os.environ.get("SMTP_TIMEOUT_SECONDS", "10").strip() or "10")
+
+    if config.use_ssl:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(config.host, config.port, timeout=timeout, context=context) as server:
+            if config.username and config.password:
+                server.login(config.username, config.password)
+            server.send_message(msg)
+        return
+
+    with smtplib.SMTP(config.host, config.port, timeout=timeout) as server:
+        server.ehlo()
+        if config.use_starttls:
+            context = ssl.create_default_context()
+            server.starttls(context=context)
+            server.ehlo()
+        if config.username and config.password:
+            server.login(config.username, config.password)
+        server.send_message(msg)
+
+

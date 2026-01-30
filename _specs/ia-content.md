@@ -200,6 +200,7 @@ Implementation notes (current code):
 - The shared view (`/c/{shareId}`) loads the snapshot via `GET /api/share/{shareId}` and renders workspace + transcript.
 - The shared view seeds `localStorage` with a forked `conversationId` so navigation back to `/` resumes in Split view.
 - In production, the reverse proxy rewrites `/c/<shareId>` to serve the SPA while keeping the browser URL intact (so the client can still extract the shareId from `window.location.pathname`).
+- **CV download tracking**: The same `/api/share` infrastructure is used when users download the CV PDF (`/cv` page). Users provide LinkedIn/email before downloading, which creates a minimal share snapshot (`shareType="cv_download"`, no artifacts) and sends an email notification.
 
 ---
 

@@ -159,17 +159,21 @@ Thinking mode behavior details: `_specs/thinking-mode.md`.
 ### 2) `POST /api/share`
 Creates an **immutable share snapshot** and returns a permalink.
 
-The UI should call this only after the user provides **LinkedIn OR email** in the Share modal.
+The UI calls this endpoint in two scenarios:
+1. **Conversation share**: User provides LinkedIn/email in Share modal (artifacts required)
+2. **CV download**: User provides LinkedIn/email before downloading CV PDF (artifacts optional)
 
 Notes:
 - **Public endpoint** (UI): `POST /api/share`
 - **Service internal endpoint**: `POST /share`
+- **Email notification**: The service sends an email notification when a share is created (best-effort, non-blocking)
 
 #### Request
 
 ```json
 {
   "createdByContact": "linkedin.com/in/yourprofile-or-email@example.com",
+  "shareType": "conversation",
   "snapshot": {
     "conversationId": "uuid-v4",
     "createdAt": "2026-01-06T12:34:56.000Z",
@@ -190,14 +194,25 @@ Notes:
 ```
 
 Rules:
+- `shareType` is optional and defaults to `"conversation"`:
+  - `"conversation"` = full conversation share with artifacts (used by Share modal)
+  - `"cv_download"` = CV download tracking (artifacts optional)
 - Snapshot stores **rendered artifacts only** (no retrieval citations).
-- Snapshot `artifacts` must include both:
-  - `fitBrief`
-  - `relevantExperience`
+- For `shareType="conversation"`:
+  - Snapshot `artifacts` must include both `fitBrief` and `relevantExperience`
+- For `shareType="cv_download"`:
+  - Artifacts are optional
+  - Minimal snapshot (only `conversationId`, `createdAt`, `ui`, `messages`)
 - The server must validate and sanitize `snapshot`:
-  - bound `messages` length
-  - validate artifact shapes
+  - bound `messages` length (max 60)
+  - validate artifact shapes (when present)
   - ensure `ui` values are valid
+- Client must round `metrics.elapsedMs` to integers (JavaScript timing APIs return floats)
+- Email notification includes:
+  - Contact information
+  - Share type ("Conversation shared" vs "CV downloaded")
+  - Share URL (when available)
+  - Client metadata (IP, user agent, origin)
 
 PDF note (UX requirement):
 - The “Download PDF” action should generate a PDF from this same share snapshot, and it must include **Fit Brief + Relevant Experience**.
