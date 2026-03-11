@@ -77,6 +77,15 @@ Use these when changing deployment, routing, or persisted state:
 
 ---
 
+## Demos / standalone workflows
+
+- `_specs/n8n-telegram-job-fit.md`
+  - **Use when**: building or modifying the n8n Telegram job-fit bot workflow.
+  - **Answers**: "How does the Telegram → Qdrant → LLM → fit brief pipeline work?"
+  - **Depends on**: `_specs/qdrant-index-design.md` for collection schema + embedding model.
+
+---
+
 ## Archived / legacy specs (do not include by default)
 
 Archived specs live under `_specs/_archive/`:
