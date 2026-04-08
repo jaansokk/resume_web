@@ -27,7 +27,12 @@ from .pipeline import ChatPipeline
 from .qdrant_client import QdrantClient, QdrantConfig
 from .email_sender import load_smtp_config_from_env, send_contact_email, send_share_notification_email
 from .share_store import ShareStore
-from .rate_limiter import InMemoryRateLimiter, load_rate_limit_config_from_env
+from .rate_limiter import (
+    InMemoryRateLimiter,
+    build_chat_rate_limit_policy,
+    build_contact_rate_limit_policy,
+    load_rate_limit_config_from_env,
+)
 
 
 log = logging.getLogger("resume_web_chat_api")
@@ -131,10 +136,13 @@ def create_app() -> FastAPI:
     
     # Rate limiter (can be disabled via RATE_LIMIT_ENABLED=0 for testing)
     rate_limit_enabled = os.environ.get("RATE_LIMIT_ENABLED", "1").strip() == "1"
-    rate_limiter = InMemoryRateLimiter(load_rate_limit_config_from_env()) if rate_limit_enabled else None
+    rate_limit_config = load_rate_limit_config_from_env()
+    chat_rate_limit_policy = build_chat_rate_limit_policy(rate_limit_config)
+    contact_rate_limit_policy = build_contact_rate_limit_policy()
+    rate_limiter = InMemoryRateLimiter(rate_limit_config) if rate_limit_enabled else None
     if rate_limiter:
         log.info("Rate limiting enabled: %s req/day, %s req/min burst",
-                 rate_limiter.config.daily_limit, rate_limiter.config.burst_limit)
+                 chat_rate_limit_policy.daily_limit, chat_rate_limit_policy.burst_limit)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -148,10 +156,11 @@ def create_app() -> FastAPI:
             allowed, reason = rate_limiter.check_limit(
                 ip=client_ip,
                 route="/chat",
+                policy=chat_rate_limit_policy,
                 conversation_id=req.conversationId,
             )
             if not allowed:
-                retry_after = rate_limiter.get_retry_after(reason)
+                retry_after = rate_limiter.get_retry_after(reason, policy=chat_rate_limit_policy)
                 log.warning("Rate limit exceeded: ip=%s reason=%s", client_ip, reason)
                 raise HTTPException(
                     status_code=429,
@@ -188,10 +197,11 @@ def create_app() -> FastAPI:
             allowed, reason = rate_limiter.check_limit(
                 ip=client_ip,
                 route="/chat",
+                policy=chat_rate_limit_policy,
                 conversation_id=req.conversationId,
             )
             if not allowed:
-                retry_after = rate_limiter.get_retry_after(reason)
+                retry_after = rate_limiter.get_retry_after(reason, policy=chat_rate_limit_policy)
                 log.warning("Rate limit exceeded: ip=%s reason=%s", client_ip, reason)
                 raise HTTPException(
                     status_code=429,
@@ -247,26 +257,14 @@ def create_app() -> FastAPI:
         # SECURITY: Rate limit contact form (5/day, 2/min per IP)
         if rate_limiter:
             client_ip = get_client_ip(request)
-            # Use stricter limits for contact than chat
-            contact_config = rate_limiter.config
-            # Override config temporarily for contact endpoint
-            original_daily = contact_config.daily_limit
-            original_burst = contact_config.burst_limit
-            contact_config.daily_limit = 5  # 5 per day
-            contact_config.burst_limit = 2  # 2 per minute
-            
             allowed, reason = rate_limiter.check_limit(
                 ip=client_ip,
                 route="/contact",
+                policy=contact_rate_limit_policy,
                 conversation_id=None,
             )
-            
-            # Restore original config
-            contact_config.daily_limit = original_daily
-            contact_config.burst_limit = original_burst
-            
             if not allowed:
-                retry_after = rate_limiter.get_retry_after(reason)
+                retry_after = rate_limiter.get_retry_after(reason, policy=contact_rate_limit_policy)
                 log.warning("Contact rate limit exceeded: ip=%s reason=%s", client_ip, reason)
                 raise HTTPException(
                     status_code=429,
@@ -384,5 +382,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
 

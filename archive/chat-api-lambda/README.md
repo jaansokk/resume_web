@@ -1,5 +1,7 @@
 # Chat API Lambda
 
+Archived implementation. This stack is no longer the active baseline for `resume_web`.
+
 Lambda function for `/chat` endpoint implementing RAG flow per `chat-api-rag-contract.md` spec.
 
 ## Structure
@@ -56,7 +58,7 @@ pip install -r requirements.txt -t .
 zip -r lambda-deployment.zip . -x "*.git*" "*.pyc" "__pycache__/*"
 ```
 
-3. Deploy via AWS CLI, CDK, or Terraform (see `infra/` directory).
+3. Deploy via AWS CLI, CDK, or Terraform (see `../infra/`).
 
 ## Testing
 
@@ -82,4 +84,3 @@ response = lambda_handler(event, None)
 ## API Contract
 
 See `_specs/chat-api-rag-contract.md` for full API contract and RAG flow details.
-

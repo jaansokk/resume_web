@@ -13,9 +13,13 @@ class MessageMetrics(BaseModel):
     outputTokens: int | None = None
 
 
+class UISplit(BaseModel):
+    activeTab: Literal["brief", "experience"] = "brief"
+
+
 class ClientUI(BaseModel):
     view: Literal["chat", "split"] = "chat"
-    split: dict[str, str] | None = None  # {activeTab: "brief" | "experience"}
+    split: UISplit | None = None
 
 
 class ClientPage(BaseModel):
@@ -81,10 +85,6 @@ class RelevantExperience(BaseModel):
 class Artifacts(BaseModel):
     fitBrief: FitBrief | None = None
     relevantExperience: RelevantExperience | None = None
-
-
-class UISplit(BaseModel):
-    activeTab: Literal["brief", "experience"] = "brief"
 
 
 class UIDirective(BaseModel):

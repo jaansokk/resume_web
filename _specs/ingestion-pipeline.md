@@ -206,4 +206,6 @@ Local dev is recommended for iterating on payload schema and end-to-end retrieva
 
 ## DEPRECATED: OpenSearch indexing references
 If you still need the legacy OpenSearch pipeline during migration/cleanup, see:
-- `_specs/_archive/opensearch-index-design.md`
+- `archive/README.md`
+- `archive/chat-api-lambda/README.md`
+- `archive/infra/README.md`

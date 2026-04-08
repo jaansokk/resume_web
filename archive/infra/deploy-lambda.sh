@@ -31,7 +31,7 @@ HANDLER="${LAMBDA_HANDLER:-lambda_handler.lambda_handler}"
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LAMBDA_DIR="$REPO_ROOT/chat-api-lambda"
+LAMBDA_DIR="$REPO_ROOT/archive/chat-api-lambda"
 BUILD_DIR="$SCRIPT_DIR/build"
 ZIP_FILE="$BUILD_DIR/lambda-deployment.zip"
 
@@ -383,4 +383,3 @@ echo ""
 rm -f /tmp/lambda-trust-policy.json
 echo "Build artifacts are in: $BUILD_DIR"
 echo "You can safely delete this directory after deployment if needed."
-

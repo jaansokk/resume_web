@@ -6,8 +6,9 @@ Main components / repo layout:
 - **UI** (`ui/`): Astro + v2 React experience (`/`, `/cv`, `/contact`, `/c/{shareId}`)
 - **Chat API** (`chat-api-service/`): FastAPI app implementing `/chat`, `/chat/stream`, `/share`, `/share/{shareId}`
 - **Ingestion** (`ingest/`): Node scripts (no npm deps) for export + embeddings + Qdrant upserts
+- **Shared contracts** (`shared/`): shared chat/share request-response types consumed by the UI
 - **Deployment** (`infra-vps/`): Lightsail/VPS deployment (Docker Compose + Caddy)
-- **Legacy** (`chat-api-lambda/`, `infra/`): deprecated (kept for migration/cleanup)
+- **Archive** (`archive/`): deprecated Lambda/OpenSearch implementation kept only for historical reference
 
 Core specs (source of truth):
 - `_specs/spec-index.md` (start here)
@@ -22,10 +23,12 @@ Target baseline is a **single VPS/Lightsail instance** running:
 - Chat API service (FastAPI)
 - Qdrant (vector store)
 
+Everything under `archive/` is historical and not part of the current deployment path.
+
 ## Prerequisites
 
 - **Node.js 18+**
-- **Python 3.11+**
+- **Python 3.14+**
 - **Docker** (optional, for local Qdrant)
 
 For full local end-to-end runs you’ll typically want:

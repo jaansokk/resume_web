@@ -126,5 +126,4 @@ Preferred approach (recommended):
 ---
 
 ## DEPRECATED: OpenSearch index design
-See `_specs/_archive/opensearch-index-design.md` for legacy OpenSearch mappings and query recipes.
-
+For legacy OpenSearch implementation details, see `archive/README.md`, `archive/chat-api-lambda/README.md`, and `archive/infra/README.md`.

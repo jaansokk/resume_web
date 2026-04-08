@@ -50,7 +50,7 @@ The service loads `chat-api-service/.env` and `chat-api-service/.env.local` on s
 
 ```bash
 # Conda (recommended)
-conda create -n resume-web-api python=3.11 -y
+conda create -n resume-web-api python=3.14 -y
 conda activate resume-web-api
 pip install -r requirements.txt
 ```
@@ -108,5 +108,4 @@ OPENAI_EMBED_MODEL=text-embedding-3-small
    - `text-embedding-3-small` (1536 dims) - default
    - `text-embedding-3-large` (3072 dims)
    - If you change models, update `EMBEDDING_DIM` to match
-
 

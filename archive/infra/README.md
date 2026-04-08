@@ -1,5 +1,7 @@
 # Infrastructure Deployment Scripts
 
+Archived implementation. These scripts target the deprecated Lambda/OpenSearch stack under `archive/`.
+
 Scripts for deploying and testing the chat-api Lambda function using AWS CLI.
 
 ## Prerequisites
@@ -56,7 +58,7 @@ export LAMBDA_TIMEOUT=120
 - Sets environment variables
 - Configures timeout and memory
 
-**Note:** Build artifacts are created in `infra/build/` directory and are ignored by git (see `.gitignore`). The script uses the official AWS Lambda Python Docker image to ensure all dependencies (especially those with C extensions) are compiled for the correct platform.
+**Note:** Build artifacts are created in `archive/infra/build/` and are ignored by git (see `.gitignore`). The script uses the official AWS Lambda Python Docker image to ensure all dependencies (especially those with C extensions) are compiled for the correct platform.
 
 **Configuration options:**
 - `LAMBDA_NAME` - Function name (default: `chat-api`)
@@ -124,7 +126,7 @@ export API_STAGE="dev"
 
 1. **Deploy Lambda:**
    ```bash
-   cd infra
+   cd archive/infra
    ./deploy-lambda.sh
    ```
 
@@ -203,7 +205,6 @@ Set these before deployment:
 ## Notes
 
 - The scripts use `python3` for JSON validation (should be available on most systems)
-- Deployment packages are created in the `infra/` directory
+- Deployment packages are created in the `archive/infra/` directory
 - IAM roles are created with basic Lambda execution permissions
 - OpenSearch permissions must be added manually (see step 2 above)
-

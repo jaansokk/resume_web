@@ -86,12 +86,11 @@ Use these when changing deployment, routing, or persisted state:
 
 ---
 
-## Archived / legacy specs (do not include by default)
+## Archived / legacy references (do not include by default)
 
-Archived specs live under `_specs/_archive/`:
-- Legacy v1 product/UI docs (`01-05`)
-- Legacy OpenSearch design (`opensearch-index-design.md`)
+Legacy implementation paths live under `archive/`:
+- `archive/chat-api-lambda/`
+- `archive/infra/`
 
-Only use these if explicitly asked to reference or migrate legacy behavior.
-
+Some current specs still include clearly marked deprecated notes for migration archaeology. Only use those or the archived code if you are explicitly asked to reference or migrate legacy behavior.
 

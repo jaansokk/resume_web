@@ -3,7 +3,7 @@ import { Header } from '../../ui/Header';
 import { ArtifactsPanel } from '../../features/artifacts/ArtifactsPanel';
 import { ChatMessage } from '../../features/chat/ChatMessage';
 import type { Message } from '../../domain/types';
-import type { Artifacts } from '../../../utils/chatApi';
+import type { Artifacts, ChatApiMessage } from '../../../utils/chatApi';
 import { getShare } from '../../../utils/shareApi';
 import { markHasSeenSplit } from '../../../utils/navState';
 import { saveConversationState } from '../../../utils/conversationState';
@@ -53,17 +53,20 @@ export default function SharedConversationApp() {
         if (cancelled) return;
 
         const snap = res.snapshot;
-        const msgs: Message[] = (snap.messages || []).map((m: any) => ({
-          role: m.role,
-          text: m.text,
-          thinking: m.thinking,
-          metrics: m.metrics,
-        }));
+        const msgs: Message[] = (snap.messages || []).flatMap((m: ChatApiMessage) => {
+          if (m.role === 'system') return [];
+          return [{
+            role: m.role,
+            text: m.text,
+            thinking: m.thinking,
+            metrics: m.metrics,
+          }];
+        });
         setMessages(msgs);
-        setArtifacts((snap.artifacts as unknown as Artifacts) || null);
+        setArtifacts((snap.artifacts as Artifacts | undefined) ?? null);
         const tab = snap.ui?.split?.activeTab === 'experience' ? 'experience' : 'brief';
         setActiveTab(tab);
-        if ((snap.artifacts as any)?.fitBrief?.title) setTitle((snap.artifacts as any).fitBrief.title);
+        if (snap.artifacts?.fitBrief?.title) setTitle(snap.artifacts.fitBrief.title);
 
         // Track shared conversation viewed
         trackSharedConversationViewed({
@@ -86,7 +89,7 @@ export default function SharedConversationApp() {
             viewMode: 'split',
             messages: msgs,
             chips: [],
-            artifacts: (snap.artifacts as unknown as Artifacts) || null,
+            artifacts: (snap.artifacts as Artifacts | undefined) ?? null,
             activeTab: tab,
           });
         } catch {
@@ -180,5 +183,4 @@ export default function SharedConversationApp() {
     </div>
   );
 }
-
 

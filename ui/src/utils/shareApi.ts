@@ -1,63 +1,6 @@
-export interface ShareSnapshotUI {
-  view: 'chat' | 'split';
-  split?: { activeTab: 'brief' | 'experience' };
-}
+import type { CreateShareRequest, CreateShareResponse, GetShareResponse } from '@shared/contracts';
 
-export interface ShareSnapshotMessage {
-  role: 'user' | 'assistant';
-  text: string;
-  thinking?: string;
-  metrics?: {
-    elapsedMs: number;
-    outputTokens: number;
-  };
-}
-
-export interface ShareSnapshotArtifacts {
-  fitBrief: {
-    title: string;
-    sections: Array<{ id: string; title: string; content: string }>;
-  };
-  relevantExperience: {
-    groups: Array<{
-      title: string;
-      items: Array<{
-        slug: string;
-        type: 'experience' | 'project';
-        title: string;
-        role?: string;
-        period?: string;
-        bullets: string[];
-        whyRelevant?: string;
-      }>;
-    }>;
-  };
-}
-
-export interface ShareSnapshot {
-  conversationId: string;
-  createdAt: string;
-  ui: ShareSnapshotUI;
-  messages: ShareSnapshotMessage[];
-  artifacts?: ShareSnapshotArtifacts; // Optional: required for conversation, not for CV download
-}
-
-export interface CreateShareRequest {
-  createdByContact: string;
-  snapshot: ShareSnapshot;
-  shareType?: 'conversation' | 'cv_download'; // Optional: defaults to "conversation"
-}
-
-export interface CreateShareResponse {
-  shareId: string;
-  path: string; // /c/{shareId}
-}
-
-export interface GetShareResponse {
-  shareId: string;
-  createdAt: string;
-  snapshot: ShareSnapshot;
-}
+export type { CreateShareRequest, CreateShareResponse, GetShareResponse, ShareSnapshot, ShareType } from '@shared/contracts';
 
 function getShareApiBase(): string {
   // Optional override: base URL (without /share), e.g. https://api.example.com
@@ -90,5 +33,4 @@ export async function getShare(shareId: string): Promise<GetShareResponse> {
   }
   return (await res.json()) as GetShareResponse;
 }
-
 

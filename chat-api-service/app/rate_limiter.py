@@ -14,7 +14,7 @@ import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from threading import Lock
 from typing import Literal
 
@@ -35,6 +35,17 @@ class RateLimitConfig:
     # Conversation ID limits (prevent bypass via rotating IDs)
     conversation_limit_per_ip: int = 20  # max new conversation IDs per hour per IP
     conversation_window_seconds: int = 3600
+
+
+@dataclass(frozen=True)
+class RateLimitPolicy:
+    """Immutable per-route limits passed into the limiter."""
+
+    daily_limit: int
+    burst_limit: int
+    burst_window_seconds: int
+    conversation_limit_per_ip: int | None = None
+    conversation_window_seconds: int | None = None
 
 
 @dataclass
@@ -65,7 +76,7 @@ class InMemoryRateLimiter:
 
     def __init__(self, config: RateLimitConfig | None = None):
         self.config = config or RateLimitConfig()
-        self._state: dict[str, RateLimitState] = defaultdict(RateLimitState)
+        self._state: dict[tuple[str, str], RateLimitState] = defaultdict(RateLimitState)
         self._global_burst: list[float] = []
         self._lock = Lock()
 
@@ -74,6 +85,7 @@ class InMemoryRateLimiter:
         *,
         ip: str,
         route: str,
+        policy: RateLimitPolicy,
         conversation_id: str | None = None,
     ) -> tuple[bool, Literal["daily", "burst", "global", "conversation", "ok"]]:
         """
@@ -88,7 +100,7 @@ class InMemoryRateLimiter:
             now = time.time()
             today_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-            state = self._state[ip]
+            state = self._state[(route, ip)]
 
             # 1. Check daily limit
             if state.daily_window_start != today_utc:
@@ -96,14 +108,14 @@ class InMemoryRateLimiter:
                 state.daily_count = 0
                 state.daily_window_start = today_utc
 
-            if state.daily_count >= self.config.daily_limit:
+            if state.daily_count >= policy.daily_limit:
                 return (False, "daily")
 
             # 2. Check per-IP burst limit (sliding window)
             state.burst_requests = [
-                ts for ts in state.burst_requests if now - ts < self.config.burst_window_seconds
+                ts for ts in state.burst_requests if now - ts < policy.burst_window_seconds
             ]
-            if len(state.burst_requests) >= self.config.burst_limit:
+            if len(state.burst_requests) >= policy.burst_limit:
                 return (False, "burst")
 
             # 3. Check global burst limit
@@ -114,15 +126,19 @@ class InMemoryRateLimiter:
                 return (False, "global")
 
             # 4. Check conversation ID limit (prevent bypass via rotating IDs)
-            if conversation_id:
+            if (
+                conversation_id
+                and policy.conversation_limit_per_ip is not None
+                and policy.conversation_window_seconds is not None
+            ):
                 # Reset window if expired
-                if now - state.conversation_window_start > self.config.conversation_window_seconds:
+                if now - state.conversation_window_start > policy.conversation_window_seconds:
                     state.conversation_ids.clear()
                     state.conversation_window_start = now
 
                 # Track new conversation IDs
                 if conversation_id not in state.conversation_ids:
-                    if len(state.conversation_ids) >= self.config.conversation_limit_per_ip:
+                    if len(state.conversation_ids) >= policy.conversation_limit_per_ip:
                         return (False, "conversation")
                     state.conversation_ids.add(conversation_id)
 
@@ -133,22 +149,26 @@ class InMemoryRateLimiter:
 
             return (True, "ok")
 
-    def get_retry_after(self, reason: Literal["daily", "burst", "global", "conversation"]) -> int:
+    def get_retry_after(
+        self,
+        reason: Literal["daily", "burst", "global", "conversation"],
+        *,
+        policy: RateLimitPolicy,
+    ) -> int:
         """
         Get Retry-After header value (seconds) based on rate limit reason.
         """
         if reason == "daily":
             # Time until next UTC midnight
             now = datetime.now(timezone.utc)
-            next_midnight = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
-            next_midnight = next_midnight.replace(day=now.day + 1)
+            next_midnight = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) + timedelta(days=1)
             return int((next_midnight - now).total_seconds())
-        elif reason == "burst":
-            return self.config.burst_window_seconds
-        elif reason == "global":
+        if reason == "burst":
+            return policy.burst_window_seconds
+        if reason == "global":
             return self.config.global_burst_window_seconds
-        elif reason == "conversation":
-            return self.config.conversation_window_seconds
+        if reason == "conversation":
+            return policy.conversation_window_seconds or 60
         return 60  # fallback
 
     def get_stats(self) -> dict[str, int]:
@@ -184,4 +204,24 @@ def load_rate_limit_config_from_env() -> RateLimitConfig:
         global_burst_window_seconds=60,
         conversation_limit_per_ip=int(os.environ.get("RATE_LIMIT_CONVERSATION_PER_IP", "20")),
         conversation_window_seconds=3600,
+    )
+
+
+def build_chat_rate_limit_policy(config: RateLimitConfig) -> RateLimitPolicy:
+    """Create the standard chat policy from env-backed config."""
+    return RateLimitPolicy(
+        daily_limit=config.daily_limit,
+        burst_limit=config.burst_limit,
+        burst_window_seconds=config.burst_window_seconds,
+        conversation_limit_per_ip=config.conversation_limit_per_ip,
+        conversation_window_seconds=config.conversation_window_seconds,
+    )
+
+
+def build_contact_rate_limit_policy() -> RateLimitPolicy:
+    """Create the stricter contact form policy."""
+    return RateLimitPolicy(
+        daily_limit=5,
+        burst_limit=2,
+        burst_window_seconds=60,
     )

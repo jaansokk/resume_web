@@ -1,100 +1,24 @@
-export type ChatApiRole = 'system' | 'user' | 'assistant';
+import type { ChatApiRequest, ChatApiResponse, Hints, UIDirective } from '@shared/contracts';
 
-export interface ChatApiMessage {
-  role: ChatApiRole;
-  text: string;
-}
-
-// V2 contract types
-export interface ClientUI {
-  view: 'chat' | 'split';
-  split?: {
-    activeTab: 'brief' | 'experience';
-  };
-}
-
-export interface ClientPage {
-  path: string;
-  referrerShareId?: string | null;
-}
-
-export interface ChatApiRequest {
-  conversationId: string;
-  client: {
-    origin: string;
-    page: ClientPage;
-    ui: ClientUI;
-    thinkingEnabled?: boolean;  // Extended thinking toggle (default: true)
-  };
-  messages: ChatApiMessage[];
-}
-
-export interface FitBriefSection {
-  id: string;
-  title: string;
-  content: string;
-}
-
-export interface FitBrief {
-  title: string;
-  sections: FitBriefSection[];
-}
-
-export interface RelevantExperienceItem {
-  slug: string;
-  type: 'experience' | 'project';
-  title: string;
-  company?: string;
-  role?: string;
-  period?: string;
-  bullets: string[];
-  whyRelevant?: string;
-}
-
-export interface RelevantExperienceGroup {
-  title: string;
-  items: RelevantExperienceItem[];
-}
-
-export interface RelevantExperience {
-  groups: RelevantExperienceGroup[];
-}
-
-export interface Artifacts {
-  fitBrief?: FitBrief;
-  relevantExperience?: RelevantExperience;
-}
-
-export interface UIDirective {
-  view: 'chat' | 'split';
-  split?: {
-    activeTab: 'brief' | 'experience';
-  };
-}
-
-export interface Hints {
-  suggestShare?: boolean;
-  suggestTab?: 'brief' | 'experience' | null;
-}
-
-export interface AgentUsage {
-  outputTokens: number;
-}
-
-export interface Usage {
-  outputTokens: number;
-  byAgent?: Record<string, AgentUsage>;
-}
-
-export interface ChatApiResponse {
-  assistant: { text: string };
-  usage?: Usage;
-  ui: UIDirective;
-  hints?: Hints;
-  chips?: string[];
-  artifacts?: Artifacts;
-  thinking?: string;  // Extended thinking summary (when enabled)
-}
+export type {
+  Artifacts,
+  ChatApiClient,
+  ChatApiMessage,
+  ChatApiRequest,
+  ChatApiResponse,
+  ChatApiRole,
+  ClientPage,
+  ClientUI,
+  FitBrief,
+  FitBriefSection,
+  Hints,
+  RelevantExperience,
+  RelevantExperienceGroup,
+  RelevantExperienceItem,
+  UIDirective,
+  UISplit,
+  Usage,
+} from '@shared/contracts';
 
 function getChatApiUrl(): string {
   // Preferred override: full endpoint (including /chat), e.g.

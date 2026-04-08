@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -24,5 +24,4 @@ EXPOSE 8000
 #   In Docker, the reverse proxy typically connects from a private bridge subnet (often 172.16.0.0/12).
 #   Override via FORWARDED_ALLOW_IPS in compose/.env if you want to tighten it further.
 CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --proxy-headers --forwarded-allow-ips \"${FORWARDED_ALLOW_IPS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.1,::1}\""]
-
 
