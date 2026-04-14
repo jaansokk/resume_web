@@ -23,13 +23,14 @@ The product has a **single, consistent header** across all views/routes.
 - Useful for returning to main experience from `/cv` or `/contact`.
 
 **Base links (always visible, following the conditional link):**
+- **Projects** — links to `/recent-projects`
 - **CV** — links to `/cv`
 - **LinkedIn** — external link
 - **Contact** — links to `/contact`
 
 **Notes**
 - Split view takes precedence over Chat because it's the more advanced state.
-- The conditional link is placed first so the positioning of **CV / LinkedIn / Contact** remains unchanged.
+- The conditional link is placed first so the positioning of **Projects / CV / LinkedIn / Contact** remains unchanged.
 - **State persistence**: Conversation state persists in `localStorage` across tabs, page reloads, and browser sessions.
   - Conversation state key: `v2:conversationState`
   - “Has seen split” key: `v2:hasSeenSplit`
@@ -49,6 +50,7 @@ The UI transforms in-place:
 
 There is no “browse mode” as a separate experience in this v2.
 Browsing happens via:
+- **Projects link** in the header (`/recent-projects`)
 - **CV link** in the header (PDF download initially; may become web CV later)
 - **Relevant Experience tab** in split view (LLM/RAG-driven content, visible alongside chat)
 
@@ -67,7 +69,7 @@ Browsing happens via:
 - “Try asking…” label
 - Quick replies (2x2 grid)
 - Optional freeform input (placeholder: “Or tell me what you're looking for...”)
-- Header: name + links (CV / LinkedIn / Contact)
+- Header: name + links (Projects / CV / LinkedIn / Contact)
 
 **Notes**
 - Handshake is an initial presentation of the same conversation. It can be modeled as `ui.view="chat"` with special UI layout.
@@ -213,6 +215,7 @@ The product uses **real routes** (not URL params) for clean navigation and brows
   - Auto-restores conversation state from `localStorage` on mount
   - If no saved state exists, shows Handshake (fresh conversation)
 - **`/cv`** — CV page (separate route, static or React-based)
+- **`/recent-projects`** — Curated project page with sticky project details and screenshot-only scroll layouts
 - **`/contact`** — Contact page (separate route, form with LinkedIn/email capture)
 - **`/c/{shareId}`** — Shared conversation snapshot (immutable, read-only or fork)
 
@@ -221,5 +224,3 @@ The product uses **real routes** (not URL params) for clean navigation and brows
 - Browser back/forward buttons work naturally.
 - No URL params needed for view state (`?resume=1`, `?view=contact` are removed).
 - Conversation state persists across route changes via `localStorage`.
-
-

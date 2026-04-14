@@ -3,12 +3,13 @@ import { createPortal } from 'react-dom';
 import { getResumeNavLabel, subscribeNavStateChanged, type ResumeNavLabel } from '../../utils/navState';
 import { trackExternalLinkClicked } from '../../utils/posthogTracking';
 
-type ActivePage = 'resume' | 'cv' | 'contact';
+type ActivePage = 'resume' | 'cv' | 'contact' | 'projects';
 
 function detectActivePage(pathname: string): ActivePage {
   const normalized = pathname.replace(/\/+$/, '').toLowerCase();
   
   if (normalized.includes('/contact')) return 'contact';
+  if (normalized.includes('/recent-projects')) return 'projects';
   if (normalized.includes('/cv')) return 'cv';
   return 'resume';
 }
@@ -101,6 +102,17 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
               }`}
             >
               {resumeLabel}
+            </a>
+
+            <a
+              href="/recent-projects"
+              className={`text-xs uppercase tracking-wider transition-colors ${
+                currentPage === 'projects'
+                  ? 'text-[var(--v2-accent)]'
+                  : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
+              }`}
+            >
+              Projects
             </a>
 
             <a
@@ -201,6 +213,21 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
               </a>
 
               <a
+                href="/recent-projects"
+                onClick={closeMobileMenu}
+                className={`text-base uppercase tracking-[0.2em] transition-all duration-500 ${
+                  isClosing || !isAnimatingIn ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'
+                } ${
+                  currentPage === 'projects'
+                    ? 'text-[var(--v2-accent)]'
+                    : 'text-[var(--v2-text)]'
+                }`}
+                style={{ transitionDelay: isClosing ? '0ms' : '200ms' }}
+              >
+                Projects
+              </a>
+
+              <a
                 href="/cv"
                 onClick={closeMobileMenu}
                 className={`text-base uppercase tracking-[0.2em] transition-all duration-500 ${
@@ -210,7 +237,7 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
                     ? 'text-[var(--v2-accent)]'
                     : 'text-[var(--v2-text)]'
                 }`}
-                style={{ transitionDelay: isClosing ? '0ms' : '200ms' }}
+                style={{ transitionDelay: isClosing ? '0ms' : '250ms' }}
               >
                 CV
               </a>
@@ -229,7 +256,7 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
                 className={`text-base uppercase tracking-[0.2em] transition-all duration-500 ${
                   isClosing || !isAnimatingIn ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'
                 } text-[var(--v2-text)]`}
-                style={{ transitionDelay: isClosing ? '0ms' : '250ms' }}
+                style={{ transitionDelay: isClosing ? '0ms' : '300ms' }}
               >
                 LinkedIn
               </a>
@@ -244,7 +271,7 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
                     ? 'text-[var(--v2-accent)]'
                     : 'text-[var(--v2-text)]'
                 }`}
-                style={{ transitionDelay: isClosing ? '0ms' : '300ms' }}
+                style={{ transitionDelay: isClosing ? '0ms' : '350ms' }}
               >
                 Contact
               </a>
@@ -256,4 +283,3 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
     </>
   );
 }
-

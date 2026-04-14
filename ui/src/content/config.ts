@@ -38,8 +38,29 @@ const background = defineCollection({
   }),
 });
 
+const projects = defineCollection({
+  type: 'content',
+  schema: z.object({
+    type: z.literal('project'),
+    subtype: z.string().optional(),
+    visibleIn: z.array(visibleInEnum).nonempty(),
+    company: z.string(),
+    title: z.string(),
+    role: z.string(),
+    period: z.string(),
+    tags: z.array(z.string()),
+    keywords: z.array(z.string()).optional(),
+    summary: z.string(),
+    updatedAt: z.string().optional(),
+    heroImage: z.string().optional(),
+    gallery: z.array(z.string()).optional(),
+    featuredInRecentProjects: z.boolean().optional(),
+    recentProjectsOrder: z.number().int().optional(),
+  }),
+});
+
 export const collections = {
   experience,
   background,
+  projects,
 };
-

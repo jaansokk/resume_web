@@ -44,6 +44,7 @@ For `background`:
 ### Optional frontmatter fields
 All types:
 - `keywords[]`, `heroImage`, `gallery[]`, `updatedAt`
+ - `featuredInRecentProjects`, `recentProjectsOrder` (UI-only curation fields for `/recent-projects`)
  - `urlPath` (canonical UI path for the item; optional)
  - `highlights[]` (optional, curated proof points; short bullets)
 
