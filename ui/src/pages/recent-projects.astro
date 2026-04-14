@@ -2,40 +2,12 @@
 import PostHog from '../components/posthog.astro';
 import { PrivacyBanner } from '../components/features/privacy/PrivacyBanner';
 import { Header } from '../components/ui/Header';
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import { ViewTransitions } from 'astro:transitions';
-
-const topCuts = [0, 6, 0, 5, 0, 4];
-const bottomCuts = [8, 3, 7, 4, 6, 2];
-
-function getClipPath(projectIndex: number, shotIndex: number): string {
-  const offsetIndex = (projectIndex * 5 + shotIndex) % bottomCuts.length;
-  const topCut = topCuts[offsetIndex];
-  const bottomCut = bottomCuts[offsetIndex];
-
-  if (shotIndex % 2 === 0) {
-    return `polygon(0% 0%, 100% 0%, ${100 - bottomCut}% 100%, 0% 100%)`;
-  }
-
-  return `polygon(0% 0%, ${100 - topCut}% 0%, 100% 100%, ${bottomCut}% 100%)`;
-}
 
 const curatedProjects = (await getCollection('projects'))
   .filter((entry) => entry.data.featuredInRecentProjects && (entry.data.gallery?.length ?? 0) > 0)
   .sort((a, b) => (a.data.recentProjectsOrder ?? Number.MAX_SAFE_INTEGER) - (b.data.recentProjectsOrder ?? Number.MAX_SAFE_INTEGER));
-
-const renderedProjects = await Promise.all(
-  curatedProjects.map(async (project, projectIndex) => {
-    const { Content } = await render(project);
-
-    return {
-      ...project,
-      Content,
-      projectIndex,
-      gallery: project.data.gallery ?? [],
-    };
-  }),
-);
 ---
 
 <!doctype html>
@@ -84,55 +56,45 @@ const renderedProjects = await Promise.all(
           </p>
         </section>
 
-        {renderedProjects.length > 0 ? (
+        {curatedProjects.length > 0 ? (
           <div class="space-y-20 md:space-y-28">
-            {renderedProjects.map((project) => {
-              const Content = project.Content;
+            {curatedProjects.map((project) => (
+              <section class="project-row grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
+                <div class="lg:sticky lg:top-24 lg:self-start">
+                  <p class="text-xs uppercase tracking-[0.16em] text-[var(--v2-accent)]">
+                    {project.data.period}
+                  </p>
+                  <h2 class="mt-3 text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.05] tracking-[-0.03em] text-[var(--v2-text)]">
+                    {project.data.title}
+                  </h2>
 
-              return (
-                <section class="project-row grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
-                  <div class="lg:sticky lg:top-24 lg:self-start">
-                    <p class="text-xs uppercase tracking-[0.16em] text-[var(--v2-accent)]">
-                      {project.data.company}
-                    </p>
-                    <h2 class="mt-3 text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.05] tracking-[-0.03em] text-[var(--v2-text)]">
-                      {project.data.title}
-                    </h2>
-
-                    <div class="mt-5 flex flex-wrap gap-2">
-                      {project.data.tags.map((tag) => (
-                        <span class="rounded-full border border-[var(--v2-border)] bg-black/15 px-3 py-1 text-xs text-[var(--v2-text-secondary)]">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div class="project-body mt-8">
-                      <Content />
-                    </div>
+                  <div class="mt-5 flex flex-wrap gap-2">
+                    {project.data.tags.map((tag) => (
+                      <span class="rounded-full border border-[var(--v2-border)] bg-black/15 px-3 py-1 text-xs text-[var(--v2-text-secondary)]">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
 
-                  <div class="space-y-5 md:space-y-7">
-                    {project.gallery.map((imageSrc, shotIndex) => {
-                      const clipPath = getClipPath(project.projectIndex, shotIndex);
-                      const offsetClass = shotIndex % 2 === 0 ? 'md:mr-14 lg:mr-18' : 'md:ml-14 lg:ml-18';
+                  <p class="project-summary mt-8">
+                    {project.data.summary}
+                  </p>
+                </div>
 
-                      return (
-                        <div class:list={['shot-wrap', offsetClass]}>
-                          <img
-                            src={imageSrc}
-                            alt={`${project.data.title} screenshot ${shotIndex + 1}`}
-                            loading="lazy"
-                            class="shot-image"
-                            style={`clip-path: ${clipPath};`}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
+                <div class="space-y-5 md:space-y-7">
+                  {(project.data.gallery ?? []).map((imageSrc, shotIndex) => (
+                    <div class="shot-wrap">
+                      <img
+                        src={imageSrc}
+                        alt={`${project.data.title} screenshot ${shotIndex + 1}`}
+                        loading="lazy"
+                        class="shot-image"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
           <section class="rounded-[28px] border border-[var(--v2-border)] bg-black/15 px-6 py-8">
@@ -195,74 +157,10 @@ const renderedProjects = await Promise.all(
     border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
 
-  .project-body {
+  .project-summary {
     color: var(--v2-text-secondary);
-  }
-
-  .project-body :global(*) + * {
-    margin-top: 1rem;
-  }
-
-  .project-body :global(h2) {
-    margin-top: 2rem;
-    color: var(--v2-text);
-    font-size: 0.85rem;
-    line-height: 1.4;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  .project-body :global(h3) {
-    margin-top: 1.5rem;
-    color: var(--v2-text);
-    font-size: 1.05rem;
-    line-height: 1.4;
-    font-weight: 600;
-  }
-
-  .project-body :global(p) {
     max-width: 62ch;
     line-height: 1.9;
-  }
-
-  .project-body :global(ul) {
-    padding-left: 0;
-    list-style: none;
-  }
-
-  .project-body :global(li) {
-    position: relative;
-    padding-left: 1.1rem;
-    line-height: 1.85;
-  }
-
-  .project-body :global(li)::before {
-    content: '•';
-    position: absolute;
-    left: 0;
-    top: 0;
-    color: var(--v2-accent);
-  }
-
-  .project-body :global(strong) {
-    color: var(--v2-text);
-    font-weight: 600;
-  }
-
-  .project-body :global(a) {
-    color: var(--v2-accent);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-
-  .project-body :global(a:hover) {
-    color: var(--v2-text);
-  }
-
-  .project-body :global(code) {
-    color: var(--v2-text);
-    font-size: 0.92em;
   }
 
   .shot-wrap {
