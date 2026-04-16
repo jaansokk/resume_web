@@ -24,11 +24,12 @@ COPY resume_web/ui /app/ui
 # In this repo, local dev uses symlinks under ui/src/content/* -> resume_web_content.
 # Docker can't "merge" a directory on top of an existing symlink path, so remove them
 # and replace with real directories from the content repo.
-RUN rm -f /app/ui/src/content/background /app/ui/src/content/experience
+RUN rm -f /app/ui/src/content/background /app/ui/src/content/experience /app/ui/src/content/projects
 
 # Copy markdown content from the content repo
 COPY resume_web_content/ui/src/content/background /app/ui/src/content/background
 COPY resume_web_content/ui/src/content/experience /app/ui/src/content/experience
+COPY resume_web_content/ui/src/content/projects /app/ui/src/content/projects
 
 # Copy PDF asset to where the sync script expects to find it
 COPY resume_web_content/ui/public/jaan-sokk-cv.pdf /resume_web_content/ui/public/jaan-sokk-cv.pdf
@@ -43,5 +44,4 @@ COPY --from=ui_build /app/ui/dist /srv/ui
 
 # Caddy config (uses DOMAIN + ACME_EMAIL env vars)
 COPY resume_web/infra-vps/Caddyfile /etc/caddy/Caddyfile
-
 
