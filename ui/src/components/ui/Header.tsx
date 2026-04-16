@@ -112,7 +112,7 @@ export function Header({ transparent, activePage, isContactActive }: HeaderProps
                   : 'text-[var(--v2-text-tertiary)] hover:text-[var(--v2-text-secondary)]'
               }`}
             >
-              Projects
+              Recent Projects
             </a>
 
             <a

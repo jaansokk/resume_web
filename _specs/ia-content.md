@@ -215,7 +215,7 @@ The product uses **real routes** (not URL params) for clean navigation and brows
   - Auto-restores conversation state from `localStorage` on mount
   - If no saved state exists, shows Handshake (fresh conversation)
 - **`/cv`** — CV page (separate route, static or React-based)
-- **`/recent-projects`** — Curated project page with sticky project details and screenshot-only scroll layouts
+- **`/recent-projects`** — Curated project page with sticky project details, screenshot galleries, and optional scroll-sequenced animated project media
 - **`/contact`** — Contact page (separate route, form with LinkedIn/email capture)
 - **`/c/{shareId}`** — Shared conversation snapshot (immutable, read-only or fork)
 

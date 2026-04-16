@@ -6,7 +6,13 @@ import { getCollection } from 'astro:content';
 import { ViewTransitions } from 'astro:transitions';
 
 const curatedProjects = (await getCollection('projects'))
-  .filter((entry) => entry.data.featuredInRecentProjects && (entry.data.gallery?.length ?? 0) > 0)
+  .filter((entry) => {
+    const hasGallery = (entry.data.gallery?.length ?? 0) > 0;
+    const hasScrollSequence =
+      entry.data.mediaTreatment === 'scrollSequence' && (entry.data.mediaSequence?.length ?? 0) > 0;
+
+    return entry.data.featuredInRecentProjects && (hasGallery || hasScrollSequence);
+  })
   .sort((a, b) => (a.data.recentProjectsOrder ?? Number.MAX_SAFE_INTEGER) - (b.data.recentProjectsOrder ?? Number.MAX_SAFE_INTEGER));
 ---
 
@@ -47,54 +53,119 @@ const curatedProjects = (await getCollection('projects'))
         <section class="mb-14 md:mb-18">
           <p class="text-xs uppercase tracking-[0.18em] text-[var(--v2-accent)] mb-4">Recent Projects</p>
           <h1 class="max-w-4xl text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.05] tracking-[-0.03em] text-[var(--v2-text)]">
-            Curated work with the
-            <span class="v2-serif text-[var(--v2-accent)]">proof still visible</span>.
+            Curated selection of
+            <span class="v2-serif text-[var(--v2-accent)]">recent work</span>.
           </h1>
           <p class="mt-6 max-w-2xl text-base md:text-lg leading-8 text-[var(--v2-text-secondary)]">
-            A focused reading path through selected projects: company, context, implementation notes,
-            and the product surfaces themselves.
+            A focused selection of selected recent projects: company, context, implementation stack,
+            and the product surfaces.
           </p>
         </section>
 
         {curatedProjects.length > 0 ? (
           <div class="space-y-20 md:space-y-28">
-            {curatedProjects.map((project) => (
-              <section class="project-row grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
-                <div class="lg:sticky lg:top-24 lg:self-start">
-                  <p class="text-xs uppercase tracking-[0.16em] text-[var(--v2-accent)]">
-                    {project.data.period}
-                  </p>
-                  <h2 class="mt-3 text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.05] tracking-[-0.03em] text-[var(--v2-text)]">
-                    {project.data.title}
-                  </h2>
+            {curatedProjects.map((project) => {
+              const sequence = project.data.mediaSequence ?? [];
+              const isScrollSequence = project.data.mediaTreatment === 'scrollSequence' && sequence.length > 0;
+              const isVideoSource = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
 
-                  <div class="mt-5 flex flex-wrap gap-2">
-                    {project.data.tags.map((tag) => (
-                      <span class="rounded-full border border-[var(--v2-border)] bg-black/15 px-3 py-1 text-xs text-[var(--v2-text-secondary)]">
-                        {tag}
-                      </span>
-                    ))}
+              return (
+                <section
+                  class:list={[
+                    'project-row grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14',
+                    { 'has-scroll-sequence': isScrollSequence },
+                  ]}
+                  style={isScrollSequence ? `--sequence-steps: ${sequence.length};` : undefined}
+                  data-scroll-sequence={isScrollSequence ? '' : undefined}
+                >
+                  <div class="lg:sticky lg:top-24 lg:self-start">
+                    <p class="text-xs uppercase tracking-[0.16em] text-[var(--v2-accent)]">
+                      {project.data.period}
+                    </p>
+                    <h2 class="mt-3 text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.05] tracking-[-0.03em] text-[var(--v2-text)]">
+                      {project.data.title}
+                    </h2>
+
+                    <div class="mt-5 flex flex-wrap gap-2">
+                      {project.data.tags.map((tag) => (
+                        <span class="rounded-full border border-[var(--v2-border)] bg-black/15 px-3 py-1 text-xs text-[var(--v2-text-secondary)]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p class="project-summary mt-8">
+                      {project.data.summary}
+                    </p>
+
+                    {isScrollSequence && (
+                      <div class="feature-nav mt-8" aria-label={`${project.data.title} features`}>
+                        {sequence.map((item, itemIndex) => (
+                          <button
+                            type="button"
+                            class:list={['feature-trigger', { 'is-active': itemIndex === 0 }]}
+                            data-sequence-trigger
+                            data-sequence-index={itemIndex}
+                            aria-pressed={itemIndex === 0 ? 'true' : 'false'}
+                          >
+                            <span class="feature-kicker">{String(itemIndex + 1).padStart(2, '0')}</span>
+                            <span>{item.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <p class="project-summary mt-8">
-                    {project.data.summary}
-                  </p>
-                </div>
-
-                <div class="space-y-5 md:space-y-7">
-                  {(project.data.gallery ?? []).map((imageSrc, shotIndex) => (
-                    <div class="shot-wrap">
-                      <img
-                        src={imageSrc}
-                        alt={`${project.data.title} screenshot ${shotIndex + 1}`}
-                        loading="lazy"
-                        class="shot-image"
-                      />
+                  {isScrollSequence ? (
+                    <div class="scroll-sequence-wrap">
+                      <div class="scroll-sequence-stage" aria-label={`${project.data.title} animated feature previews`}>
+                        {sequence.map((item, itemIndex) => (
+                          isVideoSource(item.src) ? (
+                            <video
+                              src={item.src}
+                              class:list={['sequence-media', { 'is-active': itemIndex === 0 }]}
+                              data-sequence-media
+                              data-sequence-index={itemIndex}
+                              aria-label={item.alt}
+                              aria-hidden={itemIndex === 0 ? 'false' : 'true'}
+                              autoplay
+                              muted
+                              loop
+                              playsinline
+                              preload="metadata"
+                            ></video>
+                          ) : (
+                            <img
+                              src={item.src}
+                              alt={item.alt}
+                              class:list={['sequence-media', { 'is-active': itemIndex === 0 }]}
+                              data-sequence-media
+                              data-sequence-index={itemIndex}
+                              aria-hidden={itemIndex === 0 ? 'false' : 'true'}
+                              decoding="async"
+                            />
+                          )
+                        ))}
+                        <div class="sequence-blackout" data-sequence-blackout aria-hidden="true"></div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-            ))}
+                  ) : (
+                    <div class="space-y-5 md:space-y-7">
+                      {(project.data.gallery ?? []).map((imageSrc, shotIndex) => (
+                        <div class="shot-wrap">
+                          <img
+                            src={imageSrc}
+                            alt={`${project.data.title} screenshot ${shotIndex + 1}`}
+                            loading="lazy"
+                            class="shot-image"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         ) : (
           <section class="rounded-[28px] border border-[var(--v2-border)] bg-black/15 px-6 py-8">
@@ -157,10 +228,63 @@ const curatedProjects = (await getCollection('projects'))
     border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
 
+  .project-row.has-scroll-sequence {
+    min-height: calc(var(--sequence-steps, 4) * 78vh);
+  }
+
   .project-summary {
     color: var(--v2-text-secondary);
     max-width: 62ch;
     line-height: 1.9;
+  }
+
+  .feature-nav {
+    display: grid;
+    gap: 0.25rem;
+    max-width: 30rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .feature-trigger {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    align-items: center;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 0;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: transparent;
+    color: var(--v2-text-tertiary);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition:
+      color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .feature-trigger:hover,
+  .feature-trigger:focus-visible {
+    color: var(--v2-text-secondary);
+    border-bottom-color: rgba(164, 198, 190, 0.32);
+  }
+
+  .feature-trigger:focus-visible {
+    outline: 1px solid var(--v2-accent);
+    outline-offset: 4px;
+  }
+
+  .feature-trigger.is-active {
+    color: var(--v2-text);
+    border-bottom-color: rgba(164, 198, 190, 0.68);
+  }
+
+  .feature-kicker {
+    color: var(--v2-accent);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
   }
 
   .shot-wrap {
@@ -175,10 +299,200 @@ const curatedProjects = (await getCollection('projects'))
     background: rgba(10, 10, 10, 0.65);
   }
 
+  .scroll-sequence-wrap {
+    position: sticky;
+    top: 6rem;
+    align-self: start;
+  }
+
+  .scroll-sequence-stage {
+    position: relative;
+    width: min(100%, 34rem);
+    aspect-ratio: 1044 / 1080;
+    margin-left: auto;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #000;
+    box-shadow: 0 24px 54px rgba(0, 0, 0, 0.32);
+    contain: paint;
+  }
+
+  .sequence-media,
+  .sequence-blackout {
+    position: absolute;
+    inset: 0;
+  }
+
+  .sequence-media {
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: translateZ(0);
+  }
+
+  .sequence-media.is-active {
+    opacity: 1;
+  }
+
+  .sequence-blackout {
+    z-index: 2;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+  }
+
   @media (max-width: 1023px) {
     .project-row + .project-row {
       padding-top: 0;
       border-top: none;
     }
+
+    .project-row.has-scroll-sequence {
+      min-height: auto;
+    }
+
+    .scroll-sequence-wrap {
+      position: relative;
+      top: auto;
+    }
+
+    .scroll-sequence-stage {
+      width: min(100%, 28rem);
+      margin-right: auto;
+      margin-left: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feature-trigger {
+      transition: none;
+    }
   }
 </style>
+
+<script>
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const sequenceBlocks = Array.from(document.querySelectorAll('[data-scroll-sequence]'));
+
+  sequenceBlocks.forEach((block) => {
+    const mediaItems = Array.from(block.querySelectorAll('[data-sequence-media]'));
+    const triggers = Array.from(block.querySelectorAll('[data-sequence-trigger]'));
+    const blackout = block.querySelector('[data-sequence-blackout]');
+    let activeIndex = 0;
+    let frameRequested = false;
+
+    const setActiveState = (index) => {
+      activeIndex = clamp(index, 0, mediaItems.length - 1);
+
+      triggers.forEach((trigger, triggerIndex) => {
+        const isActive = triggerIndex === activeIndex;
+        trigger.classList.toggle('is-active', isActive);
+        trigger.setAttribute('aria-pressed', String(isActive));
+      });
+
+      mediaItems.forEach((mediaItem, mediaIndex) => {
+        const isActive = mediaIndex === activeIndex;
+        mediaItem.classList.toggle('is-active', isActive);
+        mediaItem.setAttribute('aria-hidden', String(!isActive));
+      });
+    };
+
+    const applyVisualState = (currentIndex, nextIndex, transitionProgress) => {
+      const hasNext = nextIndex !== currentIndex;
+      const showNext = hasNext && transitionProgress >= 0.5;
+      const activeCandidate = showNext ? nextIndex : currentIndex;
+
+      if (activeCandidate !== activeIndex) {
+        setActiveState(activeCandidate);
+      }
+
+      mediaItems.forEach((mediaItem, mediaIndex) => {
+        let opacity = mediaIndex === currentIndex ? 1 : 0;
+
+        if (hasNext && transitionProgress > 0) {
+          if (transitionProgress < 0.5) {
+            opacity = mediaIndex === currentIndex ? 1 - transitionProgress * 2 : 0;
+          } else {
+            opacity = mediaIndex === nextIndex ? (transitionProgress - 0.5) * 2 : 0;
+          }
+        }
+
+        mediaItem.style.opacity = String(opacity);
+      });
+
+      if (blackout) {
+        const blackoutOpacity = hasNext
+          ? 1 - Math.abs(transitionProgress - 0.5) * 2
+          : 0;
+        blackout.style.opacity = String(clamp(blackoutOpacity, 0, 1));
+      }
+    };
+
+    const updateFromScroll = () => {
+      frameRequested = false;
+
+      if (reducedMotion.matches || mediaItems.length <= 1) {
+        return;
+      }
+
+      const rect = block.getBoundingClientRect();
+      const blockTop = window.scrollY + rect.top;
+      const scrollable = Math.max(block.offsetHeight - window.innerHeight, 1);
+      const progress = clamp((window.scrollY - blockTop) / scrollable, 0, 1);
+      const scaled = progress * mediaItems.length;
+      const currentIndex = clamp(Math.floor(scaled), 0, mediaItems.length - 1);
+      const localProgress = scaled - currentIndex;
+      const transitionStart = 0.64;
+      const nextIndex = clamp(currentIndex + 1, 0, mediaItems.length - 1);
+      const transitionProgress =
+        currentIndex === mediaItems.length - 1 || localProgress < transitionStart
+          ? 0
+          : clamp((localProgress - transitionStart) / (1 - transitionStart), 0, 1);
+
+      applyVisualState(currentIndex, nextIndex, transitionProgress);
+    };
+
+    const requestScrollUpdate = () => {
+      if (!frameRequested) {
+        frameRequested = true;
+        window.requestAnimationFrame(updateFromScroll);
+      }
+    };
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        const targetIndex = Number(trigger.getAttribute('data-sequence-index') ?? 0);
+        setActiveState(targetIndex);
+
+        if (blackout) {
+          blackout.style.opacity = '0';
+        }
+
+        mediaItems.forEach((mediaItem, mediaIndex) => {
+          mediaItem.style.opacity = mediaIndex === targetIndex ? '1' : '0';
+        });
+
+        const blockTop = window.scrollY + block.getBoundingClientRect().top;
+        const scrollable = Math.max(block.offsetHeight - window.innerHeight, 1);
+        const targetProgress = clamp((targetIndex + 0.18) / mediaItems.length, 0, 1);
+
+        window.scrollTo({
+          top: blockTop + scrollable * targetProgress,
+          behavior: reducedMotion.matches ? 'auto' : 'smooth',
+        });
+      });
+    });
+
+    window.addEventListener('scroll', requestScrollUpdate, { passive: true });
+    window.addEventListener('resize', requestScrollUpdate);
+    reducedMotion.addEventListener('change', () => {
+      setActiveState(activeIndex);
+      requestScrollUpdate();
+    });
+    updateFromScroll();
+  });
+</script>

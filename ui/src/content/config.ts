@@ -1,6 +1,13 @@
 import { defineCollection, z } from 'astro:content';
 
 const visibleInEnum = z.enum(['cv', 'artifacts', 'rag']);
+const mediaTreatmentEnum = z.enum(['gallery', 'scrollSequence']);
+const mediaSequenceItem = z.object({
+  label: z.string(),
+  src: z.string(),
+  alt: z.string(),
+  poster: z.string().optional(),
+});
 
 const experience = defineCollection({
   type: 'content',
@@ -54,6 +61,8 @@ const projects = defineCollection({
     updatedAt: z.string().optional(),
     heroImage: z.string().optional(),
     gallery: z.array(z.string()).optional(),
+    mediaTreatment: mediaTreatmentEnum.optional(),
+    mediaSequence: z.array(mediaSequenceItem).optional(),
     featuredInRecentProjects: z.boolean().optional(),
     recentProjectsOrder: z.number().int().optional(),
   }),

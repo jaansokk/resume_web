@@ -45,6 +45,7 @@ For `background`:
 All types:
 - `keywords[]`, `heroImage`, `gallery[]`, `updatedAt`
  - `featuredInRecentProjects`, `recentProjectsOrder` (UI-only curation fields for `/recent-projects`)
+ - `mediaTreatment`, `mediaSequence[]` (UI-only `/recent-projects` media controls; currently used for animated scroll-sequence project media and not part of RAG semantics unless intentionally indexed later)
  - `urlPath` (canonical UI path for the item; optional)
  - `highlights[]` (optional, curated proof points; short bullets)
 
