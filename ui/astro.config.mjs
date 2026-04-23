@@ -9,6 +9,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://jaan.sokkphoto.com',
   integrations: [react(), tailwind()],
   vite: {
     resolve: {

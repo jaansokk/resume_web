@@ -3,6 +3,7 @@ import PostHog from '../components/posthog.astro';
 import { PrivacyBanner } from '../components/features/privacy/PrivacyBanner';
 import { Header } from '../components/ui/Header';
 import { getCollection } from 'astro:content';
+import SeoHead from '../components/astro/SeoHead.astro';
 import { ViewTransitions } from 'astro:transitions';
 
 const curatedProjects = (await getCollection('projects'))
@@ -27,10 +28,10 @@ const curatedProjects = (await getCollection('projects'))
       href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap"
       rel="stylesheet"
     />
-    <title>Recent Projects — Jaan Sokk</title>
-    <meta
-      name="description"
-      content="A curated recent-projects view built from real project notes, product screenshots, and implementation details."
+    <SeoHead
+      title="Recent Projects - Jaan Sokk"
+      description="Selected recent work by Jaan Sokk: AI-assisted tools, product systems, web applications, and implementation notes."
+      path="/recent-projects/"
     />
     <ViewTransitions />
     <PostHog />

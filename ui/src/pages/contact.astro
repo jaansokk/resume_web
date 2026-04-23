@@ -1,6 +1,7 @@
 ---
 import PostHog from '../components/posthog.astro';
 import { PrivacyBanner } from '../components/features/privacy/PrivacyBanner';
+import SeoHead from '../components/astro/SeoHead.astro';
 import { ViewTransitions } from 'astro:transitions';
 import { ContactView } from '../components/routes/contact/ContactView';
 ---
@@ -12,7 +13,11 @@ import { ContactView } from '../components/routes/contact/ContactView';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-    <title>Contact — Jaan Sokk</title>
+    <SeoHead
+      title="Contact - Jaan Sokk"
+      description="Get in touch with Jaan Sokk about product leadership, full stack engineering, consulting, or hiring conversations."
+      path="/contact/"
+    />
     <ViewTransitions />
     <PostHog />
   </head>

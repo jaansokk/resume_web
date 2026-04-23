@@ -36,6 +36,12 @@ The product has a **single, consistent header** across all views/routes.
   - “Has seen split” key: `v2:hasSeenSplit`
 - **Auto-restore**: On mount at any route, the app checks `localStorage` and restores the last conversation state if present.
 
+## Public route metadata
+
+All public routes emit static social sharing metadata for link previews: canonical URL, description, Open Graph tags, Twitter Card tags, and a shared 1200x630 preview image.
+
+Current shared conversation URLs (`/c/{shareId}`) use generic static metadata for the `/c/` route. They do not generate per-share titles, descriptions, or preview images.
+
 ---
 
 ## Primary experience (single flow, in-place transforms)

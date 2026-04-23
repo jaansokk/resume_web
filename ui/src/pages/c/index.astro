@@ -1,6 +1,7 @@
 ---
 import PostHog from '../../components/posthog.astro';
 import { PrivacyBanner } from '../../components/features/privacy/PrivacyBanner';
+import SeoHead from '../../components/astro/SeoHead.astro';
 import { ViewTransitions } from 'astro:transitions';
 import SharedConversationApp from '../../components/routes/share/SharedConversationApp';
 ---
@@ -12,7 +13,11 @@ import SharedConversationApp from '../../components/routes/share/SharedConversat
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-    <title>Shared — Jaan Sokk</title>
+    <SeoHead
+      title="Shared Fit Brief - Jaan Sokk"
+      description="A shared fit brief and relevant experience snapshot from Jaan Sokk's interactive resume."
+      path="/c/"
+    />
     <ViewTransitions />
     <PostHog />
   </head>

@@ -2,6 +2,7 @@
 import PostHog from '../components/posthog.astro';
 import { PrivacyBanner } from '../components/features/privacy/PrivacyBanner';
 import ResumeApp from '../components/routes/resume/ResumeApp';
+import SeoHead from '../components/astro/SeoHead.astro';
 import { ViewTransitions } from 'astro:transitions';
 ---
 <!doctype html>
@@ -12,7 +13,11 @@ import { ViewTransitions } from 'astro:transitions';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-    <title>Jaan Sokk — PM & Technical Lead</title>
+    <SeoHead
+      title="Jaan Sokk - Product Leader | Full Stack Engineer"
+      description="Interactive resume for Jaan Sokk, a product leader and full stack engineer building AI-assisted product, web, and data tools."
+      path="/"
+    />
     <ViewTransitions />
     <PostHog />
   </head>
