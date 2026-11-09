@@ -112,8 +112,8 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
                       class="group scroll-mt-24"
                     >
                       <div class="relative pl-6 pb-12 border-l border-[var(--v2-border-subtle)] last:pb-0">
-                        <!-- Timeline dot -->
-                        <div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-[var(--v2-accent)] opacity-60 group-hover:opacity-100 transition-opacity" />
+                        <!-- Timeline dot: centred on the title's first line (text-lg, 28px line height) -->
+                        <div class="absolute -left-[5px] top-[9.5px] w-[9px] h-[9px] rounded-full bg-[var(--v2-accent)] opacity-60 group-hover:opacity-100 transition-opacity" />
                         
                         <!-- Header -->
                         <div class="mb-4">
@@ -155,7 +155,7 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
                             <ul class="space-y-2">
                               {role.parsed.impact.map((bullet) => (
                                 <li class="flex items-start gap-3 text-sm text-[var(--v2-text-secondary)]">
-                                  <span class="text-[var(--v2-accent)] mt-1.5 text-[8px]">●</span>
+                                  <span class="flex h-5 shrink-0 items-center" aria-hidden="true"><span class="h-[5px] w-[5px] rounded-full bg-[var(--v2-accent)]"></span></span>
                                   <span>{bullet}</span>
                                 </li>
                               ))}
@@ -170,7 +170,7 @@ const skillsEducation = skillsDoc ? parseSkillsEducationMarkdown(skillsDoc.body)
                             <ul class="space-y-1">
                               {role.parsed.context.map((bullet) => (
                                 <li class="flex items-start gap-3 text-sm text-[var(--v2-text-secondary)]">
-                                  <span class="text-[var(--v2-accent)] mt-1.5 text-[8px]">●</span>
+                                  <span class="flex h-5 shrink-0 items-center" aria-hidden="true"><span class="h-[5px] w-[5px] rounded-full bg-[var(--v2-accent)]"></span></span>
                                   <span>{bullet}</span>
                                 </li>
                               ))}
