@@ -169,6 +169,10 @@ Use point upserts:
 - Upsert `content_items_v1` by deterministic point ID (see `_specs/qdrant-index-design.md`)
 - Upsert `content_chunks_v1` by deterministic point ID (see `_specs/qdrant-index-design.md`)
 
+Stale points:
+- Upserts never remove anything. When a content file is deleted, renamed, or now yields fewer chunks, its old points stay in Qdrant and keep being retrieved.
+- After such a change, compare the collections against the run's debug dumps (`ingest/exported-content/debug/items.json` and `chunks.json`: items by `slug`, chunks by `slug` + `chunkId`) and delete the points that are no longer produced.
+
 Idempotency:
 - Compute a hash for each source file (frontmatter + body).
 - Store `updatedAt` and optionally `sourceHash`.
