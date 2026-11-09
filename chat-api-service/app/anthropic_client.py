@@ -173,6 +173,14 @@ ANSWER_SCHEMA = {
 }
 
 
+def _is_haiku_5(model: str) -> bool:
+    """
+    Claude Haiku 5.x models use adaptive thinking + effort instead of
+    budget_tokens, and reject non-default sampling params (temperature etc.).
+    """
+    return "claude-haiku-5" in model
+
+
 class AnthropicClient:
     """
     Direct HTTP client for Anthropic API using httpx.
@@ -200,7 +208,13 @@ class AnthropicClient:
         # Extended thinking configuration
         # Budget tokens for thinking (default 10000, max depends on model)
         self.thinking_budget_tokens = int(os.environ.get("ANTHROPIC_THINKING_BUDGET_TOKENS", "10000"))
-        
+
+        # Effort levels (Haiku 5.x only; ignored for older models).
+        # Thinking-off calls must stay at "high" or below.
+        self.router_effort = os.environ.get("ANTHROPIC_ROUTER_EFFORT", "low").strip()
+        self.answer_effort = os.environ.get("ANTHROPIC_ANSWER_EFFORT", "low").strip()
+        self.answer_thinking_effort = os.environ.get("ANTHROPIC_ANSWER_THINKING_EFFORT", "medium").strip()
+
         # Validate model compatibility with structured outputs
         if self.use_structured_outputs:
             self._validate_structured_output_support()
@@ -218,7 +232,7 @@ class AnthropicClient:
         """Check if configured models support structured outputs and log warnings."""
         # Models that support structured outputs (as of 2025-01)
         # Pattern: sonnet-4-5, opus-4-1, opus-4-5, haiku-4-5, or haiku with 3-5 in name
-        supported_patterns = ["-4-5-", "-4-1-", "3-5-haiku"]
+        supported_patterns = ["-4-5-", "-4-1-", "3-5-haiku", "claude-haiku-5"]
         
         for model_name, model_type in [(self.chat_model, "chat"), (self.router_model, "router")]:
             if not any(pattern in model_name for pattern in supported_patterns):
@@ -265,6 +279,51 @@ class AnthropicClient:
                 )
             return self._client
     
+    def _generation_params(
+        self,
+        *,
+        model: str,
+        thinking_enabled: bool,
+        effort: str,
+        json_schema: dict[str, Any] | None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
+        """
+        Model-specific request params: thinking, effort, sampling, structured output.
+
+        Haiku 5.x: adaptive thinking (summarized, so the UI can show it) or thinking
+        disabled, effort via output_config, no sampling params.
+        The JSON schema is kept with thinking on, so answers stay valid JSON.
+        Older models: legacy budget_tokens thinking, temperature, output_format,
+        with structured outputs off while thinking is on (legacy beta limitation).
+        """
+        params: dict[str, Any] = {}
+        want_schema = bool(json_schema) and self.use_structured_outputs
+
+        if _is_haiku_5(model):
+            use_schema = want_schema
+            params["thinking"] = (
+                {"type": "adaptive", "display": "summarized"}
+                if thinking_enabled
+                else {"type": "disabled"}
+            )
+            output_config: dict[str, Any] = {"effort": effort}
+            if use_schema:
+                output_config["format"] = {"type": "json_schema", "schema": json_schema}
+            params["output_config"] = output_config
+            return params
+
+        use_schema = want_schema and not thinking_enabled
+        if thinking_enabled:
+            # Legacy extended thinking requires temperature 1
+            params["temperature"] = 1
+            params["thinking"] = {"type": "enabled", "budget_tokens": self.thinking_budget_tokens}
+        elif temperature is not None:
+            params["temperature"] = temperature
+        if use_schema:
+            params["output_format"] = {"type": "json_schema", "schema": json_schema}
+        return params
+
     async def close(self) -> None:
         """Close the HTTP clients."""
         if self._client is not None:
@@ -281,6 +340,7 @@ class AnthropicClient:
         messages: list[dict[str, str]],
         max_tokens: int,
         json_schema: dict[str, Any] | None = None,
+        effort: str = "low",
     ) -> tuple[str, dict[str, int]]:
         """
         Non-streaming API call that returns raw JSON string.
@@ -325,20 +385,20 @@ class AnthropicClient:
                 }
             ]
 
-        # Add structured output schema if enabled
+        # Thinking off; effort / structured output schema per model
+        request_body.update(
+            self._generation_params(
+                model=model,
+                thinking_enabled=False,
+                effort=effort,
+                json_schema=json_schema,
+            )
+        )
         if json_schema and self.use_structured_outputs:
-            request_body["output_format"] = {
-                "type": "json_schema",
-                "schema": json_schema
-            }
             logger.info(f"Using structured outputs with schema keys: {list(json_schema.get('properties', {}).keys())}")
 
         client = await self._get_client()
-        
-        # Log request details for debugging
-        if self.use_structured_outputs:
-            logger.debug(f"Sending request to Anthropic with output_format: {json.dumps(request_body.get('output_format', {}), indent=2)}")
-        
+
         response = await client.post("/messages", json=request_body)
         
         # Log error details if request fails
@@ -356,11 +416,17 @@ class AnthropicClient:
         except Exception:
             usage_out = 0
         
-        # Extract text content from the response
+        stop_reason = data.get("stop_reason") if isinstance(data, dict) else None
+        if stop_reason not in (None, "end_turn"):
+            logger.warning(f"Anthropic {model} stopped with stop_reason={stop_reason}")
+
+        # Extract the first text block (newer models may emit thinking blocks first)
         content = ""
-        if "content" in data and len(data["content"]) > 0:
-            content = data["content"][0].get("text", "{}")
-        
+        for block in data.get("content") or []:
+            if block.get("type") == "text":
+                content = block.get("text", "{}")
+                break
+
         # Strip markdown code blocks if present
         content = content.strip()
         if content.startswith("```json"):
@@ -383,6 +449,7 @@ class AnthropicClient:
             messages=messages,
             max_tokens=self.router_max_tokens,
             json_schema=ROUTER_SCHEMA,
+            effort=self.router_effort,
         )
         try:
             self.last_router_output_tokens = int((usage or {}).get("output_tokens") or 0)
@@ -397,6 +464,7 @@ class AnthropicClient:
             messages=messages,
             max_tokens=self.router_max_tokens,
             json_schema=ROUTER_SCHEMA,
+            effort=self.router_effort,
         )
 
     async def answer(self, *, messages: list[dict[str, str]]) -> str:
@@ -406,6 +474,7 @@ class AnthropicClient:
             messages=messages,
             max_tokens=self.answer_max_tokens,
             json_schema=ANSWER_SCHEMA,
+            effort=self.answer_effort,
         )
         try:
             self.last_answer_output_tokens = int((usage or {}).get("output_tokens") or 0)
@@ -420,6 +489,7 @@ class AnthropicClient:
             messages=messages,
             max_tokens=self.answer_max_tokens,
             json_schema=ANSWER_SCHEMA,
+            effort=self.answer_effort,
         )
 
     async def answer_stream(
@@ -470,18 +540,20 @@ class AnthropicClient:
             "stream": True,  # Enable streaming
         }
         
-        # Extended thinking configuration
-        # When thinking is enabled, temperature MUST be 1
+        # Thinking / effort / sampling / structured output per model
+        request_body.update(
+            self._generation_params(
+                model=self.chat_model,
+                thinking_enabled=thinking_enabled,
+                effort=self.answer_thinking_effort if thinking_enabled else self.answer_effort,
+                json_schema=ANSWER_SCHEMA,
+                temperature=self.chat_temperature,
+            )
+        )
         if thinking_enabled:
-            request_body["temperature"] = 1
-            request_body["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": self.thinking_budget_tokens,
-            }
-            logger.info(f"Extended thinking enabled with budget_tokens={self.thinking_budget_tokens}")
-        else:
-            request_body["temperature"] = self.chat_temperature
-        
+            effort = (request_body.get("output_config") or {}).get("effort")
+            logger.info(f"Thinking enabled: {request_body.get('thinking')} effort={effort}")
+
         if system_content:
             request_body["system"] = [
                 {
@@ -491,15 +563,8 @@ class AnthropicClient:
                 }
             ]
 
-        # Add structured output schema if enabled (not compatible with thinking)
-        # When thinking is enabled, we can't use structured outputs
-        if self.use_structured_outputs and not thinking_enabled:
-            request_body["output_format"] = {
-                "type": "json_schema",
-                "schema": ANSWER_SCHEMA
-            }
+        if "output_format" in request_body or "format" in request_body.get("output_config", {}):
             logger.info(f"Using structured outputs for streaming with schema keys: {list(ANSWER_SCHEMA.get('properties', {}).keys())}")
-            logger.debug(f"Full request body output_format: {json.dumps(request_body.get('output_format', {}), indent=2)}")
         elif thinking_enabled and self.use_structured_outputs:
             logger.info("Structured outputs disabled (incompatible with extended thinking)")
 
@@ -627,6 +692,9 @@ class AnthropicClient:
 
                         elif event_type == "message_delta":
                             # Token counts are reported here; per docs these are cumulative.
+                            stop_reason = (data.get("delta") or {}).get("stop_reason")
+                            if stop_reason not in (None, "end_turn"):
+                                logger.warning(f"Anthropic {self.chat_model} stream stopped with stop_reason={stop_reason}")
                             try:
                                 usage = data.get("usage") if isinstance(data, dict) else None
                                 maybe = (usage or {}).get("output_tokens")

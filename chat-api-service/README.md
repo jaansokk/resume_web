@@ -21,6 +21,10 @@ The service loads `chat-api-service/.env` and `chat-api-service/.env.local` on s
 - `ANTHROPIC_CHAT_MODEL` (default: `claude-sonnet-4-20250514`)
 - `ANTHROPIC_ROUTER_MODEL` (default: `claude-sonnet-4-20250514`)
 - `ANTHROPIC_MAX_TOKENS` (default: `4096`)
+- Haiku 5.x only (`claude-haiku-5-5`): thinking is adaptive and set by effort; `temperature` and `ANTHROPIC_THINKING_BUDGET_TOKENS` are ignored.
+  - `ANTHROPIC_ROUTER_EFFORT` (default: `low`, thinking off)
+  - `ANTHROPIC_ANSWER_EFFORT` (default: `low`, thinking toggle off; thinking is disabled, so keep this at `high` or below)
+  - `ANTHROPIC_ANSWER_THINKING_EFFORT` (default: `medium`, thinking toggle on; summarized thinking is streamed)
 
 **OpenAI:**
 - `OPENAI_API_KEY` (always required for embeddings)
@@ -96,6 +100,7 @@ OPENAI_EMBED_MODEL=text-embedding-3-small
 **Available Models:**
 
 1. **Anthropic** (when `MODEL_PROVIDER=anthropic`):
+   - `claude-haiku-5-5` (Claude Haiku 5.5) - used locally (`.env.local`)
    - `claude-sonnet-4-20250514` (Claude Sonnet 4.5) - default
    - `claude-opus-4-20250514` (Claude Opus 4)
    - `claude-3-7-sonnet-20250219` (Claude 3.7 Sonnet)

@@ -129,8 +129,8 @@ Thinking mode introduces a practical compatibility split:
 
 - **Extended thinking mode (thinking enabled)**:
   - uses Anthropic extended thinking streaming
-  - **structured outputs may be incompatible** with extended thinking (provider constraint)
-  - model may return **plain text** instead of JSON; server must apply fallbacks
+  - **Haiku 5.x**: the JSON schema stays on with thinking, so answers remain valid JSON (with artifacts)
+  - **older models**: structured outputs are turned off with thinking (legacy beta limitation); model may return **plain text** instead of JSON, so the server applies fallbacks
 
 ### Plain-text fallback (current implementation)
 
@@ -142,15 +142,19 @@ When extended thinking returns plain text (not JSON):
 
 ## Anthropic extended thinking constraints
 
-These constraints must be enforced by the server when `thinkingEnabled=true`:
+The server picks request params per model (`AnthropicClient._generation_params`).
 
-- **Temperature** must be `1`.
-- **Token budgeting**: `max_tokens` must be **greater than** `thinking.budget_tokens`.
-  - otherwise Anthropic returns `400` (`invalid_request_error`).
+**Haiku 5.x (`claude-haiku-5-5`, current local model):**
+- Thinking on: `thinking: {type: "adaptive", display: "summarized"}` (summaries feed `event: thinking`), effort via `output_config.effort`.
+- Thinking off (and the router): `thinking: {type: "disabled"}`, which is only valid at effort `high` or below.
+- No `temperature` / `top_p` / `top_k` and no `budget_tokens` (both return `400`); no assistant prefill.
+- Thinking counts toward `max_tokens`; responses may start with `thinking` blocks, so read content by block type.
+- Knobs: `ANTHROPIC_ROUTER_EFFORT` (`low`), `ANTHROPIC_ANSWER_EFFORT` (`low`), `ANTHROPIC_ANSWER_THINKING_EFFORT` (`medium`), `ANTHROPIC_ANSWER_MAX_TOKENS`.
 
-Configuration knobs:
-- `ANTHROPIC_THINKING_BUDGET_TOKENS` (default: 10,000)
-- `ANTHROPIC_ANSWER_MAX_TOKENS` (must be > budget)
+**Older models (legacy budget thinking):**
+- **Temperature** must be `1` when thinking is on.
+- **Token budgeting**: `max_tokens` must be **greater than** `thinking.budget_tokens`, otherwise Anthropic returns `400` (`invalid_request_error`).
+- Knobs: `ANTHROPIC_THINKING_BUDGET_TOKENS` (default: 10,000), `ANTHROPIC_ANSWER_MAX_TOKENS` (must be > budget).
 
 ---
 
