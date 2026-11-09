@@ -31,7 +31,7 @@ class Client(BaseModel):
     origin: str | None = None
     page: ClientPage | None = None
     ui: ClientUI | None = None
-    thinkingEnabled: bool | None = None  # Extended thinking toggle (default: True)
+    thinkingEnabled: bool | None = None  # Extended thinking toggle (default: False)
 
 
 class ChatMessage(BaseModel):

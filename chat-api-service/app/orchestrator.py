@@ -71,7 +71,7 @@ class ChatOrchestrator:
         client_view = "chat"
         client_active_tab = "brief"
         page_path = None
-        thinking_enabled = True  # Default to enabled
+        thinking_enabled = False  # Default to disabled (matches UI default)
         
         if req.client:
             if req.client.ui:

@@ -53,7 +53,7 @@ Rules:
 - The UI sends the last ~8–20 messages (bounded).
 - The UI includes the current `client.ui` so the model can be tactful (e.g., don’t keep suggesting the other tab every turn).
 - `referrerShareId` is optional and only used for analytics/tone (“came from a shared link”).
-- `thinkingEnabled` is optional and defaults to `true`. Details: `_specs/thinking-mode.md`.
+- `thinkingEnabled` is optional and defaults to `false` (the UI sends it explicitly). Details: `_specs/thinking-mode.md`.
 
 #### Response
 

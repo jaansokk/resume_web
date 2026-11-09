@@ -22,7 +22,7 @@ class AgentContext:
     client_view: str = "chat"
     client_active_tab: str = "brief"
     page_path: str | None = None
-    thinking_enabled: bool = True  # Extended thinking toggle
+    thinking_enabled: bool = False  # Extended thinking toggle
     
     # Router output
     retrieval_query: str = ""
