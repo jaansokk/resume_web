@@ -5,6 +5,8 @@ const mediaTreatmentEnum = z.enum(['gallery', 'scrollSequence']);
 const mediaSequenceItem = z.object({
   label: z.string(),
   src: z.string(),
+  // Optional second video source (e.g. H.264 .mp4) for browsers that cannot play `src`.
+  fallbackSrc: z.string().optional(),
   alt: z.string(),
   poster: z.string().optional(),
 });
@@ -63,6 +65,10 @@ const projects = defineCollection({
     gallery: z.array(z.string()).optional(),
     mediaTreatment: mediaTreatmentEnum.optional(),
     mediaSequence: z.array(mediaSequenceItem).optional(),
+    // Alpha mask image applied to the whole sequence stage (makes the media background transparent).
+    mediaMask: z.string().optional(),
+    // Alpha mask of the device screen; limits the between-clips dip to black to the screen area.
+    mediaScreenMask: z.string().optional(),
     featuredInRecentProjects: z.boolean().optional(),
     recentProjectsOrder: z.number().int().optional(),
   }),

@@ -227,6 +227,7 @@ The product uses **real routes** (not URL params) for clean navigation and brows
   - If no saved state exists, shows Handshake (fresh conversation)
 - **`/cv`** — CV page (separate route, static or React-based)
 - **`/recent-projects`** — Curated project page with sticky project details, screenshot galleries, and optional scroll-sequenced animated project media
+  - Scroll sequence: one clip is visible at a time, and between clips the device screen dips to black (the frame stays). On `lg`+ the scroll position drives the dip and the swap; below `lg` each clip plays once and auto-advances, and the feature nav switches clips (no scroll-driven switching)
 - **`/contact`** — Contact page (separate route, form with LinkedIn/email capture)
 - **`/c/{shareId}`** — Shared conversation snapshot (immutable, read-only or fork)
 

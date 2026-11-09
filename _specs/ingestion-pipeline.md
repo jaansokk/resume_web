@@ -45,7 +45,7 @@ For `background`:
 All types:
 - `keywords[]`, `heroImage`, `gallery[]`, `updatedAt`
  - `featuredInRecentProjects`, `recentProjectsOrder` (UI-only curation fields for `/recent-projects`)
- - `mediaTreatment`, `mediaSequence[]` (UI-only `/recent-projects` media controls; currently used for animated scroll-sequence project media and not part of RAG semantics unless intentionally indexed later)
+ - `mediaTreatment`, `mediaSequence[]` (items: `label`, `src`, `alt`, optional `fallbackSrc` / `poster`), `mediaMask`, `mediaScreenMask` (UI-only `/recent-projects` media controls; currently used for animated scroll-sequence project media and not part of RAG semantics unless intentionally indexed later. `mediaMask` is an alpha image applied over the whole stage so the media background is transparent; `mediaScreenMask` limits the between-clips dip to black to the device screen; regenerate masks and clips with `ui/scripts/build-scroll-sequence-media.py`)
  - `urlPath` (canonical UI path for the item; optional)
  - `highlights[]` (optional, curated proof points; short bullets)
 

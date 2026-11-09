@@ -15,6 +15,15 @@ const curatedProjects = (await getCollection('projects'))
     return entry.data.featuredInRecentProjects && (hasGallery || hasScrollSequence);
   })
   .sort((a, b) => (a.data.recentProjectsOrder ?? Number.MAX_SAFE_INTEGER) - (b.data.recentProjectsOrder ?? Number.MAX_SAFE_INTEGER));
+
+// `type` lets the browser skip a <source> it cannot decode and fall through to the next one.
+// Scroll-sequence .webm files are VP9 (see scripts/build-scroll-sequence-media.py).
+const videoTypes: Record<string, string> = {
+  webm: 'video/webm; codecs="vp9"',
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+};
+const videoType = (src: string) => videoTypes[src.split('.').pop()?.toLowerCase() ?? ''];
 ---
 
 <!doctype html>
@@ -119,22 +128,38 @@ const curatedProjects = (await getCollection('projects'))
 
                   {isScrollSequence ? (
                     <div class="scroll-sequence-wrap">
-                      <div class="scroll-sequence-stage" aria-label={`${project.data.title} animated feature previews`}>
+                      <div
+                        class:list={[
+                          'scroll-sequence-stage',
+                          {
+                            'has-mask': Boolean(project.data.mediaMask),
+                            'has-screen-mask': Boolean(project.data.mediaScreenMask),
+                          },
+                        ]}
+                        style={[
+                          project.data.mediaMask && `--sequence-mask: url('${project.data.mediaMask}');`,
+                          project.data.mediaScreenMask && `--sequence-screen-mask: url('${project.data.mediaScreenMask}');`,
+                        ].filter(Boolean).join(' ') || undefined}
+                        aria-label={`${project.data.title} animated feature previews`}
+                      >
                         {sequence.map((item, itemIndex) => (
                           isVideoSource(item.src) ? (
                             <video
-                              src={item.src}
                               class:list={['sequence-media', { 'is-active': itemIndex === 0 }]}
                               data-sequence-media
                               data-sequence-index={itemIndex}
                               aria-label={item.alt}
                               aria-hidden={itemIndex === 0 ? 'false' : 'true'}
-                              autoplay
+                              poster={item.poster}
+                              autoplay={itemIndex === 0}
                               muted
                               loop
                               playsinline
-                              preload="metadata"
-                            ></video>
+                              preload="auto"
+                            >
+                              <source src={item.src} type={videoType(item.src)} />
+                              {item.fallbackSrc && <source src={item.fallbackSrc} type={videoType(item.fallbackSrc)} />}
+                            </video>
                           ) : (
                             <img
                               src={item.src}
@@ -318,13 +343,22 @@ const curatedProjects = (await getCollection('projects'))
     contain: paint;
   }
 
-  .sequence-media,
-  .sequence-blackout {
-    position: absolute;
-    inset: 0;
+  /* The mask's alpha is the device silhouette, so everything outside it shows the page through. */
+  .scroll-sequence-stage.has-mask {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    -webkit-mask-image: var(--sequence-mask);
+    mask-image: var(--sequence-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
   }
 
   .sequence-media {
+    position: absolute;
+    inset: 0;
     z-index: 1;
     display: block;
     width: 100%;
@@ -338,11 +372,32 @@ const curatedProjects = (await getCollection('projects'))
     opacity: 1;
   }
 
+  /* Clips switch behind this layer while it is fully black, which marks each step boundary. */
   .sequence-blackout {
+    position: absolute;
+    inset: 0;
     z-index: 2;
     background: #000;
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* Dip only the screen to black; the device frame stays put between clips. */
+  .scroll-sequence-stage.has-screen-mask .sequence-blackout {
+    -webkit-mask-image: var(--sequence-screen-mask);
+    mask-image: var(--sequence-screen-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+
+  /* Below lg the clips switch on tap / clip end rather than with scroll position, so animate the dip.
+     Keep the duration in sync with DIP_MS in the script below. */
+  @media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+    .sequence-blackout {
+      transition: opacity 220ms ease-in-out;
+    }
   }
 
   @media (max-width: 1023px) {
@@ -375,18 +430,50 @@ const curatedProjects = (await getCollection('projects'))
 </style>
 
 <script>
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const sequenceBlocks = Array.from(document.querySelectorAll('[data-scroll-sequence]'));
+  // lg layout: the sequence row is tall and the stage is sticky, so scroll position picks the clip.
+  // Below it the stage scrolls with the page: each clip plays once, then the screen dips to black
+  // and the next clip starts.
+  const wideLayout = window.matchMedia('(min-width: 1024px)');
+  // Matches the opacity transition on .sequence-blackout in the narrow layout.
+  const DIP_MS = 220;
 
-  sequenceBlocks.forEach((block) => {
-    const mediaItems = Array.from(block.querySelectorAll('[data-sequence-media]'));
-    const triggers = Array.from(block.querySelectorAll('[data-sequence-trigger]'));
-    const blackout = block.querySelector('[data-sequence-blackout]');
+  const initSequence = (block: HTMLElement, signal: AbortSignal) => {
+    const mediaItems = Array.from(block.querySelectorAll<HTMLElement>('[data-sequence-media]'));
+    const triggers = Array.from(block.querySelectorAll<HTMLElement>('[data-sequence-trigger]'));
+    const videos = mediaItems.filter((item): item is HTMLVideoElement => item instanceof HTMLVideoElement);
+    const blackout = block.querySelector<HTMLElement>('[data-sequence-blackout]');
     let activeIndex = 0;
     let frameRequested = false;
+    let dipTimer = 0;
 
-    const setActiveState = (index) => {
+    const isScrollDriven = () => wideLayout.matches && !reducedMotion.matches && mediaItems.length > 1;
+    const isAutoAdvance = () => !wideLayout.matches && !reducedMotion.matches && mediaItems.length > 1;
+
+    // A ViewTransitions navigation swaps in <video> elements parsed in an inert document; their
+    // resource selection already failed (NETWORK_NO_SOURCE), so restart it or they stay blank.
+    videos.forEach((video) => {
+      if (video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+        video.load();
+      }
+    });
+
+    // Only decode what is visible: play clips with opacity > 0, pause the rest. An ended clip that is
+    // still showing during the dip stays on its last frame (play() would rewind it to the start).
+    const syncPlayback = () => {
+      videos.forEach((video) => {
+        if (Number(video.style.opacity || 0) > 0) {
+          if (video.paused && !video.ended) {
+            video.play().catch(() => {});
+          }
+        } else if (!video.paused) {
+          video.pause();
+        }
+      });
+    };
+
+    const setActiveState = (index: number) => {
       activeIndex = clamp(index, 0, mediaItems.length - 1);
 
       triggers.forEach((trigger, triggerIndex) => {
@@ -402,41 +489,63 @@ const curatedProjects = (await getCollection('projects'))
       });
     };
 
-    const applyVisualState = (currentIndex, nextIndex, transitionProgress) => {
-      const hasNext = nextIndex !== currentIndex;
-      const showNext = hasNext && transitionProgress >= 0.5;
-      const activeCandidate = showNext ? nextIndex : currentIndex;
-
-      if (activeCandidate !== activeIndex) {
-        setActiveState(activeCandidate);
-      }
-
-      mediaItems.forEach((mediaItem, mediaIndex) => {
-        let opacity = mediaIndex === currentIndex ? 1 : 0;
-
-        if (hasNext && transitionProgress > 0) {
-          if (transitionProgress < 0.5) {
-            opacity = mediaIndex === currentIndex ? 1 - transitionProgress * 2 : 0;
-          } else {
-            opacity = mediaIndex === nextIndex ? (transitionProgress - 0.5) * 2 : 0;
-          }
-        }
-
-        mediaItem.style.opacity = String(opacity);
-      });
-
+    const setBlackout = (opacity: number) => {
       if (blackout) {
-        const blackoutOpacity = hasNext
-          ? 1 - Math.abs(transitionProgress - 0.5) * 2
-          : 0;
-        blackout.style.opacity = String(clamp(blackoutOpacity, 0, 1));
+        blackout.style.opacity = String(opacity);
       }
+    };
+
+    // Show exactly one clip. Clips are never blended: a clip that was hidden starts from its first frame.
+    const swapTo = (index: number) => {
+      mediaItems.forEach((mediaItem, mediaIndex) => {
+        const isTarget = mediaIndex === index;
+        if (isTarget && mediaItem instanceof HTMLVideoElement && mediaItem.style.opacity !== '1') {
+          mediaItem.currentTime = 0;
+        }
+        mediaItem.style.opacity = isTarget ? '1' : '0';
+      });
+      syncPlayback();
+    };
+
+    // Discrete switch (feature nav, clip end, layout change): dip to black, swap while black, come back.
+    const showClip = (index: number, animate: boolean) => {
+      const targetIndex = clamp(index, 0, mediaItems.length - 1);
+      const changing = mediaItems[targetIndex].style.opacity !== '1';
+
+      window.clearTimeout(dipTimer);
+      setActiveState(targetIndex);
+
+      if (!animate || !blackout || !changing) {
+        swapTo(targetIndex);
+        setBlackout(0);
+        return;
+      }
+
+      setBlackout(1);
+      dipTimer = window.setTimeout(() => {
+        swapTo(targetIndex);
+        setBlackout(0);
+      }, DIP_MS + 40);
+    };
+
+    // Scroll-driven dip: black rises over the first half of the transition and falls over the second.
+    // It holds at full black for the middle fifth, and the clip swaps at the midpoint.
+    const applyScrollState = (currentIndex: number, nextIndex: number, transitionProgress: number) => {
+      const inTransition = nextIndex !== currentIndex && transitionProgress > 0;
+      const visibleIndex = inTransition && transitionProgress >= 0.5 ? nextIndex : currentIndex;
+
+      if (visibleIndex !== activeIndex) {
+        setActiveState(visibleIndex);
+      }
+
+      swapTo(visibleIndex);
+      setBlackout(inTransition ? clamp((1 - Math.abs(transitionProgress - 0.5) * 2) * 1.25, 0, 1) : 0);
     };
 
     const updateFromScroll = () => {
       frameRequested = false;
 
-      if (reducedMotion.matches || mediaItems.length <= 1) {
+      if (!isScrollDriven()) {
         return;
       }
 
@@ -454,7 +563,7 @@ const curatedProjects = (await getCollection('projects'))
           ? 0
           : clamp((localProgress - transitionStart) / (1 - transitionStart), 0, 1);
 
-      applyVisualState(currentIndex, nextIndex, transitionProgress);
+      applyScrollState(currentIndex, nextIndex, transitionProgress);
     };
 
     const requestScrollUpdate = () => {
@@ -464,36 +573,77 @@ const curatedProjects = (await getCollection('projects'))
       }
     };
 
-    triggers.forEach((trigger) => {
-      trigger.addEventListener('click', () => {
-        const targetIndex = Number(trigger.getAttribute('data-sequence-index') ?? 0);
-        setActiveState(targetIndex);
-
-        if (blackout) {
-          blackout.style.opacity = '0';
-        }
-
-        mediaItems.forEach((mediaItem, mediaIndex) => {
-          mediaItem.style.opacity = mediaIndex === targetIndex ? '1' : '0';
-        });
-
-        const blockTop = window.scrollY + block.getBoundingClientRect().top;
-        const scrollable = Math.max(block.offsetHeight - window.innerHeight, 1);
-        const targetProgress = clamp((targetIndex + 0.18) / mediaItems.length, 0, 1);
-
-        window.scrollTo({
-          top: blockTop + scrollable * targetProgress,
-          behavior: reducedMotion.matches ? 'auto' : 'smooth',
-        });
+    const applyMode = () => {
+      // Auto-advance needs `ended`, which never fires on looping media.
+      const autoAdvance = isAutoAdvance();
+      videos.forEach((video) => {
+        video.loop = !autoAdvance;
       });
+
+      if (isScrollDriven()) {
+        updateFromScroll();
+      } else {
+        showClip(activeIndex, false);
+      }
+    };
+
+    videos.forEach((video) => {
+      video.addEventListener(
+        'ended',
+        () => {
+          if (isAutoAdvance() && mediaItems.indexOf(video) === activeIndex) {
+            showClip((activeIndex + 1) % mediaItems.length, true);
+          }
+        },
+        { signal },
+      );
     });
 
-    window.addEventListener('scroll', requestScrollUpdate, { passive: true });
-    window.addEventListener('resize', requestScrollUpdate);
-    reducedMotion.addEventListener('change', () => {
-      setActiveState(activeIndex);
-      requestScrollUpdate();
+    triggers.forEach((trigger) => {
+      trigger.addEventListener(
+        'click',
+        () => {
+          const targetIndex = Number(trigger.getAttribute('data-sequence-index') ?? 0);
+
+          if (!isScrollDriven()) {
+            showClip(targetIndex, !reducedMotion.matches);
+            return;
+          }
+
+          showClip(targetIndex, false);
+
+          const blockTop = window.scrollY + block.getBoundingClientRect().top;
+          const scrollable = Math.max(block.offsetHeight - window.innerHeight, 1);
+          const targetProgress = clamp((targetIndex + 0.18) / mediaItems.length, 0, 1);
+
+          window.scrollTo({ top: blockTop + scrollable * targetProgress, behavior: 'smooth' });
+        },
+        { signal },
+      );
     });
-    updateFromScroll();
-  });
+
+    window.addEventListener('scroll', requestScrollUpdate, { passive: true, signal });
+    window.addEventListener('resize', requestScrollUpdate, { signal });
+    wideLayout.addEventListener('change', applyMode, { signal });
+    reducedMotion.addEventListener('change', applyMode, { signal });
+    signal.addEventListener('abort', () => window.clearTimeout(dipTimer));
+
+    applyMode();
+  };
+
+  let teardownSequences = () => {};
+
+  const initScrollSequences = () => {
+    teardownSequences();
+    const controller = new AbortController();
+    teardownSequences = () => controller.abort();
+
+    document
+      .querySelectorAll<HTMLElement>('[data-scroll-sequence]')
+      .forEach((block) => initSequence(block, controller.signal));
+  };
+
+  // With <ViewTransitions /> this module runs once per visit, not once per page view.
+  // astro:page-load fires after the first load and after every client-side navigation.
+  document.addEventListener('astro:page-load', initScrollSequences);
 </script>
