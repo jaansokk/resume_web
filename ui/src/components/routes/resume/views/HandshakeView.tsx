@@ -46,7 +46,7 @@ export function HandshakeView({
               Hey {'\u2014'} I'm <span className="v2-serif text-[var(--v2-accent)]">Jaan</span>.
             </h1>
             <p className="text-xs md:text-[0.7rem] uppercase tracking-[0.1em] text-[var(--v2-accent)] mt-3 mb-6">
-              Product Leader / PM <span className="opacity-50">&nbsp;|&nbsp;</span> Web3 Nerd <span className="opacity-50">&nbsp;|&nbsp;</span> Critical Thinker <span className="opacity-50">&nbsp;|&nbsp;</span> Leading Teams for 15y
+              Product Manager <span className="opacity-50">&nbsp;|&nbsp;</span> Product Engineer <span className="opacity-50">&nbsp;|&nbsp;</span> UX Nerd <span className="opacity-50">&nbsp;|&nbsp;</span> Critical Thinker <span className="opacity-50">&nbsp;|&nbsp;</span> 15y Shipping Products
             </p>
             <p className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.15] tracking-[-0.02em]">
               What kind of product<br />

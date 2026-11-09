@@ -70,10 +70,15 @@ Browsing happens via:
 **Visible**
 - Hero headline:
   - “Hey — I’m Jaan.”
+  - Tagline: “Product Manager | Product Engineer | UX Nerd | Critical Thinker | 15y Shipping Products” (owner, 2026-11-09)
   - “What kind of product are you building?”
 - Supporting subline: “In 60 seconds we'll produce a fit brief you can forward internally to your team.”
 - “Try asking…” label
-- Quick replies (2x2 grid)
+- Quick replies (2x2 grid), aimed at PM and product engineer / FDE hiring (owner, 2026-11-09):
+  - “We're hiring a Product Manager / PO”
+  - “We're hiring a Product Engineer / FDE”
+  - “How do you take a product from zero to MVP?”
+  - “How do you build with AI coding agents?”
 - Optional freeform input (placeholder: “Or tell me what you're looking for...”)
 - Header: name + links (Projects / CV / LinkedIn / Contact)
 

@@ -22,8 +22,8 @@ export interface QuickReply {
 
 export const quickReplies: readonly QuickReply[] = [
   { id: 'product', label: "We're hiring a Product Manager / PO", icon: '◇' },
-  { id: 'engineer', label: "We're looking for a full stack Product Engineer", icon: '◇' },
-  { id: 'philosophy', label: "What's your leadership philosophy?", icon: '◇' },
-  { id: 'how-it-works', label: 'Cool site — how does it work?', icon: '◇' },
+  { id: 'engineer', label: "We're hiring a Product Engineer / FDE", icon: '◇' },
+  { id: 'zero-to-mvp', label: 'How do you take a product from zero to MVP?', icon: '◇' },
+  { id: 'ai-agents', label: 'How do you build with AI coding agents?', icon: '◇' },
 ] as const;
 
